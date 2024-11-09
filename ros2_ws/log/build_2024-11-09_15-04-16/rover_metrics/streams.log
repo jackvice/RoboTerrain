@@ -1,0 +1,23 @@
+[0.471s] Invoking command in '/home/jack/src/RoboTerrain/ros2_ws/src/rover_metrics': PYTHONPATH=/home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base ../../build/rover_metrics build --build-base /home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics/build install --record /home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics/install.log --single-version-externally-managed install_data
+[0.646s] running egg_info
+[0.647s] writing ../../build/rover_metrics/rover_metrics.egg-info/PKG-INFO
+[0.647s] writing dependency_links to ../../build/rover_metrics/rover_metrics.egg-info/dependency_links.txt
+[0.647s] writing entry points to ../../build/rover_metrics/rover_metrics.egg-info/entry_points.txt
+[0.647s] writing requirements to ../../build/rover_metrics/rover_metrics.egg-info/requires.txt
+[0.647s] writing top-level names to ../../build/rover_metrics/rover_metrics.egg-info/top_level.txt
+[0.648s] reading manifest file '../../build/rover_metrics/rover_metrics.egg-info/SOURCES.txt'
+[0.649s] writing manifest file '../../build/rover_metrics/rover_metrics.egg-info/SOURCES.txt'
+[0.649s] running build
+[0.649s] running build_py
+[0.649s] copying rover_metrics/metrics_node.py -> /home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics/build/lib/rover_metrics
+[0.649s] copying rover_metrics/__init__.py -> /home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics/build/lib/rover_metrics
+[0.649s] running install
+[0.649s] running install_lib
+[0.650s] running install_data
+[0.650s] running install_egg_info
+[0.651s] removing '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/lib/python3.10/site-packages/rover_metrics-0.0.0-py3.10.egg-info' (and everything under it)
+[0.652s] Copying ../../build/rover_metrics/rover_metrics.egg-info to /home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/lib/python3.10/site-packages/rover_metrics-0.0.0-py3.10.egg-info
+[0.652s] running install_scripts
+[0.665s] Installing metrics_node script to /home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/lib/rover_metrics
+[0.665s] writing list of installed files to '/home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics/install.log'
+[0.678s] Invoked command in '/home/jack/src/RoboTerrain/ros2_ws/src/rover_metrics' returned '0': PYTHONPATH=/home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base ../../build/rover_metrics build --build-base /home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics/build install --record /home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics/install.log --single-version-externally-managed install_data

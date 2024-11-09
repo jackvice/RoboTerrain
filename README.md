@@ -74,12 +74,16 @@ Run the container with GUI support for Gazebo and GPU acceleration.
 # Allow X server connections (run on host)
 xhost +local:root
 
-# Run the container
-docker run -it --gpus all --name ros2_rl_container \
+# Run the detached container
+docker run -d --gpus all --name ros2_rl_container \
     -e DISPLAY=$DISPLAY \
     -e QT_X11_NO_MITSHM=1 \
     -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
     ros2-humble-gazebo-pytorch:latest
+
+# Open a shell in the container
+docker exec -it ros2_rl_container bash
+
 ```
 
 **Note**: If you're using an NVIDIA GPU, ensure that the NVIDIA Container Toolkit is properly installed.

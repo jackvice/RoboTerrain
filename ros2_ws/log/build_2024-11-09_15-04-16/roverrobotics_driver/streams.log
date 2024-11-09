@@ -1,0 +1,92 @@
+[0.195s] Invoking command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble /usr/bin/cmake --build /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver -- -j24 -l24
+[0.199s] [0mCMake Error: The current CMakeCache.txt directory /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver/CMakeCache.txt is different than the directory /home/jack/rover_workspace/build/roverrobotics_driver where CMakeCache.txt was created. This may result in binaries being created in the wrong place. If you are not sure, reedit the CMakeCache.txt[0m
+[0.222s] -- Found ament_cmake: 1.3.10 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.310s] -- Found rclcpp: 16.0.10 (/opt/ros/humble/share/rclcpp/cmake)
+[0.349s] -- Found rosidl_generator_c: 3.1.5 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.351s] -- Found rosidl_adapter: 3.1.5 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.358s] -- Found rosidl_generator_cpp: 3.1.5 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.368s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.380s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.415s] -- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[0.418s] -- Found rmw_fastrtps_cpp: 6.2.7 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[0.519s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[0.562s] -- Found geometry_msgs: 4.2.4 (/opt/ros/humble/share/geometry_msgs/cmake)
+[0.573s] -- Found nav_msgs: 4.2.4 (/opt/ros/humble/share/nav_msgs/cmake)
+[0.586s] -- Found tf2_geometry_msgs: 0.25.8 (/opt/ros/humble/share/tf2_geometry_msgs/cmake)
+[0.589s] -- Found eigen3_cmake_module: 0.1.1 (/opt/ros/humble/share/eigen3_cmake_module/cmake)
+[0.590s] -- Ensuring Eigen3 include directory is part of orocos-kdl CMake target
+[0.664s] -- Found sensor_msgs: 4.2.4 (/opt/ros/humble/share/sensor_msgs/cmake)
+[0.720s] -- Configuring done
+[0.730s] -- Generating done
+[0.731s] -- Build files have been written to: /home/jack/rover_workspace/build/roverrobotics_driver
+[0.758s] [35m[1mConsolidate compiler generated dependencies of target roverrobotics_driver[0m
+[0.791s] [  9%] [32m[1mLinking CXX executable roverrobotics_driver[0m
+[1.442s] [100%] Built target roverrobotics_driver
+[1.451s] Invoked command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble /usr/bin/cmake --build /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver -- -j24 -l24
+[1.485s] Invoking command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble /usr/bin/cmake --install /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver
+[1.490s] -- Install configuration: ""
+[1.490s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch
+[1.490s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/pro_teleop.launch.py
+[1.490s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/miti.launch.py
+[1.490s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/slam_launch.py
+[1.490s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/navigation_launch.py
+[1.490s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/max.launch.py
+[1.490s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/mini_teleop.launch.py
+[1.490s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/nav2_backend.py
+[1.490s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/mini.launch.py
+[1.490s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/zero.launch.py
+[1.490s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/miti65_teleop.launch.py
+[1.490s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/miti_teleop.launch.py
+[1.490s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/accessories.launch.py
+[1.490s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/ps4_controller.launch.py
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/pro.launch.py
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/miti65.launch.py
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/robot_localizer.launch.py
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/max_teleop.launch.py
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/launch/zero_teleop.launch.py
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/zero_config.yaml
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/realsense_config.yaml
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/slam_configs
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/slam_configs/mapper_params_lifelong.yaml
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/slam_configs/mapper_params_online_sync.yaml
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/slam_configs/mapper_params_localization.yaml
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/slam_configs/mapper_params_online_async.yaml
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/slam_configs/mapper_params_offline.yaml
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/rviz_configs
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/rviz_configs/nav2_default_view.rviz
+[1.491s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/rviz_configs/realsense_rviz_layout.rviz
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/rviz_configs/slam_rviz_layout.rviz
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/controller_config.yaml
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/mini_config.yaml
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/topics.yaml
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/max_config.yaml
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/miti_config.yaml
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/pro_config.yaml
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/controller_config_jp6.yaml
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/miti65_config.yaml
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/accessories.yaml
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/localization_ekf.yaml
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/config/nav2_params.yaml
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/maps
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/maps/maze_map.data
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/maps/maze_map.posegraph
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/maps/maze_map.pgm
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/maps/maze_map.yaml
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/lib/roverrobotics_driver/roverrobotics_driver
+[1.492s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/ament_index/resource_index/package_run_dependencies/roverrobotics_driver
+[1.492s] -- Installing: /home/jack/rover_workspace/install/roverrobotics_driver/share/ament_index/resource_index/parent_prefix_path/roverrobotics_driver
+[1.493s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/environment/ament_prefix_path.sh
+[1.493s] -- Installing: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/environment/ament_prefix_path.dsv
+[1.493s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/environment/path.sh
+[1.493s] -- Installing: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/environment/path.dsv
+[1.493s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/local_setup.bash
+[1.493s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/local_setup.sh
+[1.493s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/local_setup.zsh
+[1.493s] -- Installing: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/local_setup.dsv
+[1.493s] -- Installing: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/package.dsv
+[1.493s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/ament_index/resource_index/packages/roverrobotics_driver
+[1.493s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/cmake/roverrobotics_driverConfig.cmake
+[1.493s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/cmake/roverrobotics_driverConfig-version.cmake
+[1.493s] -- Up-to-date: /home/jack/rover_workspace/install/roverrobotics_driver/share/roverrobotics_driver/package.xml
+[1.494s] Invoked command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble /usr/bin/cmake --install /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver

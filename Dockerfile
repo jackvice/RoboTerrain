@@ -6,6 +6,15 @@ ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
 
+
+# Install necessary OpenGL libraries
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libgl1-mesa-dri \
+    libglvnd-dev \
+    mesa-utils
+
+
 # Install ROS 2 Humble full desktop and necessary dependencies
 RUN apt-get update && apt-get install -y \
     ros-humble-desktop-full \
@@ -25,7 +34,6 @@ RUN apt-get update && apt-get install -y \
     ros-humble-ros-gz \
     ros-humble-ros-gz-sim \
     ros-humble-gazebo-ros2-control \
-    ros-humble-gazebo-ros2-controllers \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PyTorch with CUDA support (modify for CPU-only if needed)

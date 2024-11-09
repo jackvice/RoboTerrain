@@ -222,7 +222,6 @@
 
         </plugin>
 
-        
         <plugin filename="ignition-gazebo-joint-state-publisher-system" name="ignition::gazebo::systems::JointStatePublisher">
             <topic>/joint_states</topic>
         </plugin>

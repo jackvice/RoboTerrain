@@ -1,0 +1,1 @@
+[0mCMake Error: The current CMakeCache.txt directory /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver/CMakeCache.txt is different than the directory /home/jack/rover_workspace/build/roverrobotics_driver where CMakeCache.txt was created. This may result in binaries being created in the wrong place. If you are not sure, reedit the CMakeCache.txt[0m

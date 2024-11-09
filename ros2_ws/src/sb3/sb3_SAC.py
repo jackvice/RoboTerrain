@@ -1,0 +1,29 @@
+import sys
+ros_path = '/opt/ros/humble/lib/python3.10/site-packages'
+if ros_path not in sys.path:
+    sys.path.append(ros_path)
+
+from stable_baselines3 import SAC
+from stable_baselines3.common.vec_env import DummyVecEnv
+from environments.rover_environment import RoverEnv 
+
+# Create and wrap the environment
+env = RoverEnv()
+env = DummyVecEnv([lambda: env])
+
+# Create and train the SAC agent with some tuned hyperparameters
+model = SAC(
+    "MultiInputPolicy",
+    env,
+    learning_rate=3e-4,
+    buffer_size=100000,
+    batch_size=256,
+    tau=0.005,
+    gamma=0.99,
+    train_freq=1,
+    gradient_steps=1,
+    verbose=1
+)
+
+# Train for the same number of steps
+model.learn(total_timesteps=1_000_000)
