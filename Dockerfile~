@@ -46,14 +46,17 @@ RUN pip3 install torch torchvision torchaudio --extra-index-url https://download
 # Install additional Python libraries for reinforcement learning and PPO
 RUN pip3 install gym==0.23.1 stable-baselines3[extra] numpy scipy
 
-# Set up ROS 2 workspace
-RUN mkdir -p /home/ros2_ws/src
+# Set up ROS 2 workspace in /home/ros2_ws
 WORKDIR /home/ros2_ws
+RUN mkdir -p src
 
-# Build and source the workspace
+# Copy everything from the host's ros2_ws into the container
+COPY ros2_ws/src src/
+
+# Build ROS 2 workspace
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build"
 
-# Environment setup
+# Add environment setup to bashrc for convenience
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 RUN echo "source /home/ros2_ws/install/setup.bash" >> ~/.bashrc
 ENV PATH="/opt/ros/humble/bin:${PATH}"
@@ -61,6 +64,5 @@ ENV PATH="/opt/ros/humble/bin:${PATH}"
 # Expose Gazebo and ROS 2 ports
 EXPOSE 11311 11345
 
-# Set entrypoint
+# Set entrypoint to keep container alive and workspace sourced
 ENTRYPOINT ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash && source /home/ros2_ws/install/setup.bash && tail -f /dev/null"]
-

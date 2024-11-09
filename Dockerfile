@@ -6,39 +6,27 @@ ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Add Gazebo package repository
-RUN apt-get update && apt-get install -y wget lsb-release gnupg && \
-    wget https://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add - && \
-    sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" > /etc/apt/sources.list.d/gazebo-stable.list'
-
 # Install ROS 2 Humble full desktop and necessary dependencies
 RUN apt-get update && apt-get install -y \
     ros-humble-desktop-full \
     ros-humble-navigation2 \
     ros-humble-nav2-bringup \
-    ros-humble-gazebo-ros-pkgs \
-    ros-humble-ros2-controllers \
     ros-humble-ros2-control \
+    ros-humble-ros2-controllers \
+    ros-humble-diff-drive-controller \
+    ros-humble-joint-state-broadcaster \
+    ros-humble-xacro \
     python3-pip \
     python3-colcon-common-extensions \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Gazebo Fortress (for use with ROS 2 Humble)
+# Install Gazebo Fortress and ROS-Gazebo integration
 RUN apt-get update && apt-get install -y \
-    ignition-fortress \
+    ros-humble-ros-gz \
+    ros-humble-ros-gz-sim \
+    ros-humble-gazebo-ros2-control \
+    ros-humble-gazebo-ros2-controllers \
     && rm -rf /var/lib/apt/lists/*
-
-# Install TurtleBot4 packages for ROS 2
-RUN apt-get update && apt-get install -y \
-    ros-humble-turtlebot4* \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Navigation Stack 2 (Nav2) for ROS 2 Humble
-RUN apt-get update && apt-get install -y \
-    ros-humble-navigation2 \
-    ros-humble-nav2-bringup \
-    && rm -rf /var/lib/apt/lists/*
-
 
 # Install PyTorch with CUDA support (modify for CPU-only if needed)
 RUN pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
@@ -52,6 +40,9 @@ RUN mkdir -p src
 
 # Copy everything from the host's ros2_ws into the container
 COPY ros2_ws/src src/
+
+# Adjust permissions
+RUN chmod -R a+rw /home/ros2_ws/src
 
 # Build ROS 2 workspace
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build"
