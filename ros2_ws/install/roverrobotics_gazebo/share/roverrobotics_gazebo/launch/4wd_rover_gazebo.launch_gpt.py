@@ -1,0 +1,90 @@
+import os
+
+from ament_index_python.packages import get_package_share_directory
+
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
+
+import os
+
+from ament_index_python.packages import get_package_share_directory
+
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    # Create the launch configuration variables
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    world = LaunchConfiguration('world')
+    
+    declare_use_sim_time_cmd = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='true',
+        description='Use simulation (Gazebo) clock if true')
+    
+    declare_world_cmd = DeclareLaunchArgument(
+        'world',
+        default_value='simplecave3.sdf',
+        description='World file to use in Gazebo')
+    
+    world_path = PathJoinSubstitution([
+        get_package_share_directory('roverrobotics_gazebo'), 'worlds', world])
+
+    # Launch Gazebo in headless mode
+    gz_sim = ExecuteProcess(
+        cmd=['ign', 'gazebo', world_path, '--headless-rendering'],
+        output='screen'
+    )
+    
+    # Spawn Rover Robot
+    gz_spawn_entity = Node(
+        package="ros_gz_sim",
+        executable="create",
+        arguments=[
+            "-file", os.path.join(
+                get_package_share_directory('roverrobotics_description'),
+                'urdf', 'camera_rover_4wd.sdf'),
+            "-name", "rover_zero4wd",
+            "-allow_renaming", "true",
+            "-x", "0",
+            "-y", "0",
+            "-z", "0.1",
+        ]
+    )
+    
+    # Bridge between ROS 2 and Ignition Gazebo
+    gz_ros2_bridge = Node(
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        arguments=[
+            "/cmd_vel@geometry_msgs/msg/Twist@ignition.msgs.Twist",
+            "/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock",
+            "/odometry/wheels@nav_msgs/msg/Odometry@ignition.msgs.Odometry",
+            "/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V",
+            "/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model",
+            "/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan",
+            "/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU",
+            "/camera/image_raw@sensor_msgs/msg/Image@gz.msgs.Image",
+            "/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo"
+        ],
+    )
+    
+    # Create the launch description and populate
+    ld = LaunchDescription()
+
+    # Declare the launch options
+    ld.add_action(declare_use_sim_time_cmd)
+    ld.add_action(declare_world_cmd)
+
+    # Launch Gazebo in headless mode
+    ld.add_action(gz_sim)
+    ld.add_action(gz_spawn_entity)
+    ld.add_action(gz_ros2_bridge)
+
+    return ld

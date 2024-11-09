@@ -1,0 +1,2 @@
+source;share/roverrobotics_gazebo/environment/ament_prefix_path.sh
+source;share/roverrobotics_gazebo/environment/path.sh

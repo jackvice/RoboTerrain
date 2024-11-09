@@ -1,0 +1,3 @@
+[console_scripts]
+metrics_node = rover_metrics.metrics_node:main
+
