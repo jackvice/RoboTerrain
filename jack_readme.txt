@@ -18,6 +18,8 @@ ros2 launch roverrobotics_gazebo 4wd_rover_gazebo.launch.py
 ros2 launch turtlebot4_ignition_bringup turtlebot4_ignition.launch.py
 
 
+ign fuel download -u https://fuel.ignitionrobotics.org/1.0/OpenRobotics/models/Jersey%20Barrier
+
 # metrics logger in ~/rover_workspace/rover_metrics/
 ros2 run rover_metrics metrics_node
 
@@ -66,3 +68,14 @@ rozer map is 20 x 20 meters
 # list ign topics
 ign topic -l
 
+
+
+sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
+wget https://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
+sudo apt update
+
+sudo apt install ignition-edifice
+sudo apt install ignition-edifice-fuel-tools
+
+
+export IGN_GAZEBO_RESOURCE_PATH=$HOME/src/RoboTerrain/models:$IGN_GAZEBO_RESOURCE_PATH

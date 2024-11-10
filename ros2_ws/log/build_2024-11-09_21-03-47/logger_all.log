@@ -1,0 +1,478 @@
+[0.073s] DEBUG:colcon:Command line arguments: ['/usr/bin/colcon', 'build']
+[0.073s] DEBUG:colcon:Parsed command line arguments: Namespace(log_base=None, log_level=None, verb_name='build', build_base='build', install_base='install', merge_install=False, symlink_install=False, test_result_base=None, continue_on_error=False, executor='parallel', parallel_workers=24, event_handlers=None, ignore_user_meta=False, metas=['./colcon.meta'], base_paths=['.'], packages_ignore=None, packages_ignore_regex=None, paths=None, packages_up_to=None, packages_up_to_regex=None, packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_select_by_dep=None, packages_skip_by_dep=None, packages_skip_up_to=None, packages_select_build_failed=False, packages_skip_build_finished=False, packages_select_test_failures=False, packages_skip_test_passed=False, packages_select=None, packages_skip=None, packages_select_regex=None, packages_skip_regex=None, packages_start=None, packages_end=None, allow_overriding=[], cmake_args=None, cmake_target=None, cmake_target_skip_unavailable=False, cmake_clean_cache=False, cmake_clean_first=False, cmake_force_configure=False, ament_cmake_args=None, catkin_cmake_args=None, catkin_skip_building_tests=False, mixin_files=None, mixin=None, verb_parser=<colcon_mixin.mixin.mixin_argument.MixinArgumentDecorator object at 0x7100f6447b20>, verb_extension=<colcon_core.verb.build.BuildVerb object at 0x7100f6588250>, main=<bound method BuildVerb.main of <colcon_core.verb.build.BuildVerb object at 0x7100f6588250>>, mixin_verb=('build',))
+[0.197s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) check parameters
+[0.197s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) check parameters
+[0.197s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) check parameters
+[0.197s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) check parameters
+[0.197s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) discover
+[0.197s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) discover
+[0.197s] INFO:colcon.colcon_core.package_discovery:Crawling recursively for packages in '/home/jack/src/RoboTerrain/ros2_ws'
+[0.197s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ignore', 'ignore_ament_install']
+[0.197s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore'
+[0.197s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore_ament_install'
+[0.197s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_pkg']
+[0.197s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_pkg'
+[0.197s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_meta']
+[0.197s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_meta'
+[0.197s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ros']
+[0.197s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ros'
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['cmake', 'python']
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'cmake'
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python'
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['python_setup_py']
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python_setup_py'
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extensions ['ignore', 'ignore_ament_install']
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extension 'ignore'
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(build) ignored
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extensions ['ignore', 'ignore_ament_install']
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extension 'ignore'
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(install) ignored
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extensions ['ignore', 'ignore_ament_install']
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extension 'ignore'
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(log) ignored
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['ignore', 'ignore_ament_install']
+[0.204s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ignore'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ignore_ament_install'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['colcon_pkg']
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'colcon_pkg'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['colcon_meta']
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'colcon_meta'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['ros']
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ros'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['cmake', 'python']
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'cmake'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'python'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['python_setup_py']
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'python_setup_py'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/dynamic_obstacles) by extensions ['ignore', 'ignore_ament_install']
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/dynamic_obstacles) by extension 'ignore'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/dynamic_obstacles) by extension 'ignore_ament_install'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/dynamic_obstacles) by extensions ['colcon_pkg']
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/dynamic_obstacles) by extension 'colcon_pkg'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/dynamic_obstacles) by extensions ['colcon_meta']
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/dynamic_obstacles) by extension 'colcon_meta'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/dynamic_obstacles) by extensions ['ros']
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/dynamic_obstacles) by extension 'ros'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/dynamic_obstacles) by extensions ['cmake', 'python']
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/dynamic_obstacles) by extension 'cmake'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/dynamic_obstacles) by extension 'python'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/dynamic_obstacles) by extensions ['python_setup_py']
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/dynamic_obstacles) by extension 'python_setup_py'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_metrics) by extensions ['ignore', 'ignore_ament_install']
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_metrics) by extension 'ignore'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_metrics) by extension 'ignore_ament_install'
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_metrics) by extensions ['colcon_pkg']
+[0.205s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_metrics) by extension 'colcon_pkg'
+[0.206s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_metrics) by extensions ['colcon_meta']
+[0.206s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_metrics) by extension 'colcon_meta'
+[0.206s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_metrics) by extensions ['ros']
+[0.206s] Level 1:colcon.colcon_core.package_identification:_identify(src/rover_metrics) by extension 'ros'
+[0.207s] DEBUG:colcon.colcon_core.package_identification:Package 'src/rover_metrics' with type 'ros.ament_python' and name 'rover_metrics'
+[0.207s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2) by extensions ['ignore', 'ignore_ament_install']
+[0.207s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2) by extension 'ignore'
+[0.207s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2) by extension 'ignore_ament_install'
+[0.207s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2) by extensions ['colcon_pkg']
+[0.207s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2) by extension 'colcon_pkg'
+[0.207s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2) by extensions ['colcon_meta']
+[0.207s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2) by extension 'colcon_meta'
+[0.207s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2) by extensions ['ros']
+[0.207s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2) by extension 'ros'
+[0.207s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2) by extensions ['cmake', 'python']
+[0.207s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2) by extension 'cmake'
+[0.207s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2) by extension 'python'
+[0.207s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2) by extensions ['python_setup_py']
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2) by extension 'python_setup_py'
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_description) by extensions ['ignore', 'ignore_ament_install']
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_description) by extension 'ignore'
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_description) by extension 'ignore_ament_install'
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_description) by extensions ['colcon_pkg']
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_description) by extension 'colcon_pkg'
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_description) by extensions ['colcon_meta']
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_description) by extension 'colcon_meta'
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_description) by extensions ['ros']
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_description) by extension 'ros'
+[0.208s] DEBUG:colcon.colcon_core.package_identification:Package 'src/roverrobotics_ros2/roverrobotics_description' with type 'ros.ament_cmake' and name 'roverrobotics_description'
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_driver) by extensions ['ignore', 'ignore_ament_install']
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_driver) by extension 'ignore'
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_driver) by extension 'ignore_ament_install'
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_driver) by extensions ['colcon_pkg']
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_driver) by extension 'colcon_pkg'
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_driver) by extensions ['colcon_meta']
+[0.208s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_driver) by extension 'colcon_meta'
+[0.209s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_driver) by extensions ['ros']
+[0.209s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_driver) by extension 'ros'
+[0.209s] DEBUG:colcon.colcon_core.package_identification:Package 'src/roverrobotics_ros2/roverrobotics_driver' with type 'ros.ament_cmake' and name 'roverrobotics_driver'
+[0.209s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_gazebo) by extensions ['ignore', 'ignore_ament_install']
+[0.209s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_gazebo) by extension 'ignore'
+[0.209s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_gazebo) by extension 'ignore_ament_install'
+[0.209s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_gazebo) by extensions ['colcon_pkg']
+[0.209s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_gazebo) by extension 'colcon_pkg'
+[0.209s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_gazebo) by extensions ['colcon_meta']
+[0.209s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_gazebo) by extension 'colcon_meta'
+[0.209s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_gazebo) by extensions ['ros']
+[0.209s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_gazebo) by extension 'ros'
+[0.210s] DEBUG:colcon.colcon_core.package_identification:Package 'src/roverrobotics_ros2/roverrobotics_gazebo' with type 'ros.ament_cmake' and name 'roverrobotics_gazebo'
+[0.210s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_input_manager) by extensions ['ignore', 'ignore_ament_install']
+[0.210s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_input_manager) by extension 'ignore'
+[0.210s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_input_manager) by extension 'ignore_ament_install'
+[0.210s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_input_manager) by extensions ['colcon_pkg']
+[0.210s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_input_manager) by extension 'colcon_pkg'
+[0.210s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_input_manager) by extensions ['colcon_meta']
+[0.210s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_input_manager) by extension 'colcon_meta'
+[0.210s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_input_manager) by extensions ['ros']
+[0.210s] Level 1:colcon.colcon_core.package_identification:_identify(src/roverrobotics_ros2/roverrobotics_input_manager) by extension 'ros'
+[0.210s] DEBUG:colcon.colcon_core.package_identification:Package 'src/roverrobotics_ros2/roverrobotics_input_manager' with type 'ros.ament_cmake' and name 'roverrobotics_input_manager'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3) by extensions ['ignore', 'ignore_ament_install']
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3) by extension 'ignore'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3) by extension 'ignore_ament_install'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3) by extensions ['colcon_pkg']
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3) by extension 'colcon_pkg'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3) by extensions ['colcon_meta']
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3) by extension 'colcon_meta'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3) by extensions ['ros']
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3) by extension 'ros'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3) by extensions ['cmake', 'python']
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3) by extension 'cmake'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3) by extension 'python'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3) by extensions ['python_setup_py']
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3) by extension 'python_setup_py'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments) by extensions ['ignore', 'ignore_ament_install']
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments) by extension 'ignore'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments) by extension 'ignore_ament_install'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments) by extensions ['colcon_pkg']
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments) by extension 'colcon_pkg'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments) by extensions ['colcon_meta']
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments) by extension 'colcon_meta'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments) by extensions ['ros']
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments) by extension 'ros'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments) by extensions ['cmake', 'python']
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments) by extension 'cmake'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments) by extension 'python'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments) by extensions ['python_setup_py']
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments) by extension 'python_setup_py'
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments/__pycache__) by extensions ['ignore', 'ignore_ament_install']
+[0.211s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments/__pycache__) by extension 'ignore'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments/__pycache__) by extension 'ignore_ament_install'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments/__pycache__) by extensions ['colcon_pkg']
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments/__pycache__) by extension 'colcon_pkg'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments/__pycache__) by extensions ['colcon_meta']
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments/__pycache__) by extension 'colcon_meta'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments/__pycache__) by extensions ['ros']
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments/__pycache__) by extension 'ros'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments/__pycache__) by extensions ['cmake', 'python']
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments/__pycache__) by extension 'cmake'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments/__pycache__) by extension 'python'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments/__pycache__) by extensions ['python_setup_py']
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/sb3/environments/__pycache__) by extension 'python_setup_py'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/worlds) by extensions ['ignore', 'ignore_ament_install']
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/worlds) by extension 'ignore'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/worlds) by extension 'ignore_ament_install'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/worlds) by extensions ['colcon_pkg']
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/worlds) by extension 'colcon_pkg'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/worlds) by extensions ['colcon_meta']
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/worlds) by extension 'colcon_meta'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/worlds) by extensions ['ros']
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/worlds) by extension 'ros'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/worlds) by extensions ['cmake', 'python']
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/worlds) by extension 'cmake'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/worlds) by extension 'python'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/worlds) by extensions ['python_setup_py']
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(src/worlds) by extension 'python_setup_py'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(temp) by extensions ['ignore', 'ignore_ament_install']
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(temp) by extension 'ignore'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(temp) by extension 'ignore_ament_install'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(temp) by extensions ['colcon_pkg']
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(temp) by extension 'colcon_pkg'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(temp) by extensions ['colcon_meta']
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(temp) by extension 'colcon_meta'
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(temp) by extensions ['ros']
+[0.212s] Level 1:colcon.colcon_core.package_identification:_identify(temp) by extension 'ros'
+[0.213s] Level 1:colcon.colcon_core.package_identification:_identify(temp) by extensions ['cmake', 'python']
+[0.213s] Level 1:colcon.colcon_core.package_identification:_identify(temp) by extension 'cmake'
+[0.213s] Level 1:colcon.colcon_core.package_identification:_identify(temp) by extension 'python'
+[0.213s] Level 1:colcon.colcon_core.package_identification:_identify(temp) by extensions ['python_setup_py']
+[0.213s] Level 1:colcon.colcon_core.package_identification:_identify(temp) by extension 'python_setup_py'
+[0.213s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) using defaults
+[0.213s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) discover
+[0.213s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) using defaults
+[0.213s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) discover
+[0.213s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) using defaults
+[0.230s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) check parameters
+[0.230s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) discover
+[0.232s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 5 installed packages in /home/jack/rover_workspace/install
+[0.232s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 3 installed packages in /home/jack/ros2_ws/install
+[0.233s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 339 installed packages in /opt/ros/humble
+[0.234s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) using defaults
+[0.261s] Level 5:colcon.colcon_core.verb:set package 'rover_metrics' build argument 'cmake_args' from command line to 'None'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'rover_metrics' build argument 'cmake_target' from command line to 'None'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'rover_metrics' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'rover_metrics' build argument 'cmake_clean_cache' from command line to 'False'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'rover_metrics' build argument 'cmake_clean_first' from command line to 'False'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'rover_metrics' build argument 'cmake_force_configure' from command line to 'False'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'rover_metrics' build argument 'ament_cmake_args' from command line to 'None'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'rover_metrics' build argument 'catkin_cmake_args' from command line to 'None'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'rover_metrics' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.262s] DEBUG:colcon.colcon_core.verb:Building package 'rover_metrics' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics', 'merge_install': False, 'path': '/home/jack/src/RoboTerrain/ros2_ws/src/rover_metrics', 'symlink_install': False, 'test_result_base': None}
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_description' build argument 'cmake_args' from command line to 'None'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_description' build argument 'cmake_target' from command line to 'None'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_description' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_description' build argument 'cmake_clean_cache' from command line to 'False'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_description' build argument 'cmake_clean_first' from command line to 'False'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_description' build argument 'cmake_force_configure' from command line to 'False'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_description' build argument 'ament_cmake_args' from command line to 'None'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_description' build argument 'catkin_cmake_args' from command line to 'None'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_description' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.262s] DEBUG:colcon.colcon_core.verb:Building package 'roverrobotics_description' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_description', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description', 'merge_install': False, 'path': '/home/jack/src/RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_description', 'symlink_install': False, 'test_result_base': None}
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_driver' build argument 'cmake_args' from command line to 'None'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_driver' build argument 'cmake_target' from command line to 'None'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_driver' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_driver' build argument 'cmake_clean_cache' from command line to 'False'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_driver' build argument 'cmake_clean_first' from command line to 'False'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_driver' build argument 'cmake_force_configure' from command line to 'False'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_driver' build argument 'ament_cmake_args' from command line to 'None'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_driver' build argument 'catkin_cmake_args' from command line to 'None'
+[0.262s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_driver' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.262s] DEBUG:colcon.colcon_core.verb:Building package 'roverrobotics_driver' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver', 'merge_install': False, 'path': '/home/jack/src/RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_driver', 'symlink_install': False, 'test_result_base': None}
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_input_manager' build argument 'cmake_args' from command line to 'None'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_input_manager' build argument 'cmake_target' from command line to 'None'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_input_manager' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_input_manager' build argument 'cmake_clean_cache' from command line to 'False'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_input_manager' build argument 'cmake_clean_first' from command line to 'False'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_input_manager' build argument 'cmake_force_configure' from command line to 'False'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_input_manager' build argument 'ament_cmake_args' from command line to 'None'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_input_manager' build argument 'catkin_cmake_args' from command line to 'None'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_input_manager' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.263s] DEBUG:colcon.colcon_core.verb:Building package 'roverrobotics_input_manager' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_input_manager', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager', 'merge_install': False, 'path': '/home/jack/src/RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_input_manager', 'symlink_install': False, 'test_result_base': None}
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_gazebo' build argument 'cmake_args' from command line to 'None'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_gazebo' build argument 'cmake_target' from command line to 'None'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_gazebo' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_gazebo' build argument 'cmake_clean_cache' from command line to 'False'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_gazebo' build argument 'cmake_clean_first' from command line to 'False'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_gazebo' build argument 'cmake_force_configure' from command line to 'False'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_gazebo' build argument 'ament_cmake_args' from command line to 'None'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_gazebo' build argument 'catkin_cmake_args' from command line to 'None'
+[0.263s] Level 5:colcon.colcon_core.verb:set package 'roverrobotics_gazebo' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.263s] DEBUG:colcon.colcon_core.verb:Building package 'roverrobotics_gazebo' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_gazebo', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo', 'merge_install': False, 'path': '/home/jack/src/RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_gazebo', 'symlink_install': False, 'test_result_base': None}
+[0.263s] INFO:colcon.colcon_core.executor:Executing jobs using 'parallel' executor
+[0.264s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete
+[0.264s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/home/jack/src/RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_description' with build type 'ament_cmake'
+[0.264s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/home/jack/src/RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_description'
+[0.266s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_core.shell.bat': Not used on non-Windows systems
+[0.266s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.266s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.269s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/home/jack/src/RoboTerrain/ros2_ws/src/rover_metrics' with build type 'ament_python'
+[0.269s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_metrics', 'ament_prefix_path')
+[0.269s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/share/rover_metrics/hook/ament_prefix_path.ps1'
+[0.269s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/share/rover_metrics/hook/ament_prefix_path.dsv'
+[0.270s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/share/rover_metrics/hook/ament_prefix_path.sh'
+[0.270s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.270s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.273s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/home/jack/src/RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_driver' with build type 'ament_cmake'
+[0.273s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/home/jack/src/RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_driver'
+[0.273s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.273s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.276s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/home/jack/src/RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_input_manager' with build type 'ament_cmake'
+[0.276s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/home/jack/src/RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_input_manager'
+[0.276s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.276s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.283s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --build /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_description -- -j24 -l24
+[0.463s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/home/jack/src/RoboTerrain/ros2_ws/src/rover_metrics'
+[0.463s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.463s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.470s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --build /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver -- -j24 -l24
+[0.472s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_input_manager': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --build /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_input_manager -- -j24 -l24
+[0.473s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --build /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_description -- -j24 -l24
+[0.495s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --install /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_description
+[0.499s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_input_manager' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --build /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_input_manager -- -j24 -l24
+[0.502s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(roverrobotics_description)
+[0.502s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --install /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_description
+[0.504s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description' for CMake module files
+[0.504s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description' for CMake config files
+[0.505s] Level 1:colcon.colcon_core.shell:create_environment_hook('roverrobotics_description', 'cmake_prefix_path')
+[0.505s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/hook/cmake_prefix_path.ps1'
+[0.505s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/hook/cmake_prefix_path.dsv'
+[0.505s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/hook/cmake_prefix_path.sh'
+[0.506s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/bin'
+[0.506s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/lib/pkgconfig/roverrobotics_description.pc'
+[0.506s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/lib/python3.10/site-packages'
+[0.506s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/bin'
+[0.506s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/package.ps1'
+[0.507s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/package.dsv'
+[0.507s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/package.sh'
+[0.507s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/package.bash'
+[0.508s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/package.zsh'
+[0.508s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/colcon-core/packages/roverrobotics_description)
+[0.516s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_input_manager': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --install /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_input_manager
+[0.523s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --build /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver -- -j24 -l24
+[0.523s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(roverrobotics_input_manager)
+[0.524s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager' for CMake module files
+[0.524s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_input_manager' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --install /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_input_manager
+[0.524s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager' for CMake config files
+[0.524s] Level 1:colcon.colcon_core.shell:create_environment_hook('roverrobotics_input_manager', 'cmake_prefix_path')
+[0.525s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/hook/cmake_prefix_path.ps1'
+[0.525s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/hook/cmake_prefix_path.dsv'
+[0.525s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/hook/cmake_prefix_path.sh'
+[0.525s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/lib'
+[0.526s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/bin'
+[0.526s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/lib/pkgconfig/roverrobotics_input_manager.pc'
+[0.526s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/lib/python3.10/site-packages'
+[0.526s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/bin'
+[0.526s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/package.ps1'
+[0.526s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/package.dsv'
+[0.527s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/package.sh'
+[0.527s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/package.bash'
+[0.527s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/package.zsh'
+[0.527s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/colcon-core/packages/roverrobotics_input_manager)
+[0.528s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(roverrobotics_description)
+[0.528s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description' for CMake module files
+[0.529s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description' for CMake config files
+[0.529s] Level 1:colcon.colcon_core.shell:create_environment_hook('roverrobotics_description', 'cmake_prefix_path')
+[0.529s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/hook/cmake_prefix_path.ps1'
+[0.529s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/hook/cmake_prefix_path.dsv'
+[0.529s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/hook/cmake_prefix_path.sh'
+[0.530s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/bin'
+[0.530s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/lib/pkgconfig/roverrobotics_description.pc'
+[0.530s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/lib/python3.10/site-packages'
+[0.530s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/bin'
+[0.530s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/package.ps1'
+[0.530s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/package.dsv'
+[0.531s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/package.sh'
+[0.531s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/package.bash'
+[0.531s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/package.zsh'
+[0.531s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/colcon-core/packages/roverrobotics_description)
+[0.532s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/home/jack/src/RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_gazebo' with build type 'ament_cmake'
+[0.532s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/home/jack/src/RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_gazebo'
+[0.532s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.532s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.539s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_gazebo': AMENT_PREFIX_PATH=/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description:/home/jack/ros2_ws/install/custom_turtlebot4_bringup:/home/jack/rover_workspace/install/roverrobotics_input_manager:/home/jack/rover_workspace/install/roverrobotics_gazebo:/home/jack/rover_workspace/install/roverrobotics_driver:/home/jack/rover_workspace/install/roverrobotics_description:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --build /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_gazebo -- -j24 -l24
+[0.543s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(roverrobotics_input_manager)
+[0.543s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager' for CMake module files
+[0.543s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager' for CMake config files
+[0.544s] Level 1:colcon.colcon_core.shell:create_environment_hook('roverrobotics_input_manager', 'cmake_prefix_path')
+[0.544s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/hook/cmake_prefix_path.ps1'
+[0.544s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/hook/cmake_prefix_path.dsv'
+[0.544s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/hook/cmake_prefix_path.sh'
+[0.545s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/lib'
+[0.545s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/bin'
+[0.545s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/lib/pkgconfig/roverrobotics_input_manager.pc'
+[0.545s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/lib/python3.10/site-packages'
+[0.545s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/bin'
+[0.545s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/package.ps1'
+[0.545s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/package.dsv'
+[0.546s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/package.sh'
+[0.546s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/package.bash'
+[0.546s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/roverrobotics_input_manager/package.zsh'
+[0.546s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_input_manager/share/colcon-core/packages/roverrobotics_input_manager)
+[0.556s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --install /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver
+[0.566s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_gazebo' returned '0': AMENT_PREFIX_PATH=/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description:/home/jack/ros2_ws/install/custom_turtlebot4_bringup:/home/jack/rover_workspace/install/roverrobotics_input_manager:/home/jack/rover_workspace/install/roverrobotics_gazebo:/home/jack/rover_workspace/install/roverrobotics_driver:/home/jack/rover_workspace/install/roverrobotics_description:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --build /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_gazebo -- -j24 -l24
+[0.566s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(roverrobotics_driver)
+[0.566s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --install /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_driver
+[0.566s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver' for CMake module files
+[0.567s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver' for CMake config files
+[0.567s] Level 1:colcon.colcon_core.shell:create_environment_hook('roverrobotics_driver', 'cmake_prefix_path')
+[0.567s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/hook/cmake_prefix_path.ps1'
+[0.567s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/hook/cmake_prefix_path.dsv'
+[0.568s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/hook/cmake_prefix_path.sh'
+[0.568s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/lib'
+[0.568s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/bin'
+[0.568s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/lib/pkgconfig/roverrobotics_driver.pc'
+[0.568s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/lib/python3.10/site-packages'
+[0.568s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/bin'
+[0.568s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/package.ps1'
+[0.569s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/package.dsv'
+[0.569s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/package.sh'
+[0.569s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/package.bash'
+[0.569s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/package.zsh'
+[0.570s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/colcon-core/packages/roverrobotics_driver)
+[0.582s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_gazebo': AMENT_PREFIX_PATH=/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description:/home/jack/ros2_ws/install/custom_turtlebot4_bringup:/home/jack/rover_workspace/install/roverrobotics_input_manager:/home/jack/rover_workspace/install/roverrobotics_gazebo:/home/jack/rover_workspace/install/roverrobotics_driver:/home/jack/rover_workspace/install/roverrobotics_description:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --install /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_gazebo
+[0.589s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(roverrobotics_gazebo)
+[0.589s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_gazebo' returned '0': AMENT_PREFIX_PATH=/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description:/home/jack/ros2_ws/install/custom_turtlebot4_bringup:/home/jack/rover_workspace/install/roverrobotics_input_manager:/home/jack/rover_workspace/install/roverrobotics_gazebo:/home/jack/rover_workspace/install/roverrobotics_driver:/home/jack/rover_workspace/install/roverrobotics_description:/home/jack/ros2_ws/install/unity_slam_example:/home/jack/ros2_ws/install/camera_subscriber:/home/jack/rover_workspace/install/rover_metrics:/opt/ros/humble CONDA_PROMPT_MODIFIER=(sb3) /usr/bin/cmake --install /home/jack/src/RoboTerrain/ros2_ws/build/roverrobotics_gazebo
+[0.589s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo' for CMake module files
+[0.590s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo' for CMake config files
+[0.590s] Level 1:colcon.colcon_core.shell:create_environment_hook('roverrobotics_gazebo', 'cmake_prefix_path')
+[0.590s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/hook/cmake_prefix_path.ps1'
+[0.591s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/hook/cmake_prefix_path.dsv'
+[0.591s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/hook/cmake_prefix_path.sh'
+[0.592s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/bin'
+[0.592s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/lib/pkgconfig/roverrobotics_gazebo.pc'
+[0.592s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/lib/python3.10/site-packages'
+[0.592s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/bin'
+[0.592s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/package.ps1'
+[0.592s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/package.dsv'
+[0.593s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/package.sh'
+[0.593s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/package.bash'
+[0.593s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/package.zsh'
+[0.594s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/colcon-core/packages/roverrobotics_gazebo)
+[0.603s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(roverrobotics_driver)
+[0.603s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver' for CMake module files
+[0.603s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver' for CMake config files
+[0.603s] Level 1:colcon.colcon_core.shell:create_environment_hook('roverrobotics_driver', 'cmake_prefix_path')
+[0.604s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/hook/cmake_prefix_path.ps1'
+[0.604s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/hook/cmake_prefix_path.dsv'
+[0.604s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/hook/cmake_prefix_path.sh'
+[0.604s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/lib'
+[0.604s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/bin'
+[0.604s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/lib/pkgconfig/roverrobotics_driver.pc'
+[0.605s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/lib/python3.10/site-packages'
+[0.605s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/bin'
+[0.605s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/package.ps1'
+[0.605s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/package.dsv'
+[0.605s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/package.sh'
+[0.606s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/package.bash'
+[0.606s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/roverrobotics_driver/package.zsh'
+[0.606s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_driver/share/colcon-core/packages/roverrobotics_driver)
+[0.609s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(roverrobotics_gazebo)
+[0.609s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo' for CMake module files
+[0.610s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo' for CMake config files
+[0.610s] Level 1:colcon.colcon_core.shell:create_environment_hook('roverrobotics_gazebo', 'cmake_prefix_path')
+[0.610s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/hook/cmake_prefix_path.ps1'
+[0.610s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/hook/cmake_prefix_path.dsv'
+[0.610s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/hook/cmake_prefix_path.sh'
+[0.611s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/bin'
+[0.611s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/lib/pkgconfig/roverrobotics_gazebo.pc'
+[0.611s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/lib/python3.10/site-packages'
+[0.611s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/bin'
+[0.611s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/package.ps1'
+[0.611s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/package.dsv'
+[0.612s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/package.sh'
+[0.612s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/package.bash'
+[0.612s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/package.zsh'
+[0.612s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/colcon-core/packages/roverrobotics_gazebo)
+[0.710s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/jack/src/RoboTerrain/ros2_ws/src/rover_metrics': CONDA_PROMPT_MODIFIER=(sb3) PYTHONPATH=/home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base ../../build/rover_metrics build --build-base /home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics/build install --record /home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics/install.log --single-version-externally-managed install_data
+[0.910s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics' for CMake module files
+[0.911s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/jack/src/RoboTerrain/ros2_ws/src/rover_metrics' returned '0': CONDA_PROMPT_MODIFIER=(sb3) PYTHONPATH=/home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated setup.py egg_info --egg-base ../../build/rover_metrics build --build-base /home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics/build install --record /home/jack/src/RoboTerrain/ros2_ws/build/rover_metrics/install.log --single-version-externally-managed install_data
+[0.911s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics' for CMake config files
+[0.912s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/lib'
+[0.912s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/bin'
+[0.912s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/lib/pkgconfig/rover_metrics.pc'
+[0.912s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/lib/python3.10/site-packages'
+[0.912s] Level 1:colcon.colcon_core.shell:create_environment_hook('rover_metrics', 'pythonpath')
+[0.912s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/share/rover_metrics/hook/pythonpath.ps1'
+[0.913s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/share/rover_metrics/hook/pythonpath.dsv'
+[0.913s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/share/rover_metrics/hook/pythonpath.sh'
+[0.914s] Level 1:colcon.colcon_core.environment:checking '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/bin'
+[0.914s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(rover_metrics)
+[0.914s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/share/rover_metrics/package.ps1'
+[0.914s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/share/rover_metrics/package.dsv'
+[0.915s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/share/rover_metrics/package.sh'
+[0.915s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/share/rover_metrics/package.bash'
+[0.916s] INFO:colcon.colcon_core.shell:Creating package script '/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/share/rover_metrics/package.zsh'
+[0.916s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/jack/src/RoboTerrain/ros2_ws/install/rover_metrics/share/colcon-core/packages/rover_metrics)
+[0.916s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:closing loop
+[0.916s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:loop closed
+[0.916s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete finished with '0'
+[0.917s] DEBUG:colcon.colcon_core.event_reactor:joining thread
+[0.921s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.terminal_notifier': Not used on non-Darwin systems
+[0.922s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.win32': Not used on non-Windows systems
+[0.922s] INFO:colcon.colcon_notification.desktop_notification:Sending desktop notification using 'notify2'
+[0.931s] DEBUG:colcon.colcon_core.event_reactor:joined thread
+[0.931s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/jack/src/RoboTerrain/ros2_ws/install/local_setup.ps1'
+[0.932s] INFO:colcon.colcon_core.shell:Creating prefix util module '/home/jack/src/RoboTerrain/ros2_ws/install/_local_setup_util_ps1.py'
+[0.933s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/jack/src/RoboTerrain/ros2_ws/install/setup.ps1'
+[0.934s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/jack/src/RoboTerrain/ros2_ws/install/local_setup.sh'
+[0.934s] INFO:colcon.colcon_core.shell:Creating prefix util module '/home/jack/src/RoboTerrain/ros2_ws/install/_local_setup_util_sh.py'
+[0.935s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/jack/src/RoboTerrain/ros2_ws/install/setup.sh'
+[0.936s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/jack/src/RoboTerrain/ros2_ws/install/local_setup.bash'
+[0.936s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/jack/src/RoboTerrain/ros2_ws/install/setup.bash'
+[0.938s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/jack/src/RoboTerrain/ros2_ws/install/local_setup.zsh'
+[0.938s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/jack/src/RoboTerrain/ros2_ws/install/setup.zsh'
