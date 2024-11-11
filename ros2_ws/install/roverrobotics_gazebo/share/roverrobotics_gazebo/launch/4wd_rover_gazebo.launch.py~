@@ -62,7 +62,8 @@ def generate_launch_description():
     gz_sim = ExecuteProcess(
         # -s for server/headless, -r for start running(play), -v verbose
         #cmd=['ign', 'gazebo', '-s', '-r', '-v 4', world_path], 
-        cmd=['ign', 'gazebo', world_path, additional_env=env],
+        #cmd=['ign', 'gazebo', world_path, 'additional_env=env'],
+        cmd=['ign', 'gazebo', world_path],
         output='screen'
     )
     

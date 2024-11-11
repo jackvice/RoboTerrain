@@ -11,9 +11,6 @@ import time
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from std_srvs.srv import Empty
 import math
-from geometry_msgs.msg import Pose, Twist
-from gazebo_msgs.msg import EntityState
-from gazebo_msgs.srv import SetEntityState
 
 
 class RoverEnv(gym.Env):
@@ -42,8 +39,7 @@ class RoverEnv(gym.Env):
                                                              self.odom_callback, 10)
         self.imu_subscriber = self.node.create_subscription(Imu, imu_topic,
                                                           self.imu_callback, 10)
-        self.set_entity_state_client = self.node.create_client(SetEntityState, '/set_entity_state')
-        
+
         # Initialize environment parameters
         self.lidar_points = lidar_points
         self.max_lidar_range = max_lidar_range
@@ -74,8 +70,8 @@ class RoverEnv(gym.Env):
         # Define action space
         # [linear_velocity, angular_velocity]
         self.action_space = spaces.Box(
-            low=np.array([-0.2, -1.0]),  # [min_linear_vel, min_angular_vel]
-            high=np.array([0.3, 1.0]),   # [max_linear_vel, max_angular_vel]
+            low=np.array([-0.3, -1.0]),  # [min_linear_vel, min_angular_vel]
+            high=np.array([0.4, 1.0]),   # [max_linear_vel, max_angular_vel]
             dtype=np.float32
         )
 
@@ -138,15 +134,15 @@ class RoverEnv(gym.Env):
         self.last_angular_velocity = float(action[1]) 
         # Check for climbing and adjust movement with cooldown
         climbing_status, climbing_severity = self.is_climbing_wall()
-        if climbing_status:# and self.steps_since_correction >= self.cooldown_steps:
+        if climbing_status and self.steps_since_correction >= self.cooldown_steps:
             # Execute corrective action
             twist = Twist()
             if climbing_status == 'forward':
                 twist.linear.x = -0.1
-                twist.angular.z = 0.0 #-self.current_roll * 1.0
+                twist.angular.z = -self.current_roll * 1.0
             elif climbing_status == 'reverse':
                 twist.linear.x = 0.1
-                twist.angular.z = 0.0 #self.current_roll * 1.0
+                twist.angular.z = self.current_roll * 1.0
             self.publisher.publish(twist)
             self.steps_since_correction = 0
         else:
@@ -172,7 +168,7 @@ class RoverEnv(gym.Env):
         
         # Check if episode is done
         self._step += 1
-        done = False #(self._step >= self._length)
+        done = (self._step >= self._length)
         
         # Get observation
         observation = {
@@ -191,7 +187,6 @@ class RoverEnv(gym.Env):
         if climbing_status:
             reward -= 1.0 * climbing_severity  # Scales penalty with tilt severity
 
-        # Debug print statement
         if self.total_steps % 10_000 == 0:
             print(
                 f"climbing_status: {climbing_status},  climbing_severity: {climbing_severity}"
@@ -218,15 +213,12 @@ class RoverEnv(gym.Env):
             self.node.get_logger().error('Reset service not available')
             return False
 
-        #request = Empty.Request()
-        #future = self.reset_simulation_client.call_async(request)
+        request = Empty.Request()
+        future = self.reset_simulation_client.call_async(request)
     
         # Wait for result
-        #rclpy.spin_until_future_complete(self.node, future)
-        twist.linear.x = -0.1
-        twist.angular.z = 0.0 #-self.current_roll * 1.0
-        self.publisher.publish(twist)
-        
+        rclpy.spin_until_future_complete(self.node, future)
+    
         if future.result() is not None:
             self.node.get_logger().info('Simulation reset successful')
             self.is_flipped = False
@@ -235,75 +227,28 @@ class RoverEnv(gym.Env):
             self.node.get_logger().error('Failed to reset simulation')
             return False
 
+
     def reset(self, seed=None, options=None):
         """Reset the environment to its initial state"""
         super().reset(seed=seed)
-    
+        
         # Reset internal state
         self._step = 0
+        self.total_steps = 0
         self.last_linear_velocity = 0.0
         self.steps_since_correction = self.cooldown_steps
         self.is_flipped = False
         
-        # Reset the robot's position
-        request = SetEntityState.Request()
-        state = EntityState()
-        state.name = 'rover'  # Replace with your robot's actual model name in Gazebo
-        state.pose.position.x = 0.0  # Desired x position
-        state.pose.position.y = 0.0  # Desired y position
-        state.pose.position.z = 0.0  # Desired z position
-        
-        # Set orientation (if needed)
-        state.pose.orientation.x = 0.0
-        state.pose.orientation.y = 0.0
-        state.pose.orientation.z = 0.0
-        state.pose.orientation.w = 1.0
-
-        request.state = state
-
-        # Wait for the service to be available
-        if not self.set_entity_state_client.wait_for_service(timeout_sec=1.0):
-            self.node.get_logger().error('SetEntityState service not available')
-        else:
-            future = self.set_entity_state_client.call_async(request)
-            rclpy.spin_until_future_complete(self.node, future)
-            if future.result() is not None:
-                self.node.get_logger().info('SetEntityState request successful')
-            else:
-                self.node.get_logger().error('SetEntityState request failed')
-
-        # Ensure we get fresh sensor data after reset
-        for _ in range(3):  # Spin a few times to get fresh data
-            rclpy.spin_once(self.node, timeout_sec=0.1)
-    
-        observation = {
-            'lidar': self.lidar_data,
-            'odom': np.array(self.rover_position, dtype=np.float32),
-            'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
-                            dtype=np.float32)
-        }
-    
-        return observation, {}
-
-
-    def reset_old(self, seed=None, options=None):
-        """Reset the environment to its initial state"""
-        super().reset(seed=seed)
-        
-        # Reset internal state
-        self._step = 0
-        self.last_linear_velocity = 0.0
-        self.steps_since_correction = self.cooldown_steps
-        self.is_flipped = False
-
         # Reset simulation if robot is in bad state
-        if False: #self.check_flip_status():
-            success = self.reset_simulation()  # Instead of using future.done()
-            if not success:
-                self.node.get_logger().error("Failed to reset simulation after flip")
+        if self.check_flip_status():
+            future = self.reset_simulation()
+            while rclpy.ok():
+                rclpy.spin_once(self.node)
+                if future.done():
+                    break
         
         # Ensure we get fresh sensor data after reset
-        for _ in range(3):  # Spin a few times to get fresh data
+        for _ in range(10):  # Spin a few times to get fresh data
             rclpy.spin_once(self.node, timeout_sec=0.1)
         
         observation = {
@@ -314,6 +259,76 @@ class RoverEnv(gym.Env):
         }
         
         return observation, {}
+        
+
+    def render(self):
+        """Render the environment (optional)"""
+        pass
+
+
+    def close(self):
+        """Clean up resources"""
+        self.node.destroy_node()
+        rclpy.shutdown()
+
+
+    # Keep all the existing callback methods and helper functions
+    def lidar_callback(self, msg):
+        if not self.first:
+            print("First scan received:")
+            print(f"Number of points: {len(msg.ranges)}")
+            print(f"Angle min: {msg.angle_min}, Angle max: {msg.angle_max}")
+            print(f"Angle increment: {msg.angle_increment}")
+            print(f"Range min: {msg.range_min}, Range max: {msg.range_max}")
+            print(f"First 20 ranges: {msg.ranges[:20]}")
+            print(f"Last 20 ranges: {msg.ranges[-20:]}")
+            self.angle_min = msg.angle_min
+            self.angle_max = msg.angle_max
+            self.angle_increment = msg.angle_increment
+            self.first = True
+
+        lidar_data = np.array(msg.ranges, dtype=np.float32)
+        lidar_data = np.clip(lidar_data, 0, self.max_lidar_range)
+        
+        if len(lidar_data) != self.lidar_points:
+            lidar_data = np.resize(lidar_data, (self.lidar_points,))
+
+        self.lidar_data = lidar_data
+        self._received_scan = True
+
+
+    def imu_callback(self, msg):
+        try:
+            quat = np.array([msg.orientation.w, msg.orientation.x, msg.orientation.y,
+                             msg.orientation.z])
+            norm = np.linalg.norm(quat)
+            if norm == 0:
+                raise ValueError("Received a zero-length quaternion")
+            quat_normalized = quat / norm
+            roll, pitch, yaw = quat2euler(quat_normalized, axes='sxyz')
+            self.current_pitch = pitch
+            self.current_roll = roll
+            self.current_yaw = yaw
+        except Exception as e:
+            self.node.get_logger().error(f"Error processing IMU data: {e}")
+
+
+    def odom_callback(self, msg):
+        self.rover_position = (msg.pose.pose.position.x, msg.pose.pose.position.y,
+                               msg.pose.pose.position.z)
+        self.last_linear_velocity = msg.twist.twist.linear.x
+
+
+    def _check_robot_connection(self, timeout):
+        start_time = time.time()
+        while not self._received_scan:
+            rclpy.spin_once(self.node, timeout_sec=0.1)
+            if time.time() - start_time > timeout:
+                return False
+            if self._received_scan:
+                return True
+        return False
+
 
     def is_climbing_wall(self):
         if self.lidar_data is None:
@@ -416,74 +431,3 @@ class RoverEnv(gym.Env):
         self.last_angular_velocity = angular_velocity
     
         return total_reward
-
-    
-    def render(self):
-        """Render the environment (optional)"""
-        pass
-
-
-    def close(self):
-        """Clean up resources"""
-        self.node.destroy_node()
-        rclpy.shutdown()
-
-
-    # Keep all the existing callback methods and helper functions
-    def lidar_callback(self, msg):
-        if not self.first:
-            print("First scan received:")
-            print(f"Number of points: {len(msg.ranges)}")
-            print(f"Angle min: {msg.angle_min}, Angle max: {msg.angle_max}")
-            print(f"Angle increment: {msg.angle_increment}")
-            print(f"Range min: {msg.range_min}, Range max: {msg.range_max}")
-            print(f"First 20 ranges: {msg.ranges[:20]}")
-            print(f"Last 20 ranges: {msg.ranges[-20:]}")
-            self.angle_min = msg.angle_min
-            self.angle_max = msg.angle_max
-            self.angle_increment = msg.angle_increment
-            self.first = True
-
-        lidar_data = np.array(msg.ranges, dtype=np.float32)
-        lidar_data = np.clip(lidar_data, 0, self.max_lidar_range)
-        
-        if len(lidar_data) != self.lidar_points:
-            lidar_data = np.resize(lidar_data, (self.lidar_points,))
-
-        self.lidar_data = lidar_data
-        self._received_scan = True
-
-
-    def imu_callback(self, msg):
-        try:
-            quat = np.array([msg.orientation.w, msg.orientation.x, msg.orientation.y,
-                             msg.orientation.z])
-            norm = np.linalg.norm(quat)
-            if norm == 0:
-                raise ValueError("Received a zero-length quaternion")
-            quat_normalized = quat / norm
-            roll, pitch, yaw = quat2euler(quat_normalized, axes='sxyz')
-            self.current_pitch = pitch
-            self.current_roll = roll
-            self.current_yaw = yaw
-        except Exception as e:
-            self.node.get_logger().error(f"Error processing IMU data: {e}")
-
-
-    def odom_callback(self, msg):
-        self.rover_position = (msg.pose.pose.position.x, msg.pose.pose.position.y,
-                               msg.pose.pose.position.z)
-        self.last_linear_velocity = msg.twist.twist.linear.x
-
-
-    def _check_robot_connection(self, timeout):
-        start_time = time.time()
-        while not self._received_scan:
-            rclpy.spin_once(self.node, timeout_sec=0.1)
-            if time.time() - start_time > timeout:
-                return False
-            if self._received_scan:
-                return True
-        return False
-
-

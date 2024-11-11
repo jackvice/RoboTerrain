@@ -98,6 +98,9 @@ def generate_launch_description():
             '/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU',
             '/camera/image_raw@sensor_msgs/msg/Image@gz.msgs.Image',
             '/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
+            #'/world/maze/reset@std_srvs/srv/Empty',
+            #'/world/maze/reset@std_srvs/srv/Empty@ignition.msgs.Empty@ignition.msgs.Empty',
+            '/world/maze/control@ros_gz_interfaces/srv/ControlWorld@ignition.msgs.WorldControl@ignition.msgs.Boolean',
         ],
         output='screen'
     )
