@@ -1,4 +1,0 @@
-[01m[K/home/jack/src/RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_driver/library/librover/src/vesc.cpp:[m[K In member function ‘[01m[Kvesc::vescChannelStatus vesc::BridgedVescArray::parseReceivedMessage(std::vector<unsigned char>)[m[K’:
-[01m[K/home/jack/src/RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_driver/library/librover/src/vesc.cpp:76:5:[m[K [01;35m[Kwarning: [m[Kcontrol reaches end of non-void function [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wreturn-type-Wreturn-type]8;;[m[K]
-   76 |     [01;35m[K}[m[K
-      |     [01;35m[K^[m[K
