@@ -15,7 +15,7 @@ def generate_launch_description():
     # Create the launch configuration variables
     use_sim_time = LaunchConfiguration('use_sim_time')
     urdf = os.path.join(get_package_share_directory(
-        'roverrobotics_description'), 'urdf', 'rover_4wd.urdf')
+        'roverrobotics_description'), 'urdf', 'camera_rover_4wd.urdf')
     world = LaunchConfiguration('world')
 
     robot_desc = ParameterValue(Command(['xacro ', urdf]),
@@ -28,7 +28,11 @@ def generate_launch_description():
     
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        default_value='maze.sdf',
+        #default_value='maze.sdf',
+        #default_value='upb12.sdf',
+        #default_value='agriculture.world',
+        #default_value='inspection.world',
+        default_value='office_cpr_construction.world',
         description='World file to use in Gazebo')
     
     gz_world_arg = PathJoinSubstitution([

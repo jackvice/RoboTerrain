@@ -2,6 +2,8 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
+![Rover Zero climbing terrain](assets/Rover_climb.png)
+
 This repository provides a comprehensive framework for off-road mobile robot research, integrating ROS 2 Humble, Gazebo Fortress, and PyTorch with Stable Baselines3 (SB3) for reinforcement learning. It includes the simulation of the Rover Zero robot and serves as a foundation for developing and testing PPO-based PointNav RL agents.
 
 ---
