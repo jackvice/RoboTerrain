@@ -16,7 +16,8 @@ class RoverEnv(gym.Env):
     metadata = {'render_modes': ['human']}
 
     def __init__(self, size=(64, 64), length=200, scan_topic='/scan', imu_topic='/imu/data',
-                 cmd_vel_topic='/cmd_vel', odom_topic='/odometry/wheels', camera_topic='/camera/image_raw',
+                 cmd_vel_topic='/cmd_vel', odom_topic='/odometry/wheels',
+                 camera_topic='/camera/image_raw',
                  connection_check_timeout=30, lidar_points=640, max_lidar_range=12.0):
         super().__init__()
         
@@ -24,6 +25,11 @@ class RoverEnv(gym.Env):
         rclpy.init()
         self.bridge = CvBridge()
         self.node = rclpy.create_node('turtlebot_controller')
+
+        # Create reset service client
+        self.reset_simulation_client = self.node.create_client(Empty, '/world/maze/reset')
+
+        # Initialize publishers and subscribers
         self.publisher = self.node.create_publisher(Twist, cmd_vel_topic, 10)
         self.lidar_subscriber = self.node.create_subscription(LaserScan, scan_topic,
                                                             self.lidar_callback, 10)
@@ -51,6 +57,13 @@ class RoverEnv(gym.Env):
         # Cooldown mechanism
         self.cooldown_steps = 100
         self.steps_since_correction = self.cooldown_steps
+
+        # Flip detection parameters
+        self.flip_threshold = math.pi / 3  # 60 degrees in radians
+        self.is_flipped = False
+        self.initial_position = None
+        self.initial_orientation = None
+  
 
         # Define action space
         # [linear_velocity, angular_velocity]
@@ -91,6 +104,33 @@ class RoverEnv(gym.Env):
     def step(self, action):
         """Execute one time step within the environment"""
         self.total_steps += 1
+
+        # Check if robot has flipped
+        if self.check_flip_status():
+            self.node.get_logger().warn("Robot has flipped! Initiating reset...")
+            # Create and publish zero velocity command
+            stop_cmd = Twist()
+            self.publisher.publish(stop_cmd)
+            
+            # Reset the simulation
+            rclpy.spin_once(self.node)  # Process any pending callbacks
+            future = self.reset_simulation()
+            
+            # Wait for reset to complete
+            while rclpy.ok():
+                rclpy.spin_once(self.node)
+                if future.done():
+                    break
+            
+            # Return observation with large negative reward
+            observation = {
+                'lidar': self.lidar_data,
+                'odom': np.array(self.rover_position, dtype=np.float32),
+                'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
+                                dtype=np.float32)
+            }
+            return observation, -100.0, True, False, {'reset_reason': 'flip'}
+        
         self.last_angular_velocity = float(action[1]) 
         # Check for climbing and adjust movement with cooldown
         climbing_status, climbing_severity = self.is_climbing_wall()
@@ -134,7 +174,8 @@ class RoverEnv(gym.Env):
         observation = {
             'lidar': self.lidar_data,
             'odom': np.array(self.rover_position, dtype=np.float32),
-            'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw], dtype=np.float32)
+            'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
+                            dtype=np.float32)
         }
 
         # Info dict for additional information
@@ -145,36 +186,99 @@ class RoverEnv(gym.Env):
 
         return observation, reward, done, False, info  # False is for truncated
 
-    def reset(self, seed=None, options=None):
-        """Reset the environment to its initial state"""
-        super().reset(seed=seed)  # Reset the random number generator
+    def check_flip_status(self):
+        """Check if the robot has flipped based on IMU data"""
+        # Use absolute roll and pitch to detect if robot is tilted too much
+        if abs(self.current_roll) > self.flip_threshold \\
+           or abs(self.current_pitch) > self.flip_threshold:
+            self.is_flipped = True
+            return True
+        return False
+
+    def reset_simulation(self):
+        """Reset the Gazebo simulation"""
+        if not self.reset_simulation_client.wait_for_service(timeout_sec=1.0):
+            self.node.get_logger().error('Reset service not available')
+            return False
+
+        request = Empty.Request()
+        future = self.reset_simulation_client.call_async(request)
+    
+        # Wait for result
+        rclpy.spin_until_future_complete(self.node, future)
+    
+        if future.result() is not None:
+            self.node.get_logger().info('Simulation reset successful')
+            self.is_flipped = False
+            return True
+        else:
+            self.node.get_logger().error('Failed to reset simulation')
+            return False
+    
+    async def reset_simulation_old(self):
+        """Reset the Gazebo simulation"""
+        # Wait for service to be available
+        while not self.reset_simulation_client.wait_for_service(timeout_sec=1.0):
+            self.node.get_logger().warn('Reset service not available, waiting...')
+
+        # Create request
+        request = Empty.Request()
         
+        try:
+            # Call reset service
+            future = self.reset_simulation_client.call_async(request)
+            await future
+            self.node.get_logger().info('Simulation reset successful')
+            self.is_flipped = False
+            return True
+        except Exception as e:
+            self.node.get_logger().error(f'Failed to reset simulation: {str(e)}')
+            return False
+
+   def reset(self, seed=None, options=None):
+        """Reset the environment to its initial state"""
+        super().reset(seed=seed)
+        
+        # Reset internal state
         self._step = 0
         self.total_steps = 0
         self.last_linear_velocity = 0.0
         self.steps_since_correction = self.cooldown_steps
+        self.is_flipped = False
         
-        # Reset robot position and orientation (if applicable)
-        # This might involve sending commands to the actual robot or simulator
+        # Reset simulation if robot is in bad state
+        if self.check_flip_status():
+            future = self.reset_simulation()
+            while rclpy.ok():
+                rclpy.spin_once(self.node)
+                if future.done():
+                    break
         
-        # Initial observation
+        # Ensure we get fresh sensor data after reset
+        for _ in range(10):  # Spin a few times to get fresh data
+            rclpy.spin_once(self.node, timeout_sec=0.1)
+        
         observation = {
             'lidar': self.lidar_data,
             'odom': np.array(self.rover_position, dtype=np.float32),
-            'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw], dtype=np.float32)
+            'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
+                            dtype=np.float32)
         }
         
-        info = {}
-        return observation, info
+        return observation, {}
+        
+
 
     def render(self):
         """Render the environment (optional)"""
         pass
 
+
     def close(self):
         """Clean up resources"""
         self.node.destroy_node()
         rclpy.shutdown()
+
 
     # Keep all the existing callback methods and helper functions
     def lidar_callback(self, msg):
@@ -200,9 +304,11 @@ class RoverEnv(gym.Env):
         self.lidar_data = lidar_data
         self._received_scan = True
 
+
     def imu_callback(self, msg):
         try:
-            quat = np.array([msg.orientation.w, msg.orientation.x, msg.orientation.y, msg.orientation.z])
+            quat = np.array([msg.orientation.w, msg.orientation.x, msg.orientation.y,
+                             msg.orientation.z])
             norm = np.linalg.norm(quat)
             if norm == 0:
                 raise ValueError("Received a zero-length quaternion")
@@ -214,9 +320,12 @@ class RoverEnv(gym.Env):
         except Exception as e:
             self.node.get_logger().error(f"Error processing IMU data: {e}")
 
+
     def odom_callback(self, msg):
-        self.rover_position = (msg.pose.pose.position.x, msg.pose.pose.position.y, msg.pose.pose.position.z)
+        self.rover_position = (msg.pose.pose.position.x, msg.pose.pose.position.y,
+                               msg.pose.pose.position.z)
         self.last_linear_velocity = msg.twist.twist.linear.x
+
 
     def _check_robot_connection(self, timeout):
         start_time = time.time()
@@ -227,6 +336,7 @@ class RoverEnv(gym.Env):
             if self._received_scan:
                 return True
         return False
+
 
     def is_climbing_wall(self):
         if self.lidar_data is None:
@@ -307,18 +417,19 @@ class RoverEnv(gym.Env):
     
         # 3. Forward motion reward
         if self.last_linear_velocity > min_forward_velocity:
-            forward_reward = 0.2 * (self.last_linear_velocity / 0.3)  # Normalized by max velocity
+            forward_reward = 0.5 * (self.last_linear_velocity / 0.3)  # Normalized by max velocity
         else:
             forward_reward = 0.0
     
         # 4. Stability reward (penalize oscillations)
-        angular_velocity = float(self.last_angular_velocity) if hasattr(self, 'last_angular_velocity') else 0.0
+        angular_velocity = float(self.last_angular_velocity) \\
+            if hasattr(self, 'last_angular_velocity') else 0.0
         stability_reward = -0.1 * abs(angular_velocity)
     
         # Combine rewards
         total_reward = (
-            0.5 * distance_reward +    # Distance maintenance is primary objective
-            0.3 * forward_reward +     # Encourage forward motion
+            0.4 * distance_reward +    # Distance maintenance is primary objective
+            0.4 * forward_reward +     # Encourage forward motion
             0.2 * stability_reward +   # Discourage oscillations
             collision_penalty          # Safety critical, so added separately
         )
@@ -327,43 +438,3 @@ class RoverEnv(gym.Env):
         self.last_angular_velocity = angular_velocity
     
         return total_reward
-
-    
-    def calc_wall_following_reward_old(self):
-        desired_distance = 0.5
-        lidar_ranges = self.lidar_data
-        num_readings = len(lidar_ranges)
-        
-        right_start_angle_deg = 250
-        right_end_angle_deg = 290
-        
-        degrees_per_index = 360 / num_readings
-        
-        right_start_idx = int(right_start_angle_deg / degrees_per_index) % num_readings
-        right_end_idx = int(right_end_angle_deg / degrees_per_index) % num_readings
-        
-        if right_start_idx <= right_end_idx:
-            right_side_indices = np.arange(right_start_idx, right_end_idx + 1)
-        else:
-            right_side_indices = np.concatenate((
-                np.arange(right_start_idx, num_readings),
-                np.arange(0, right_end_idx + 1)
-            ))
-            
-        right_distances = lidar_ranges[right_side_indices]
-        right_distances = right_distances[np.isfinite(right_distances)]
-        
-        if len(right_distances) == 0:
-            return 0.0
-        
-        average_distance = np.mean(right_distances)
-        error = np.abs(average_distance - desired_distance)
-        max_error = lidar_ranges[np.isfinite(lidar_ranges)].max() - desired_distance
-        if max_error == 0:
-            max_error = 1e-6
-
-        normalized_error = error / max_error
-        normalized_error = np.clip(normalized_error, 0.0, 1.0)
-        distance_reward = 1.0 - normalized_error
-
-        return distance_reward

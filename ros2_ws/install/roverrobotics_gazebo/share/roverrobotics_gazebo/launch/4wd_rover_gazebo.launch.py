@@ -31,7 +31,8 @@ def generate_launch_description():
         #default_value='simplecave3.sdf,'
         #default_value='maze_and_person.sdf',
         #default_value='upb12.sdf',
-        default_value='office_cpr_construction.world',
+        #default_value='office_cpr_construction.world',
+        default_value='maze.sdf',
         
         description='World file to use in Gazebo')
     
@@ -48,10 +49,20 @@ def generate_launch_description():
         value=os.environ['PATH']
     )
 
+    env = {
+        'IGN_GAZEBO_RESOURCE_PATH': os.path.join(
+            os.path.expanduser('~'),
+            'worlds/gazebo_models_worlds_collection/models/cpr_office_construction'
+        )
+    }
+
+
+    
     # Launch Gazebo in server-only mode (no GUI)
     gz_sim = ExecuteProcess(
         # -s for server/headless, -r for start running(play), -v verbose
         #cmd=['ign', 'gazebo', '-s', '-r', '-v 4', world_path], 
+        #cmd=['ign', 'gazebo', world_path, 'additional_env=env'],
         cmd=['ign', 'gazebo', world_path],
         output='screen'
     )

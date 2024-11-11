@@ -4,7 +4,7 @@
 
 ![Rover Zero climbing terrain](assets/Rover_climb.png)
 
-This repository provides a comprehensive framework for off-road mobile robot research, integrating ROS 2 Humble, Gazebo Fortress, and PyTorch with Stable Baselines3 (SB3) for reinforcement learning. It includes the simulation of the Rover Zero robot and serves as a foundation for developing and testing PPO-based PointNav RL agents.
+This repository provides a comprehensive framework for off-road mobile robot research, integrating ROS 2 Humble, Gazebo Fortress, and PyTorch with Stable Baselines3 (SB3) for reinforcement learning. It includes the simulation of the Rover Zero, Clearpath Husky and Leo Rover platforms and as well as outdoor Gazebo environments to include industrial inspection, agricultural and construction sites.  This for serves as a foundation for developing and testing mobile robot tasks on unstructured terrain.
 
 ---
 
