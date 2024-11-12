@@ -46,7 +46,7 @@ The framework is designed to simulate the Rover Zero robot, but it can be extend
 ## Features
 
 - **Dockerized Environment**: Easy setup with a Docker image that includes all dependencies.
-- **Rover Zero Simulation**: Simulate the Rover Zero robot in Gazebo Fortress.
+- **Off Road Robot Simulation**: Models of the Rover Zero, Leo Rover and Clearpath Husky platforms in Gazebo Fortress.
 - **Reinforcement Learning Integration**: Placeholder and structure for implementing SB3 PPO PointNav RL agents.
 - **ROS 2 Workspace**: Includes necessary ROS 2 packages and custom code.
 - **Extensibility**: Modular design allows for integration of additional robots and sensors.
@@ -232,7 +232,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
-   (Full text of the Apache License 2.0)
+   (Cite source models)
 ```
 
 For the full license text, please refer to the [LICENSE](LICENSE) file included in the repository.
