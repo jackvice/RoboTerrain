@@ -32,19 +32,42 @@ class RoverEnv(gym.Env):
         self.node = rclpy.create_node('turtlebot_controller')
 
         # Create reset service client
-        self.reset_simulation_client = self.node.create_client(Empty, '/world/maze/reset')
+        #self.reset_simulation_client = self.node.create_client(Empty, '/world/maze/reset')
 
         # Initialize publishers and subscribers
-        self.publisher = self.node.create_publisher(Twist, cmd_vel_topic, 10)
-        self.lidar_subscriber = self.node.create_subscription(LaserScan, scan_topic,
-                                                            self.lidar_callback, 10)
-        self.odom_subscription = self.node.create_subscription(Odometry, odom_topic,
-                                                               self.odom_callback, 10)
-        self.imu_subscriber = self.node.create_subscription(Imu, imu_topic,
-                                                            self.imu_callback, 10)
+        self.publisher = self.node.create_publisher(
+            Twist,
+            cmd_vel_topic,
+            10)
+        
+        self.lidar_subscriber = self.node.create_subscription(
+            LaserScan,
+            scan_topic,
+            self.lidar_callback,
+            10)
+        
+        self.odom_subscription = self.node.create_subscription(
+            Odometry,
+            odom_topic,
+            self.odom_callback,
+            10)
+        
+        self.imu_subscriber = self.node.create_subscription(
+            Imu,
+            imu_topic,
+            self.imu_callback,
+            10)
+        
+        self.pose_array_subscriber = self.node.create_subscription(
+            PoseArray,
+            '/rover/pose_array',
+            self.pose_array_callback,
+            10)
+
         #self.set_entity_state_client = self.node.create_client(SetEntityState, '/set_entity_state')
         
         # Initialize environment parameters
+        self.pose_node = None
         self.lidar_points = lidar_points
         self.max_lidar_range = max_lidar_range
         self.lidar_data = np.zeros(self.lidar_points, dtype=np.float32)
@@ -69,8 +92,14 @@ class RoverEnv(gym.Env):
         self.is_flipped = False
         self.initial_position = None
         self.initial_orientation = None
-  
 
+        #point navigation
+        #self.target_positions = [(-9,8),(-3,9),(-2,6),(-9,-5),(-2,-8),(-3,-1)]
+        self.target_positions = [(-2,6), (-4,3), (-2,-3)]
+        self.current_target_idx = 0
+        self.success_distance = 0.5  # Distance threshold to consider target reached
+        self.previous_distance = None  # For progress reward
+        
         # Define action space
         # [linear_velocity, angular_velocity]
         self.action_space = spaces.Box(
@@ -107,6 +136,78 @@ class RoverEnv(gym.Env):
         if not self._robot_connected:
             self.node.get_logger().warn("No actual robot detected. Running in simulation mode.")
 
+        
+    def task_reward(self):
+        """PointNav reward function"""
+        if self.current_pose is None:
+            return 0.0  # No pose data available
+            
+        reward = 0.0
+        
+        # Get current position
+        current_x = self.current_pose.position.x
+        current_y = self.current_pose.position.y
+        
+        # Get current target
+        target_x, target_y = self.target_positions[self.current_target_idx]
+        
+        # Calculate distance to current target
+        current_distance = math.sqrt(
+            (current_x - target_x)**2 + 
+            (current_y - target_y)**2
+        )
+        
+        # Initialize previous_distance if not set
+        if self.previous_distance is None:
+            self.previous_distance = current_distance
+            return 0.0
+            
+        # Progress reward: positive reward for getting closer, negative for getting further
+        distance_delta = self.previous_distance - current_distance
+        progress_reward = distance_delta * 1.0  # Scale factor for progress
+        reward += progress_reward
+        
+        # Success reward: if reached target
+        if current_distance < self.success_distance:
+            reward += 10.0  # Bonus for reaching target
+            self.current_target_idx = (self.current_target_idx + 1) % len(self.target_positions)
+            self.node.get_logger().info(f'Target reached! Moving to target {self.current_target_idx}')
+            
+            # Reset previous_distance for new target
+            self.previous_distance = None
+            return reward
+            
+        # Update previous distance
+        self.previous_distance = current_distance
+        
+        # Add a small negative reward for each step to encourage efficiency
+        reward -= 0.01
+        
+        # Optional: Add heading reward
+        target_heading = math.atan2(target_y - current_y, target_x - current_x)
+        current_yaw = self.current_yaw  # Assuming this is updated by your IMU callback
+        heading_diff = abs(math.atan2(math.sin(target_heading - current_yaw), 
+                                    math.cos(target_heading - current_yaw)))
+        heading_reward = (math.pi - heading_diff) / math.pi
+        reward += heading_reward * 0.1  # Scale factor for heading
+        
+        # Debug info (every 100 steps or so)
+        if self.total_steps % 100 == 0:
+            self.node.get_logger().info(
+                f'Target: {self.current_target_idx}, '
+                f'Distance: {current_distance:.2f}, '
+                f'Reward: {reward:.2f}, '
+                f'Progress: {distance_delta:.2f}'
+            )
+            
+        return reward
+
+    def reset(self, seed=None, options=None):
+        """Add to your existing reset function"""
+
+        
+
+            
     def step(self, action):
         """Execute one time step within the environment"""
         self.total_steps += 1
@@ -129,7 +230,7 @@ class RoverEnv(gym.Env):
             # Reset the simulation
             rclpy.spin_once(self.node)  # Process any pending callbacks
 
-            success = self.reset_simulation()
+            #success = self.reset_simulation()
             if not success:
                 self.node.get_logger().error("Failed to reset simulation after flip")
             # Return observation with large negative reward
@@ -167,8 +268,13 @@ class RoverEnv(gym.Env):
 
 
         # Calculate reward
-        reward = self.calc_wall_following_reward()
-        
+        reward = self.task_reward()
+
+        # 2. Collision penalty
+        min_distance = np.min(lidar_ranges[np.isfinite(lidar_ranges)])
+        if min_distance < collision_threshold:
+            reward = -2.0
+
         # Check if episode is done
         self._step += 1
         done = (self._step >= self._length)
@@ -193,9 +299,11 @@ class RoverEnv(gym.Env):
         # Debug print statement
         if self.total_steps % 10_000 == 0:
             print(
-                f"climbing_status: {climbing_status},  climbing_severity: {climbing_severity},  "
-                f"Pitch: {round(self.current_pitch,3)},  Roll: {round(self.current_roll,3)},  "
-                f"min lidar: {round(np.nanmin(self.lidar_data),3)}   Yaw: {round(self.current_yaw,3)},  "
+                #f"climbing_status: {climbing_status},  climbing_severity: {climbing_severity},  "
+                #f"Pitch: {round(self.current_pitch,3)},  Roll: {round(self.current_roll,3)},  "
+                #f"min lidar: {round(np.nanmin(self.lidar_data),3)}   Yaw: {round(self.current_yaw,3)},  "
+                f"current target: {self.current_target_idx},  "
+                f"previous distance: {self.previous_distance},  "
                 f"Reward: {reward},  "
             )
             
@@ -211,67 +319,21 @@ class RoverEnv(gym.Env):
             return True
         return False
 
-    def reset_simulation(self):
-        """Reset the Gazebo simulation"""
-        if not self.reset_simulation_client.wait_for_service(timeout_sec=1.0):
-            self.node.get_logger().error('Reset service not available')
-            return False
-
-        #request = Empty.Request()
-        #future = self.reset_simulation_client.call_async(request)
-    
-        # Wait for result
-        #rclpy.spin_until_future_complete(self.node, future)
-        twist.linear.x = -0.1
-        twist.angular.z = 0.0 #-self.current_roll * 1.0
-        self.publisher.publish(twist)
-        
-        if future.result() is not None:
-            self.node.get_logger().info('Simulation reset successful')
-            self.is_flipped = False
-            return True
-        else:
-            self.node.get_logger().error('Failed to reset simulation')
-            return False
 
     def reset(self, seed=None, options=None):
         """Reset the environment to its initial state"""
         super().reset(seed=seed)
-    
+
         # Reset internal state
         self._step = 0
         self.last_linear_velocity = 0.0
         self.steps_since_correction = self.cooldown_steps
         self.is_flipped = False
-        
-        # Reset the robot's position
-        #request = SetEntityState.Request()
-        #state = EntityState()
-        #state.name = 'rover'  # Replace with your robot's actual model name in Gazebo
-        #state.pose.position.x = 0.0  # Desired x position
-        #state.pose.position.y = 0.0  # Desired y position
-        #state.pose.position.z = 0.0  # Desired z position
-        
-        # Set orientation (if needed)
-        #state.pose.orientation.x = 0.0
-        #state.pose.orientation.y = 0.0
-        #state.pose.orientation.z = 0.0
-        #state.pose.orientation.w = 1.0
-        #request.state = state
 
-        # Wait for the service to be available
-        """
-        if not self.set_entity_state_client.wait_for_service(timeout_sec=1.0):
-            self.node.get_logger().error('SetEntityState service not available')
-        else:
-            future = self.set_entity_state_client.call_async(request)
-            rclpy.spin_until_future_complete(self.node, future)
-            if future.result() is not None:
-                self.node.get_logger().info('SetEntityState request successful')
-            else:
-                self.node.get_logger().error('SetEntityState request failed')
+        # Reset PointNav-specific variables
+        self.current_target_idx = 0
+        self.previous_distance = None
 
-        """
         # Ensure we get fresh sensor data after reset
         for _ in range(3):  # Spin a few times to get fresh data
             rclpy.spin_once(self.node, timeout_sec=0.1)
@@ -281,7 +343,7 @@ class RoverEnv(gym.Env):
             'odom': np.array(self.rover_position, dtype=np.float32),
             'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
                             dtype=np.float32)
-        }
+        }        
     
         return observation, {}
 
@@ -321,74 +383,6 @@ class RoverEnv(gym.Env):
         return climbing_status, severity
 
 
-    def calc_wall_following_reward(self):
-        # Constants
-        desired_distance = 0.5
-        collision_threshold = 0.25
-        min_forward_velocity = 0.05
-        
-        # Get right-side distances (keeping your existing code)
-        lidar_ranges = self.lidar_data
-        num_readings = len(lidar_ranges)
-        
-        right_start_angle_deg = 250
-        right_end_angle_deg = 290
-        
-        degrees_per_index = 360 / num_readings
-        right_start_idx = int(right_start_angle_deg / degrees_per_index) % num_readings
-        right_end_idx = int(right_end_angle_deg / degrees_per_index) % num_readings
-        
-        if right_start_idx <= right_end_idx:
-            right_side_indices = np.arange(right_start_idx, right_end_idx + 1)
-        else:
-            right_side_indices = np.concatenate((
-                np.arange(right_start_idx, num_readings),
-                np.arange(0, right_end_idx + 1)
-            ))
-        
-        right_distances = lidar_ranges[right_side_indices]
-        right_distances = right_distances[np.isfinite(right_distances)]
-    
-        if len(right_distances) == 0:
-            return 0.0
-    
-        # 1. Distance maintenance reward
-        average_distance = np.mean(right_distances)
-        distance_error = abs(average_distance - desired_distance)
-        distance_reward = np.exp(-2.0 * distance_error)  # Exponential decay
-    
-        # 2. Collision penalty
-        min_distance = np.min(lidar_ranges[np.isfinite(lidar_ranges)])
-        if min_distance < collision_threshold:
-            collision_penalty = -2.0
-        else:
-            collision_penalty = 0.0
-    
-        # 3. Forward motion reward
-        if self.last_linear_velocity > min_forward_velocity:
-            forward_reward = 0.5 * (self.last_linear_velocity / 0.3)  # Normalized by max velocity
-        else:
-            forward_reward = 0.0
-    
-        # 4. Stability reward (penalize oscillations)
-        angular_velocity = ( float(self.last_angular_velocity)
-                             if hasattr(self, 'last_angular_velocity') else 0.0 )
-        stability_reward = -0.1 * abs(angular_velocity)
-    
-        # Combine rewards
-        total_reward = (
-            0.4 * distance_reward +    # Distance maintenance is primary objective
-            0.4 * forward_reward +     # Encourage forward motion
-            0.2 * stability_reward +   # Discourage oscillations
-            collision_penalty          # Safety critical, so added separately
-        )
-    
-        # Store angular velocity for next step
-        self.last_angular_velocity = angular_velocity
-    
-        return total_reward
-
-    
     def render(self):
         """Render the environment (optional)"""
         pass
@@ -399,7 +393,10 @@ class RoverEnv(gym.Env):
         self.node.destroy_node()
         rclpy.shutdown()
 
-
+    def pose_array_callback(self, msg):
+        """Callback for processing pose array messages"""
+        if msg.poses:  # Check if we have any poses
+            self.current_pose = msg.poses[0]  # Take the first pose (rover_zero4wd)
 
     def lidar_callback(self, msg):
         if not self.first:

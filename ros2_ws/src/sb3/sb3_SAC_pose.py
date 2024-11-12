@@ -4,11 +4,26 @@ if ros_path not in sys.path:
     sys.path.append(ros_path)
 
 from stable_baselines3 import SAC
-from environments.rover_environment_pointnav import RoverEnv
-#from environments.pose-converter import PoseConverterNode 
+from environments.rover_environment import RoverEnv
+from environments.pose-converter import PoseConverterNode 
 from stable_baselines3.common.callbacks import CheckpointCallback
 
+def run_ros_node(node):
+    """Function to run the ROS node in a separate thread"""
+    rclpy.spin(node)
+
 def main(args=None):
+    # Initialize ROS
+    rclpy.init(args=args)
+    
+    # Create the pose converter node
+    pose_node = PoseConverterNode()
+    
+    # Create and start ROS spinning thread
+    executor = MultiThreadedExecutor()
+    executor.add_node(pose_node)
+    ros_thread = threading.Thread(target=executor.spin, daemon=True)
+    ros_thread.start()
 
     # Create the environment
     env = RoverEnv()
@@ -46,11 +61,12 @@ def main(args=None):
 
     # Save the final model
     model.save("sac_rover_final")
+
+    #cleanup
     node.destroy_node()
     rclpy.shutdown()
+    ros_thread.join()
     return 1
-
-
 
 
 if __name__ == "__main__":

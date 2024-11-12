@@ -45,6 +45,7 @@ class RoverEnv(gym.Env):
         #self.set_entity_state_client = self.node.create_client(SetEntityState, '/set_entity_state')
         
         # Initialize environment parameters
+        self.pose_node = None
         self.lidar_points = lidar_points
         self.max_lidar_range = max_lidar_range
         self.lidar_data = np.zeros(self.lidar_points, dtype=np.float32)
@@ -117,6 +118,26 @@ class RoverEnv(gym.Env):
             
         self._received_scan = False
 
+        # Add pose data if available
+        if self.pose_node:
+            poses = self.pose_node.get_latest_poses()
+            if poses and len(poses) > 0:
+                pose_data = np.array([
+                    poses[0].position.x,
+                    poses[0].position.y,
+                    poses[0].position.z,
+                    poses[0].orientation.x,
+                    poses[0].orientation.y,
+                    poses[0].orientation.z,
+                    poses[0].orientation.w
+                ], dtype=np.float32)
+                
+                observation = {
+                    'original_obs': observation,
+                    'pose': pose_data
+                }
+
+        
         
         # Check if robot has flipped
         if self.check_flip_status():
@@ -243,7 +264,7 @@ class RoverEnv(gym.Env):
         self.last_linear_velocity = 0.0
         self.steps_since_correction = self.cooldown_steps
         self.is_flipped = False
-        
+
         # Reset the robot's position
         #request = SetEntityState.Request()
         #state = EntityState()

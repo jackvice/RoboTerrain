@@ -1,20 +1,14 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
-import os
-
-from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, SetEnvironmentVariable
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, TextSubstitution
-from launch_ros.actions import Node
+from launch.actions import IncludeLaunchDescription
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, TextSubstitution, Command
 from launch_ros.substitutions import FindPackageShare
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
     # Create the launch configuration variables
@@ -100,7 +94,9 @@ def generate_launch_description():
             '/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
             #'/world/maze/reset@std_srvs/srv/Empty',
             #'/world/maze/reset@std_srvs/srv/Empty@ignition.msgs.Empty@ignition.msgs.Empty',
-            '/world/maze/control@ros_gz_interfaces/srv/ControlWorld@ignition.msgs.WorldControl@ignition.msgs.Boolean',
+            #'/world/maze/control@ros_gz_interfaces/srv/ControlWorld@ignition.msgs.WorldControl@ignition.msgs.Boolean',
+            #'/world/maze/dynamic_pose/info@ignition.msgs.Pose_V@ros2_geometry_msgs/PoseArray'
+            '/world/maze/dynamic_pose/info@ignition.msgs.Pose_V@geometry_msgs/msg/PoseArray'
         ],
         output='screen'
     )

@@ -67,8 +67,8 @@ rozer map is 20 x 20 meters
 
 # list ign topics
 ign topic -l
-
-
+ign topic -t <topic_name> -e # echo
+ign topic -t /world/maze/dynamic_pose/info -i #info
 
 sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
 wget https://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -

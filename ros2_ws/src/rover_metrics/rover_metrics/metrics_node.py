@@ -1,22 +1,3 @@
-import rclpy
-from rclpy.node import Node
-from sensor_msgs.msg import LaserScan, Imu
-import numpy as np
-import math
-import csv
-import os
-
-
-import rclpy
-from rclpy.node import Node
-from sensor_msgs.msg import LaserScan, Imu
-from nav_msgs.msg import Odometry
-from std_msgs.msg import String
-import numpy as np
-import math
-import csv
-import os
-
 
 import rclpy
 from rclpy.node import Node
@@ -30,6 +11,9 @@ import numpy as np
 import math
 import csv
 import os
+from gz_msgs.msg import Pose_V  # Assuming this is the correct message type for the dynamic_pose info
+import ignition.transport as ign
+
 
 class MetricsNode(Node):
     """
@@ -75,6 +59,10 @@ class MetricsNode(Node):
         self.rough_terrain_samples = 0
         self.optimal_path_length = 0
 
+        # Metrics Data
+        self.current_position = None
+
+        
         # Subscribe to topics
         self.lidar_subscription = self.create_subscription(
             LaserScan,
@@ -101,6 +89,16 @@ class MetricsNode(Node):
             10
         )
 
+
+        # Ignition Transport
+        self.ign_node = ign.Node()
+        self.ign_node.subscribe('/world/maze/dynamic_pose/info', self.ign_callback)
+
+        # Start Ignition Transport in a separate thread
+        self.ign_thread = threading.Thread(target=self.start_ignition_transport, daemon=True)
+        self.ign_thread.start()
+
+        
         # Set up CSV file for logging
         self.file_path = os.path.join(os.getcwd(), 'metrics_log.csv')
         with open(self.file_path, mode='w', newline='') as file:
@@ -113,6 +111,51 @@ class MetricsNode(Node):
         # Action client for path planning
         self.path_planner_client = ActionClient(self, ComputePathToPose, 'compute_path_to_pose')
 
+
+    def ign_callback(self, msg):
+        # Extract the data from Pose_V message and simulate conversion to ROS 2 PoseArray
+        print("Received Ignition Pose_V message:")
+        pose_array = []
+
+        for pose in msg.pose:
+            if pose.name == "rover_zero4wd":  # Only process the rover pose
+                ros_pose = {
+                    "position": {
+                        "x": pose.position.x,
+                        "y": pose.position.y,
+                        "z": pose.position.z
+                    },
+                    "orientation": {
+                        "x": pose.orientation.x,
+                        "y": pose.orientation.y,
+                        "z": pose.orientation.z,
+                        "w": pose.orientation.w
+                    }
+                }
+                pose_array.append(ros_pose)
+
+                # Save current position for metrics calculations
+                self.current_position = {
+                    "x": pose.position.x,
+                    "y": pose.position.y,
+                    "z": pose.position.z
+                }
+
+                # Print the simulated ROS 2 PoseArray format
+                print("Converted to simulated ROS 2 PoseArray:")
+                for idx, pose in enumerate(pose_array):
+                    print(f"Pose {idx}: Position({pose['position']['x']}, {pose['position']['y']}, {pose['position']['z']})")
+                    print(f"          Orientation({pose['orientation']['x']}, {pose['orientation']['y']}, {pose['orientation']['z']}, {pose['orientation']['w']})")
+
+
+
+        
+    def start_ignition_transport(self):
+        print("Starting Ignition Transport Loop")
+        while rclpy.ok():  # This ensures it stops properly when ROS is shutting down.
+            pass
+
+        
     def lidar_callback(self, msg):
         # Total Collisions
         num_collisions = np.sum(np.array(msg.ranges) < self.collision_threshold)
@@ -333,4 +376,24 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
+
+    """    
+    def pose_callback(self, msg):
+        # Process ground truth position from Gazebo
+        for pose in msg.pose:
+            if pose.name == "rover_zero4wd":
+                self.previous_position = self.current_position
+                self.current_position = (pose.position.x, pose.position.y, pose.position.z)
+                
+                if self.previous_position is not None:
+                    distance = math.sqrt(
+                        (self.current_position[0] - self.previous_position[0])**2 +
+                        (self.current_position[1] - self.previous_position[1])**2 +
+                        (self.current_position[2] - self.previous_position[2])**2
+                    )
+                    self.total_distance_traveled += distance
+                break
+    """
+
 
