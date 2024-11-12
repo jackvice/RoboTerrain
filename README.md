@@ -3,6 +3,13 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 ![Rover Zero climbing terrain](assets/Rover_climb.png)
+<div align="center">
+  <p float="left">
+    <img src="assets/d657b628-86e6-4ec8-bb6c-914f8d173218.png" width="250" />
+    <img src="assets/e689169e-91e8-49d4-992c-c97178d758fd.png" width="250" />
+    <img src="assets/solar-panels-1024x620.png" width="250" />
+  </p>
+</div>
 
 This repository provides a comprehensive framework for off-road mobile robot research, integrating ROS 2 Humble, Gazebo Fortress, and PyTorch with Stable Baselines3 (SB3) for reinforcement learning. It includes the simulation of the Rover Zero, Clearpath Husky and Leo Rover platforms and as well as outdoor Gazebo environments to include industrial inspection, agricultural and construction sites.  This for serves as a foundation for developing and testing mobile robot tasks on unstructured terrain.
 
