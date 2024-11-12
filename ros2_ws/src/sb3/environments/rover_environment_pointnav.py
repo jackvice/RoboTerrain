@@ -236,8 +236,8 @@ class RoverEnv(gym.Env):
             rclpy.spin_once(self.node)  # Process any pending callbacks
 
             #success = self.reset_simulation()
-            if not success:
-                self.node.get_logger().error("Failed to reset simulation after flip")
+            #if not success:
+            #    self.node.get_logger().error("Failed to reset simulation after flip")
             # Return observation with large negative reward
             
             observation = {
