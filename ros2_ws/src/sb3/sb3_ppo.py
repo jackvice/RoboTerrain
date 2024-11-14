@@ -8,12 +8,29 @@ if ros_path not in sys.path:
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
-from environments.rover_environment import RoverEnv 
-
+from environments.rover_environment_pointnav import RoverEnv
+#from environments.pose-converter import PoseConverterNode 
+from stable_baselines3.common.callbacks import CheckpointCallback
 # Create and wrap the environment
+
 env = RoverEnv()
-env = DummyVecEnv([lambda: env])
+
 
 # Create and train the PPO agent
-model = PPO("MultiInputPolicy", env, verbose=1)
-model.learn(total_timesteps=10000)
+model = PPO("MultiInputPolicy",
+            env,
+            tensorboard_log="./tboard_logs/",  #
+            verbose=1
+            )
+checkpoint_callback = CheckpointCallback(
+        save_freq=100_000,
+        save_path="./checkpoints/",
+        name_prefix="ppo_rover_model",
+        save_replay_buffer=False,
+        save_vecnormalize=True
+    )
+
+model.learn(
+    total_timesteps=2_000_000,
+    callback=checkpoint_callback
+)

@@ -176,7 +176,13 @@ class RoverEnv(gym.Env):
         distance_delta = self.previous_distance - current_distance
         progress_reward = distance_delta * 1.0  # Scale factor for progress
         reward += progress_reward
-        
+
+
+        # Add forward motion reward
+        if self.last_linear_velocity > 0:
+            forward_reward = self.last_linear_velocity * 0.05  # Scale factor for forward motion
+            reward += forward_reward
+
         # Success reward: if reached target
         if current_distance < self.success_distance:
             reward += 10.0  # Bonus for reaching target
@@ -223,7 +229,7 @@ class RoverEnv(gym.Env):
             
         self._received_scan = False
 
-        
+        """
         # Check if robot has flipped
         if self.check_flip_status():
             print("Robot has flipped! Initiating reset...")
@@ -247,29 +253,45 @@ class RoverEnv(gym.Env):
                                 dtype=np.float32)
             }
             return observation, -100.0, True, False, {'reset_reason': 'flip'}
-        
+        """
         self.last_angular_velocity = float(action[1]) 
         # Check for climbing and adjust movement with cooldown
         climbing_status, climbing_severity = self.is_climbing_wall()
-        if climbing_status:# and self.steps_since_correction >= self.cooldown_steps:
+        if climbing_status and self.steps_since_correction >= self.cooldown_steps:
             # Execute corrective action
             twist = Twist()
+            
             if climbing_status == 'forward':
-                twist.linear.x = -0.1
-                twist.angular.z = 0.0 #-self.current_roll * 1.0
+                print('forward climbing')
+                # If pitched forward (nose up), just reverse straight back
+                twist.linear.x = -0.5  # Strong reverse
+                twist.angular.z = 0.0  # Keep straight to avoid scrubbing
+                
             elif climbing_status == 'reverse':
-                twist.linear.x = 0.1
-                twist.angular.z = 0.0 #self.current_roll * 1.0
+                print('reverse climbing')
+                # If pitched backward (nose down), move straight forward
+                twist.linear.x = 0.5  # Strong forward
+                twist.angular.z = 0.0  # Keep straight
+                
+            elif climbing_status == 'right_tilt' or climbing_status == 'left_tilt':
+                # For side tilts, just back straight up
+                # Turning during a side tilt could cause more problems with a skid steer
+                twist.linear.x = -0.2
+                twist.angular.z = 0.0
+            
             self.publisher.publish(twist)
             self.steps_since_correction = 0
+            self.last_linear_velocity = twist.linear.x
+            
         else:
             # Normal operation: publish agent's action
             twist = Twist()
-            twist.linear.x = float(action[0])  # linear velocity
-            twist.angular.z = float(action[1])  # angular velocity
+            twist.linear.x = float(action[0])
+            twist.angular.z = float(action[1])
             self.publisher.publish(twist)
             self.last_linear_velocity = twist.linear.x
             self.steps_since_correction += 1
+
 
 
         # Calculate reward
@@ -352,41 +374,45 @@ class RoverEnv(gym.Env):
     
         return observation, {}
 
-
     def is_climbing_wall(self):
-        if self.lidar_data is None:
-            return False, 0.0
-        
-        min_distance = np.nanmin(self.lidar_data)
-        collision_threshold = 0.2
+        """Detect if robot is climbing based solely on IMU data"""
         pitch_threshold = 0.2
         roll_threshold = 0.2
         
-        is_too_close = min_distance < collision_threshold
+        # Check IMU angles
         is_pitch_steep = abs(self.current_pitch) > pitch_threshold
         is_roll_steep = abs(self.current_roll) > roll_threshold
         
         climbing_status = False
         severity = 0.0
         
-        if is_too_close and (is_pitch_steep or is_roll_steep):
-            if self.current_pitch > pitch_threshold:
-                climbing_status = 'reverse'
-                severity = self.current_pitch
-            elif self.current_pitch < -pitch_threshold:
-                climbing_status = 'forward'
-                severity = abs(self.current_pitch)
-            else:
-                if self.current_roll > roll_threshold:
+        # Only check IMU angles and velocity
+        if is_pitch_steep or is_roll_steep:
+            if abs(self.last_linear_velocity) > 0.05:  # Confirm we're moving
+                if self.current_pitch > pitch_threshold:
+                    climbing_status = 'reverse'
+                    severity = self.current_pitch * abs(self.last_linear_velocity)
+                elif self.current_pitch < -pitch_threshold:
+                    climbing_status = 'forward'
+                    severity = abs(self.current_pitch) * abs(self.last_linear_velocity)
+                elif self.current_roll > roll_threshold:
                     climbing_status = 'right_tilt'
-                    severity = self.current_roll
+                    severity = self.current_roll * abs(self.last_linear_velocity)
                 elif self.current_roll < -roll_threshold:
                     climbing_status = 'left_tilt'
-                    severity = abs(self.current_roll)
+                    severity = abs(self.current_roll) * abs(self.last_linear_velocity)
+        
         if climbing_status:
-            print('climbing status:', climbing_status, severity)
+            self.node.get_logger().info(
+                f'Climbing detected: {climbing_status}, '
+                f'Severity: {severity:.2f}, '
+                f'Pitch: {self.current_pitch:.2f}, '
+                f'Roll: {self.current_roll:.2f}, '
+                f'Velocity: {self.last_linear_velocity:.2f}'
+            )
+            
         return climbing_status, severity
-
+    
 
     def render(self):
         """Render the environment (optional)"""
