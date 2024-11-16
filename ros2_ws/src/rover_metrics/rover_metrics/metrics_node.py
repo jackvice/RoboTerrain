@@ -1,399 +1,280 @@
-
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import LaserScan, Imu
 from nav_msgs.msg import Odometry
-from std_msgs.msg import String
-from geometry_msgs.msg import PoseStamped
-from nav2_msgs.action import ComputePathToPose
-from rclpy.action import ActionClient
+from geometry_msgs.msg import PoseArray
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 import numpy as np
 import math
 import csv
 import os
-from gz_msgs.msg import Pose_V  # Assuming this is the correct message type for the dynamic_pose info
-import ignition.transport as ign
-
+from datetime import datetime
 
 class MetricsNode(Node):
-    """
-    MetricsNode is responsible for monitoring and logging various performance metrics during robot
-               navigation trials.
-    
-    The node subscribes to sensor topics such as LiDAR, IMU, and odometry to gather data about the
-    robot's environment and movement. It also interacts with an experiment controller to start and
-    stop trials, and computes the following metrics:
-    
-    - Total Collisions: Number of collisions based on LiDAR data.
-    - Smoothness of Route: Calculated from IMU data to estimate how smooth the robot's movement is.
-    - Obstacle Clearance: Minimum distance from obstacles based on LiDAR readings.
-    - Mean Time to Traverse (MTT): Average time taken to traverse the environment.
-    - Traverse Rate (TR): Percentage of the environment classified as navigable terrain.
-    - Velocity Over Rough Terrain (VOR): Average speed when navigating rough terrain.
-    - Optimal Path Length vs Actual Path Length: Comparison between the optimal path calculated
-             using Nav2 and the path taken by the robot.
-    
-    Metrics are logged to a CSV file for each trial, providing detailed insights into the robot's
-    performance.
-    """
-    
     def __init__(self):
         super().__init__('metrics_node')
         
-        # Initialize metrics
-        self.total_collisions = 0
-        self.smoothness_metric = 0
-        self.obstacle_clearance = 0
-        self.collision_threshold = 0.2  # Collision if an obstacle is within 20 cm
-        self.imu_data = None
-        self.start_time = None
-        self.stop_time = None
-        self.trial_number = None
-        self.start_position = None
-        self.goal_position = None
-        self.traverse_times = []
-        self.traverse_rate = 0
-        self.velocity_over_rough_terrain = 0
-        self.total_distance = 0
-        self.rough_terrain_velocity_sum = 0
-        self.rough_terrain_samples = 0
-        self.optimal_path_length = 0
-
-        # Metrics Data
-        self.current_position = None
-
+        # Debug mode flag and settings
+        self.debug_mode = self.declare_parameter('debug_mode', False).value
+        self.debug_interval = self.declare_parameter('debug_interval', 100).value
+        self.update_count = 0
         
-        # Subscribe to topics
+        # Initialize metrics with thresholds
+        self.metrics = {
+            'total_collisions': 0,
+            'collision_threshold': 0.2,  # 20cm collision threshold
+            'smoothness_metric': 0.0,
+            'smoothness_threshold': 10.0,  # Threshold for "rough" movement
+            'obstacle_clearance': float('inf'),
+            'min_safe_clearance': 0.5,  # 50cm minimum safe clearance
+            'total_distance': 0.0,
+            'distance_threshold': 0.5,  # Maximum reasonable distance per update
+            'velocity_over_rough': 0.0,
+            'rough_terrain_threshold': 15.0  # m/s^2 acceleration threshold for rough terrain
+        }
+        
+        # Buffers for metric calculation
+        self.buffer = {
+            'imu_readings': [],
+            'clearance_readings': [],
+            'velocity_readings': [],
+            'buffer_size': 100  # Keep last 100 readings
+        }
+        
+        # State tracking
+        self.previous_position = None
+        self.start_time = self.get_clock().now()
+        self.last_log_time = self.start_time
+        
+        # Set up subscribers
+        self.setup_subscribers()
+        
+        # Set up logging
+        self.setup_logging()
+        
+        # Create timer for periodic metric logging
+        self.create_timer(1.0, self.periodic_logging)  # Log every second
+
+    def setup_subscribers(self):
+        """Set up all subscribers with appropriate QoS profiles"""
         self.lidar_subscription = self.create_subscription(
             LaserScan,
             '/scan',
             self.lidar_callback,
             10
         )
+        
         self.imu_subscription = self.create_subscription(
             Imu,
             '/imu/data',
             self.imu_callback,
             10
         )
+        
+        qos_profile = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1
+        )
+        
+        self.pose_array_subscriber = self.create_subscription(
+            PoseArray,
+            '/rover/pose_array',
+            self.pose_array_callback,
+            qos_profile
+        )
+        
         self.odometry_subscription = self.create_subscription(
             Odometry,
             '/odometry/wheels',
             self.odometry_callback,
             10
         )
-        self.experiment_controller_subscription = self.create_subscription(
-            String,
-            '/experiment_controller',
-            self.experiment_controller_callback,
-            10
-        )
 
-
-        # Ignition Transport
-        self.ign_node = ign.Node()
-        self.ign_node.subscribe('/world/maze/dynamic_pose/info', self.ign_callback)
-
-        # Start Ignition Transport in a separate thread
-        self.ign_thread = threading.Thread(target=self.start_ignition_transport, daemon=True)
-        self.ign_thread.start()
-
+    def setup_logging(self):
+        """Set up CSV logging with timestamp and create directory if needed"""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_dir = os.path.join(os.getcwd(), 'metric_logs')
+        os.makedirs(log_dir, exist_ok=True)
         
-        # Set up CSV file for logging
-        self.file_path = os.path.join(os.getcwd(), 'metrics_log.csv')
+        self.file_path = os.path.join(log_dir, f'metrics_log_{timestamp}.csv')
+        self.create_csv_header()
+
+    def create_csv_header(self):
+        """Create CSV file with detailed headers"""
         with open(self.file_path, mode='w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['Trial Number', 'Timestamp', 'Total Collisions', 'Smoothness of Route',
-                             'Obstacle Clearance','Mean Time to Traverse (s)', 'Traverse Rate (%)',
-                             'Velocity Over Rough Terrain (m/s)', 'Optimal Path Length (m)',
-                             'Actual Path Length (m)'])
+            writer.writerow([
+                'Timestamp',
+                'Total Collisions',
+                'Current Collision Status',
+                'Smoothness Metric',
+                'Current Smoothness',
+                'Obstacle Clearance',
+                'Distance Traveled',
+                'Current Velocity',
+                'IMU Acceleration Magnitude',
+                'Is Rough Terrain',
+                'Notes'
+            ])
 
-        # Action client for path planning
-        self.path_planner_client = ActionClient(self, ComputePathToPose, 'compute_path_to_pose')
-
-
-    def ign_callback(self, msg):
-        # Extract the data from Pose_V message and simulate conversion to ROS 2 PoseArray
-        print("Received Ignition Pose_V message:")
-        pose_array = []
-
-        for pose in msg.pose:
-            if pose.name == "rover_zero4wd":  # Only process the rover pose
-                ros_pose = {
-                    "position": {
-                        "x": pose.position.x,
-                        "y": pose.position.y,
-                        "z": pose.position.z
-                    },
-                    "orientation": {
-                        "x": pose.orientation.x,
-                        "y": pose.orientation.y,
-                        "z": pose.orientation.z,
-                        "w": pose.orientation.w
-                    }
-                }
-                pose_array.append(ros_pose)
-
-                # Save current position for metrics calculations
-                self.current_position = {
-                    "x": pose.position.x,
-                    "y": pose.position.y,
-                    "z": pose.position.z
-                }
-
-                # Print the simulated ROS 2 PoseArray format
-                print("Converted to simulated ROS 2 PoseArray:")
-                for idx, pose in enumerate(pose_array):
-                    print(f"Pose {idx}: Position({pose['position']['x']}, {pose['position']['y']}, {pose['position']['z']})")
-                    print(f"          Orientation({pose['orientation']['x']}, {pose['orientation']['y']}, {pose['orientation']['z']}, {pose['orientation']['w']})")
-
-
-
-        
-    def start_ignition_transport(self):
-        print("Starting Ignition Transport Loop")
-        while rclpy.ok():  # This ensures it stops properly when ROS is shutting down.
-            pass
-
-        
     def lidar_callback(self, msg):
-        # Total Collisions
-        num_collisions = np.sum(np.array(msg.ranges) < self.collision_threshold)
-        self.total_collisions += num_collisions
-
-        # Obstacle Clearance (minimum distance to obstacle)
-        self.obstacle_clearance = np.nanmin(msg.ranges)
-
-        # Save metrics to file
-        self.log_metrics()
+        """Process LiDAR data for collision detection and obstacle clearance"""
+        # Convert ranges to numpy array and handle inf/nan
+        ranges = np.array(msg.ranges)
+        finite_ranges = ranges[np.isfinite(ranges)]
         
+        if len(finite_ranges) > 0:
+            # Update obstacle clearance
+            current_clearance = np.min(finite_ranges)
+            self.metrics['obstacle_clearance'] = current_clearance
+            self.buffer['clearance_readings'].append(current_clearance)
+            
+            # Check for collisions
+            collision_detected = current_clearance < self.metrics['collision_threshold']
+            if collision_detected:
+                self.metrics['total_collisions'] += 1
+            
+            # Buffer management
+            if len(self.buffer['clearance_readings']) > self.buffer['buffer_size']:
+                self.buffer['clearance_readings'].pop(0)
+            
+            if self.debug_mode and self.update_count % self.debug_interval == 0:
+                self.get_logger().info(
+                    f"LiDAR Update - Clearance: {current_clearance:.2f}m, "
+                    f"Collisions: {self.metrics['total_collisions']}"
+                )
 
     def imu_callback(self, msg):
-        # Calculate Smoothness of Route based on linear acceleration and angular velocity
-        linear_accel = msg.linear_acceleration
+        """Process IMU data for smoothness and terrain roughness detection"""
+        # Calculate acceleration magnitude
+        accel = msg.linear_acceleration
+        accel_magnitude = math.sqrt(accel.x**2 + accel.y**2 + accel.z**2)
+        
+        # Update smoothness metric
         angular_vel = msg.angular_velocity
-
-        # Use acceleration and angular velocity magnitude for smoothness measure
-        accel_magnitude = math.sqrt(linear_accel.x**2 + linear_accel.y**2 + linear_accel.z**2)
-        angular_vel_magnitude = math.sqrt(angular_vel.x**2 + angular_vel.y**2 + angular_vel.z**2)
-
-        # Update smoothness metric (lower is smoother)
-        self.smoothness_metric += abs(accel_magnitude) + abs(angular_vel_magnitude)
-
+        angular_magnitude = math.sqrt(angular_vel.x**2 + angular_vel.y**2 + angular_vel.z**2)
         
-    def odometry_callback(self, msg):
-        # Calculate distance traveled and velocity over rough terrain
-        linear_velocity = msg.twist.twist.linear
-        velocity_magnitude = math.sqrt(linear_velocity.x**2 + linear_velocity.y**2 + linear_velocity.z**2)
-        self.total_distance += velocity_magnitude * (1 / 10)  # Assuming 10 Hz callback rate
+        current_smoothness = accel_magnitude + angular_magnitude
+        self.metrics['smoothness_metric'] += current_smoothness
+        
+        # Check for rough terrain
+        is_rough = accel_magnitude > self.metrics['rough_terrain_threshold']
+        
+        # Store in buffer
+        self.buffer['imu_readings'].append({
+            'accel_magnitude': accel_magnitude,
+            'angular_magnitude': angular_magnitude,
+            'is_rough': is_rough
+        })
+        
+        # Buffer management
+        if len(self.buffer['imu_readings']) > self.buffer['buffer_size']:
+            self.buffer['imu_readings'].pop(0)
+            
+        if self.debug_mode and self.update_count % self.debug_interval == 0:
+            self.get_logger().info(
+                f"IMU Update - Accel Mag: {accel_magnitude:.2f}, "
+                f"Angular Mag: {angular_magnitude:.2f}, "
+                f"Is Rough: {is_rough}"
+            )
 
-        # Check if the terrain is rough (using IMU data or some predefined criteria)
-        if self.imu_data:
-            accel_magnitude = math.sqrt(self.imu_data.linear_acceleration.x**2 +
-                                        self.imu_data.linear_acceleration.y**2 +
-                                        self.imu_data.linear_acceleration.z**2)
-            if accel_magnitude > 1.5:  # Example threshold for rough terrain
-                self.rough_terrain_velocity_sum += velocity_magnitude
-                self.rough_terrain_samples += 1
-
+    def pose_array_callback(self, msg):
+        """Process pose data for distance calculation"""
+        if not msg.poses:
+            return
+            
+        current_pose = msg.poses[0]
+        current_position = np.array([
+            current_pose.position.x,
+            current_pose.position.y,
+            current_pose.position.z
+        ])
+        
+        if self.previous_position is not None:
+            # Calculate distance
+            distance = np.linalg.norm(current_position - self.previous_position)
+            
+            # Only update if the distance is reasonable
+            if distance < self.metrics['distance_threshold']:
+                self.metrics['total_distance'] += distance
                 
-    def experiment_controller_callback(self, msg):
-        """
-        Callback function for experiment controller commands. Starts and stops trials based on incoming
-        messages.
+                if self.debug_mode and self.update_count % self.debug_interval == 0:
+                    self.get_logger().info(
+                        f"Position Update - Distance: {distance:.2f}m, "
+                        f"Total: {self.metrics['total_distance']:.2f}m"
+                    )
         
-        - Parses commands for 'START' and 'STOP'.
-        - Sets start time, trial number, start, and goal positions at trial start.
-        - Calculates metrics and logs them upon receiving a stop command.
-        """
-        data = msg.data.split(',')
-        command = data[0].strip()
+        self.previous_position = current_position
 
-        if command == 'START':
-            self.start_time = self.get_clock().now()
-            self.trial_number = int(data[1].strip())
-            self.start_position = (float(data[2].strip()), float(data[3].strip()))
-            self.goal_position = (float(data[4].strip()), float(data[5].strip()))
-            self.calculate_optimal_path()
-        elif command == 'STOP':
-            self.stop_time = self.get_clock().now()
-            self.calculate_metrics()
-            
-
-    def calculate_optimal_path(self):
-        """
-        Calculates the optimal path from the start to the goal position using a path planning action.
+    def odometry_callback(self, msg):
+        """Process odometry data for velocity tracking"""
+        velocity = msg.twist.twist.linear
+        velocity_magnitude = math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
         
-        - Sets up start and goal poses based on controller input.
-        - Requests path planning from Nav2's ComputePathToPose action and handles the result asynchronously.
-        """
-        start_pose = PoseStamped()
-        start_pose.header.frame_id = 'map'
-        start_pose.pose.position.x = self.start_position[0]
-        start_pose.pose.position.y = self.start_position[1]
-
-        goal_pose = PoseStamped()
-        goal_pose.header.frame_id = 'map'
-        goal_pose.pose.position.x = self.goal_position[0]
-        goal_pose.pose.position.y = self.goal_position[1]
-
-        # Send request to ComputePathToPose action in Nav2
-        if not self.path_planner_client.wait_for_server(timeout_sec=10.0):
-            self.get_logger().error('Path planner action server not available!')
-            return
-
-        goal_msg = ComputePathToPose.Goal()
-        goal_msg.start = start_pose
-        goal_msg.goal = goal_pose
-
-        self.path_planner_client.send_goal_async(goal_msg).add_done_callback(self.handle_path_response)
-
+        self.buffer['velocity_readings'].append(velocity_magnitude)
         
-    def handle_path_response(self, future):
-        """
-        Handles the response from the path planning action.
+        # Buffer management
+        if len(self.buffer['velocity_readings']) > self.buffer['buffer_size']:
+            self.buffer['velocity_readings'].pop(0)
         
-        - Checks if the path planning goal was accepted.
-        - Initiates the retrieval of the planning result if accepted.
-        """
-        goal_handle = future.result()
-        if not goal_handle.accepted:
-            self.get_logger().error('Path planning goal rejected!')
-            return
+        # Update velocity over rough terrain metric
+        if self.buffer['imu_readings'] and self.buffer['imu_readings'][-1]['is_rough']:
+            self.metrics['velocity_over_rough'] = velocity_magnitude
 
-        goal_handle.get_result_async().add_done_callback(self.handle_path_result)
-
+    def periodic_logging(self):
+        """Log metrics periodically to CSV file"""
+        current_time = self.get_clock().now()
         
-    def handle_path_result(self, future):
-        """
-        Handles the path planning result and calculates the optimal path length.
+        # Calculate current metrics
+        current_smoothness = np.mean([reading['accel_magnitude'] + reading['angular_magnitude'] 
+                                    for reading in self.buffer['imu_readings']]) if self.buffer['imu_readings'] else 0
+        current_clearance = np.mean(self.buffer['clearance_readings']) if self.buffer['clearance_readings'] else float('inf')
+        current_velocity = np.mean(self.buffer['velocity_readings']) if self.buffer['velocity_readings'] else 0
         
-        - Retrieves the planned path and calculates its length using a helper function.
-        - Stores the calculated path length for metric logging.
-        """
-        result = future.result().result
-        if result:
-            self.optimal_path_length = self.calculate_path_length(result.path)
-
-
-
-    def calculate_3d_path_length(path):
-        """
-        Calculates the 3D path length for a given set of waypoints, taking elevation into account.
+        # Get latest IMU reading
+        latest_imu = self.buffer['imu_readings'][-1] if self.buffer['imu_readings'] else {'accel_magnitude': 0, 'is_rough': False}
         
-        - Iterates through waypoints and calculates the Euclidean distance in 3D space between consecutive points.
-        - Returns the total path length.
+        # Prepare notes
+        notes = []
         """
-        total_length = 0.0
-        for i in range(1, len(path.poses)):
-            x1, y1, z1 = (path.poses[i-1].pose.position.x, 
-                          path.poses[i-1].pose.position.y, 
-                          path.poses[i-1].pose.position.z)
-            x2, y2, z2 = (path.poses[i].pose.position.x, 
-                          path.poses[i].pose.position.y, 
-                          path.poses[i].pose.position.z)
-            total_length += math.sqrt((x2 - x1)**2 + (y2 - y1)**2 + (z2 - z1)**2)
-        return total_length
-
-            
-    def calculate_path_length(self, path):
-        """
-        Calculates the 2D path length (ignoring elevation) for a given set of waypoints.
-        
-        - Computes the Euclidean distance between consecutive points in the X-Y plane.
-        - Returns the total path length.
-        """
-        total_length = 0.0
-        for i in range(1, len(path.poses)):
-            x1, y1 = path.poses[i-1].pose.position.x, path.poses[i-1].pose.position.y
-            x2, y2 = path.poses[i].pose.position.x, path.poses[i].pose.position.y
-            total_length += math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-        return total_length
-
-    
-    def calculate_metrics(self):
-        """
-        Calculates key metrics for the trial, such as Mean Time to Traverse, Traverse Rate, and
-                        Velocity over Rough Terrain.
-        
-        - Computes the mean time to traverse based on recorded times.
-        - Calculates the traverse rate as a percentage of environment size covered.
-        - Determines the average velocity over rough terrain samples.
-        - Logs all calculated metrics.
-        """
-        time_diff = (self.stop_time - self.start_time).nanoseconds * 1e-9
-        self.traverse_times.append(time_diff)
-        mean_time_to_traverse = sum(self.traverse_times) / len(self.traverse_times)
-
-        # Calculate Traverse Rate (TR)
-        self.traverse_rate = (self.total_distance / self.calculate_total_environment_size()) * 100  # Example
-
-        # Calculate Velocity Over Rough Terrain (VOR)
-        if self.rough_terrain_samples > 0:
-            self.velocity_over_rough_terrain = self.rough_terrain_velocity_sum / self.rough_terrain_samples
-
-        # Log metrics
-        self.log_metrics(mean_time_to_traverse, self.traverse_rate, self.velocity_over_rough_terrain,
-                         self.optimal_path_length, self.total_distance)
-
-    def calculate_total_environment_size(self):
-        # Placeholder for environment size calculation
-        return 100.0  # Example value
-
-    
-    def log_metrics(self, mtt=None, tr=None, vor=None, optimal_path_length=None, actual_path_length=None):
-        """
-        Logs key performance metrics to a CSV file for analysis.
-        
-        - Records trial number, timestamp, collision count, smoothness metric, obstacle clearance,
-                                      and other metrics.
-        - Logs to a file defined by `self.file_path`.
-        """
-        timestamp = self.get_clock().now().to_msg()
+        if current_clearance < self.metrics['min_safe_clearance']:
+            notes.append("Low clearance")
+        if latest_imu['is_rough']:
+            notes.append("Rough terrain")
+        if current_smoothness > self.metrics['smoothness_threshold']:
+            notes.append("Rough movement")
+        """ 
+        # Log to CSV
         with open(self.file_path, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([
-                self.trial_number if self.trial_number else 'N/A',
-                f"{timestamp.sec}.{timestamp.nanosec}",
-                self.total_collisions,
-                self.smoothness_metric,
-                self.obstacle_clearance,
-                mtt if mtt else 'N/A',
-                tr if tr else 'N/A',
-                vor if vor else 'N/A',
-                optimal_path_length if optimal_path_length else 'N/A',
-                actual_path_length if actual_path_length else 'N/A'
+                current_time.to_msg().sec,
+                round(self.metrics['total_collisions'], 4),
+                1 if current_clearance < self.metrics['collision_threshold'] else 0,
+                round(self.metrics['smoothness_metric'], 4),
+                round(current_smoothness, 4),
+                round(current_clearance, 4),
+                round(self.metrics['total_distance'], 4),
+                round(current_velocity, 4),
+                round(latest_imu['accel_magnitude'], 4),
+                1 if latest_imu['is_rough'] else 0,
+                "; ".join(notes) if notes else "Normal operation"
             ])
+        
+        self.update_count += 1
 
 def main(args=None):
     rclpy.init(args=args)
     metrics_node = MetricsNode()
-    rclpy.spin(metrics_node)
-
-    # Destroy the node explicitly (optional)
-    metrics_node.destroy_node()
-    rclpy.shutdown()
+    
+    try:
+        rclpy.spin(metrics_node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        metrics_node.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
-
-
-    """    
-    def pose_callback(self, msg):
-        # Process ground truth position from Gazebo
-        for pose in msg.pose:
-            if pose.name == "rover_zero4wd":
-                self.previous_position = self.current_position
-                self.current_position = (pose.position.x, pose.position.y, pose.position.z)
-                
-                if self.previous_position is not None:
-                    distance = math.sqrt(
-                        (self.current_position[0] - self.previous_position[0])**2 +
-                        (self.current_position[1] - self.previous_position[1])**2 +
-                        (self.current_position[2] - self.previous_position[2])**2
-                    )
-                    self.total_distance_traveled += distance
-                break
-    """
-
-

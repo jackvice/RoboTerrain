@@ -151,13 +151,86 @@ class RoverEnv(gym.Env):
         if not self._robot_connected:
             self.node.get_logger().warn("No actual robot detected. Running in simulation mode.")
 
-        
+
     def task_reward(self):
+        collision_threshold = 0.46
+        
+        """Simplified reward function for point navigation task"""
+        if self.current_pose is None:
+            return 0.0
+    
+        # Get current position and target
+        current_x = self.current_pose.position.x
+        current_y = self.current_pose.position.y
+        target_x, target_y = self.target_positions[self.current_target_idx]
+
+        # Calculate distance to current target
+        current_distance = math.sqrt(
+            (current_x - target_x)**2 + 
+            (current_y - target_y)**2
+        )
+
+        # Initialize previous_distance if not set
+        if self.previous_distance is None:
+            self.previous_distance = current_distance
+            return 0.0
+        
+        # Success reward: if reached target
+        if current_distance < self.success_distance:
+            reward = 50.0
+            self.current_target_idx = (self.current_target_idx + 1) % len(self.target_positions)
+            print('######################################################################')
+            self.node.get_logger().info(f'Target reached! Moving to target {self.current_target_idx}')
+            print('######################################################################')
+            self.previous_distance = None
+            return reward
+
+        # 2. Collision penalty
+        min_distance = np.min(self.lidar_data[np.isfinite(self.lidar_data)])
+        if min_distance < collision_threshold:
+            return -1.0
+
+
+        # Calculate reward
+        reward = 0.0
+    
+        # Calculate heading
+        target_heading = math.atan2(target_y - current_y, target_x - current_x)
+        heading_diff = abs(math.atan2(math.sin(target_heading - self.current_yaw), 
+                                 math.cos(target_heading - self.current_yaw)))
+    
+        # Progress reward only when facing within 90 degrees of target
+        distance_delta = self.previous_distance - current_distance
+        if heading_diff < math.pi/2:  # 90 degrees
+            reward += distance_delta * 20.0
+    
+        # Update previous distance
+        self.previous_distance = current_distance
+    
+        # Step penalty
+        reward -= 0.01
+
+        # Debug info (simplified)
+        if self.total_steps % 1000 == 0:
+            self.node.get_logger().info(
+                f'Status: Target: {self.current_target_idx}, '
+                f'Distance: {current_distance:.2f}m, '
+                f'Heading diff: {math.degrees(heading_diff):.1f}°, '
+                f'Heading: {math.degrees(heading_diff):.1f}°, '
+                f'Distance delat: {distance_delta:.3f}m, '
+                f'Progress reward: {(distance_delta *2):.3f}m, '
+                f'Reward: {reward:.3f}'
+            )
+            
+        return reward
+            
+    def task_rewardOld(self):
+        
+        reward = 0.0
+        
         """PointNav reward function"""
         if self.current_pose is None:
             return 0.0  # No pose data available
-            
-        reward = 0.0
         
         # Get current position
         current_x = self.current_pose.position.x
@@ -165,29 +238,18 @@ class RoverEnv(gym.Env):
         
         # Get current target
         target_x, target_y = self.target_positions[self.current_target_idx]
-        
+
         # Calculate distance to current target
         current_distance = math.sqrt(
             (current_x - target_x)**2 + 
             (current_y - target_y)**2
         )
-        
+
         # Initialize previous_distance if not set
         if self.previous_distance is None:
             self.previous_distance = current_distance
             return 0.0
             
-        # Progress reward: positive reward for getting closer, negative for getting further
-        distance_delta = self.previous_distance - current_distance
-        progress_reward = distance_delta * 1.0  # Scale factor for progress
-        reward += progress_reward
-
-
-        # Add forward motion reward
-        if self.last_linear_velocity > 0:
-            forward_reward = self.last_linear_velocity * 0.05  # Scale factor for forward motion
-            reward += forward_reward
-
         # Success reward: if reached target
         if current_distance < self.success_distance:
             reward += 100.0  # Bonus for reaching target
@@ -198,20 +260,48 @@ class RoverEnv(gym.Env):
             # Reset previous_distance for new target
             self.previous_distance = None
             return reward
+        
+        # Progress reward: positive reward for getting closer, negative for getting further
+        distance_delta = self.previous_distance - current_distance
+        progress_reward = distance_delta * 1.0  # Scale factor for progress
+        reward += progress_reward
+
+        # Add forward motion reward
+        if self.last_linear_velocity > 0:
+            forward_reward = self.last_linear_velocity * 0.05  # Scale factor for forward motion
+            reward += forward_reward
             
         # Update previous distance
         self.previous_distance = current_distance
         
         # Add a small negative reward for each step to encourage efficiency
         reward -= 0.01
-        
-        # Optional: Add heading reward
+
         target_heading = math.atan2(target_y - current_y, target_x - current_x)
         current_yaw = self.current_yaw  # Assuming this is updated by your IMU callback
+        
+        # Distance reward with heading factor
         heading_diff = abs(math.atan2(math.sin(target_heading - current_yaw), 
-                                    math.cos(target_heading - current_yaw)))
+                                      math.cos(target_heading - current_yaw)))
+        # 1.0 when aligned, 0.0 when perpendicular, -1.0 when opposite
+        heading_factor = math.cos(heading_diff)  
+
+        # Progress reward scaled by heading
+        distance_delta = self.previous_distance - current_distance
+        # Only reward progress when roughly facing target
+        progress_reward = distance_delta * 1.0 * max(0, heading_factor)  
+        
+        # Separate heading reward with larger scale
         heading_reward = (math.pi - heading_diff) / math.pi
-        reward += heading_reward * 0.1  # Scale factor for heading
+        reward += heading_reward * 0.5  # Increased from 0.1 to 0.5
+
+        # Optional: Add heading reward
+
+        #
+        #heading_diff = abs(math.atan2(math.sin(target_heading - current_yaw), 
+        #                            math.cos(target_heading - current_yaw)))
+        #heading_reward = (math.pi - heading_diff) / math.pi
+        #reward += heading_reward * 0.1  # Scale factor for heading
 
         # Debug info (every 100 steps or so)
         if self.total_steps % 10_000 == 0:
@@ -219,6 +309,7 @@ class RoverEnv(gym.Env):
                 f'Target: {self.current_target_idx}, '
                 f'Distance: {current_distance:.2f}, '
                 f'Heading diff: {heading_diff:.2f},  '
+                f'Forward reward: {forward_reward:.2f},  '
                 f'Heading reward: {heading_reward:.2f},  '
                 f'Progress reward: {progress_reward:.2f},  '
                 f'Target: ({target_x:.2f}, {target_y:.2f}),  '
@@ -255,7 +346,7 @@ class RoverEnv(gym.Env):
     def step(self, action):
         """Execute one time step within the environment"""
         self.total_steps += 1
-        collision_threshold = 0.46
+        
         # Wait for new sensor data
         while not (self._received_scan):
             rclpy.spin_once(self.node, timeout_sec=0.01)
@@ -301,11 +392,6 @@ class RoverEnv(gym.Env):
 
         # Calculate reward
         reward = self.task_reward()
-
-        # 2. Collision penalty
-        min_distance = np.min(self.lidar_data[np.isfinite(self.lidar_data)])
-        if min_distance < collision_threshold:
-            reward = -2.0
 
         # Check if episode is done
         self._step += 1

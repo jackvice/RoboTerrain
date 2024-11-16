@@ -160,11 +160,6 @@ class RoverEnv(gym.Env):
         if self.current_pose is None:
             return 0.0  # No pose data available
         
-        # Initialize previous_distance if not set
-        if self.previous_distance is None:
-            self.previous_distance = current_distance
-            return 0.0
-            
         # Get current position
         current_x = self.current_pose.position.x
         current_y = self.current_pose.position.y
@@ -177,7 +172,12 @@ class RoverEnv(gym.Env):
             (current_x - target_x)**2 + 
             (current_y - target_y)**2
         )
-        
+
+        # Initialize previous_distance if not set
+        if self.previous_distance is None:
+            self.previous_distance = current_distance
+            return 0.0
+            
         # Success reward: if reached target
         if current_distance < self.success_distance:
             reward += 100.0  # Bonus for reaching target
@@ -194,15 +194,10 @@ class RoverEnv(gym.Env):
         progress_reward = distance_delta * 1.0  # Scale factor for progress
         reward += progress_reward
 
-
-
-        
         # Add forward motion reward
         if self.last_linear_velocity > 0:
             forward_reward = self.last_linear_velocity * 0.05  # Scale factor for forward motion
             reward += forward_reward
-
-
             
         # Update previous distance
         self.previous_distance = current_distance
@@ -210,8 +205,9 @@ class RoverEnv(gym.Env):
         # Add a small negative reward for each step to encourage efficiency
         reward -= 0.01
 
-
-
+        target_heading = math.atan2(target_y - current_y, target_x - current_x)
+        current_yaw = self.current_yaw  # Assuming this is updated by your IMU callback
+        
         # Distance reward with heading factor
         heading_diff = abs(math.atan2(math.sin(target_heading - current_yaw), 
                                       math.cos(target_heading - current_yaw)))
@@ -227,15 +223,13 @@ class RoverEnv(gym.Env):
         heading_reward = (math.pi - heading_diff) / math.pi
         reward += heading_reward * 0.5  # Increased from 0.1 to 0.5
 
-
-
         # Optional: Add heading reward
-        target_heading = math.atan2(target_y - current_y, target_x - current_x)
-        current_yaw = self.current_yaw  # Assuming this is updated by your IMU callback
-        heading_diff = abs(math.atan2(math.sin(target_heading - current_yaw), 
-                                    math.cos(target_heading - current_yaw)))
-        heading_reward = (math.pi - heading_diff) / math.pi
-        reward += heading_reward * 0.1  # Scale factor for heading
+
+        #
+        #heading_diff = abs(math.atan2(math.sin(target_heading - current_yaw), 
+        #                            math.cos(target_heading - current_yaw)))
+        #heading_reward = (math.pi - heading_diff) / math.pi
+        #reward += heading_reward * 0.1  # Scale factor for heading
 
         # Debug info (every 100 steps or so)
         if self.total_steps % 10_000 == 0:

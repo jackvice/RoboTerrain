@@ -1,3 +1,13 @@
+
+python sb3_ppo.py --load False
+python sb3_ppo.py --load True --checkpoint_name checkpoints/ppo_rover_model_20241115_1152_900000_steps.zip
+
+
+How will you go about writing this program?
+Please ask me any questions that you have or clarifications that you need. If you have any suggestions please let me know.
+Do not write the program yet. Let us work on getting all issues resolved and then write the program.
+
+
 # Dream Rover commands:
 
 python dreamerv3/main.py --configs rover --logdir ~/logdir/r_camera_test
