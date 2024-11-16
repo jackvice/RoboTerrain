@@ -1,0 +1,69 @@
+import gymnasium as gym
+import torch as th
+from torch import nn
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+
+class CustomCombinedExtractor(BaseFeaturesExtractor):
+    def __init__(self, observation_space: gym.spaces.Dict):
+        # Initialize with dummy features_dim (will be updated later)
+        super(CustomCombinedExtractor, self).__init__(observation_space, features_dim=1)
+        
+        extractors = {}
+        total_concat_size = 0
+        feature_size = 128  # Size of each feature output
+        
+        # Create neural networks for each observation type
+        for key, subspace in observation_space.spaces.items():
+            if key == "lidar":
+                # 1D CNN for lidar data
+                cnn = nn.Sequential(
+                    nn.Conv1d(1, 32, kernel_size=8, stride=4, padding=0),
+                    nn.ReLU(),
+                    nn.Conv1d(32, 64, kernel_size=4, stride=2, padding=0),
+                    nn.ReLU(),
+                    nn.Conv1d(64, 64, kernel_size=3, stride=1, padding=0),
+                    nn.ReLU(),
+                    nn.Flatten(),
+                )
+                # Calculate the size of flattened features
+                test_tensor = th.zeros(1, 1, subspace.shape[0])  # [batch, channels, length]
+                with th.no_grad():
+                    n_flatten = cnn(test_tensor).shape[1]
+                
+                # Add final fully connected layer
+                fc = nn.Sequential(
+                    nn.Linear(n_flatten, feature_size),
+                    nn.ReLU()
+                )
+                extractors[key] = nn.Sequential(cnn, fc)
+                
+            elif key in ["pose", "imu", "target"]:
+                # Simple MLPs for vector inputs
+                extractors[key] = nn.Sequential(
+                    nn.Linear(subspace.shape[0], feature_size),
+                    nn.ReLU(),
+                    nn.Linear(feature_size, feature_size),
+                    nn.ReLU()
+                )
+            else:
+                raise ValueError(f"Unknown observation key: {key}")
+                
+            total_concat_size += feature_size
+            
+        self.extractors = nn.ModuleDict(extractors)
+        self._features_dim = total_concat_size
+
+    def forward(self, observations) -> th.Tensor:
+        encoded_tensor_list = []
+        
+        # Process each observation type
+        for key, extractor in self.extractors.items():
+            if key == "lidar":
+                # Add channel dimension for CNN
+                x = observations[key].unsqueeze(1)  # [batch, channel, length]
+            else:
+                x = observations[key]
+            encoded_tensor_list.append(extractor(x))
+            
+        # Concatenate all features
+        return th.cat(encoded_tensor_list, dim=1)

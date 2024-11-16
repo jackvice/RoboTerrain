@@ -153,41 +153,31 @@ class RoverEnv(gym.Env):
 
         
     def task_reward(self):
+        
+        reward = 0.0
+        
         """PointNav reward function"""
         if self.current_pose is None:
             return 0.0  # No pose data available
-            
-        reward = 0.0
-        
-        # Get current position
-        current_x = self.current_pose.position.x
-        current_y = self.current_pose.position.y
-        
-        # Get current target
-        target_x, target_y = self.target_positions[self.current_target_idx]
-        
-        # Calculate distance to current target
-        current_distance = math.sqrt(
-            (current_x - target_x)**2 + 
-            (current_y - target_y)**2
-        )
         
         # Initialize previous_distance if not set
         if self.previous_distance is None:
             self.previous_distance = current_distance
             return 0.0
             
-        # Progress reward: positive reward for getting closer, negative for getting further
-        distance_delta = self.previous_distance - current_distance
-        progress_reward = distance_delta * 1.0  # Scale factor for progress
-        reward += progress_reward
+        # Get current position
+        current_x = self.current_pose.position.x
+        current_y = self.current_pose.position.y
+        
+        # Get current target
+        target_x, target_y = self.target_positions[self.current_target_idx]
 
-
-        # Add forward motion reward
-        if self.last_linear_velocity > 0:
-            forward_reward = self.last_linear_velocity * 0.05  # Scale factor for forward motion
-            reward += forward_reward
-
+        # Calculate distance to current target
+        current_distance = math.sqrt(
+            (current_x - target_x)**2 + 
+            (current_y - target_y)**2
+        )
+        
         # Success reward: if reached target
         if current_distance < self.success_distance:
             reward += 100.0  # Bonus for reaching target
@@ -198,13 +188,47 @@ class RoverEnv(gym.Env):
             # Reset previous_distance for new target
             self.previous_distance = None
             return reward
+        
+        # Progress reward: positive reward for getting closer, negative for getting further
+        distance_delta = self.previous_distance - current_distance
+        progress_reward = distance_delta * 1.0  # Scale factor for progress
+        reward += progress_reward
+
+
+
+        
+        # Add forward motion reward
+        if self.last_linear_velocity > 0:
+            forward_reward = self.last_linear_velocity * 0.05  # Scale factor for forward motion
+            reward += forward_reward
+
+
             
         # Update previous distance
         self.previous_distance = current_distance
         
         # Add a small negative reward for each step to encourage efficiency
         reward -= 0.01
+
+
+
+        # Distance reward with heading factor
+        heading_diff = abs(math.atan2(math.sin(target_heading - current_yaw), 
+                                      math.cos(target_heading - current_yaw)))
+        # 1.0 when aligned, 0.0 when perpendicular, -1.0 when opposite
+        heading_factor = math.cos(heading_diff)  
+
+        # Progress reward scaled by heading
+        distance_delta = self.previous_distance - current_distance
+        # Only reward progress when roughly facing target
+        progress_reward = distance_delta * 1.0 * max(0, heading_factor)  
         
+        # Separate heading reward with larger scale
+        heading_reward = (math.pi - heading_diff) / math.pi
+        reward += heading_reward * 0.5  # Increased from 0.1 to 0.5
+
+
+
         # Optional: Add heading reward
         target_heading = math.atan2(target_y - current_y, target_x - current_x)
         current_yaw = self.current_yaw  # Assuming this is updated by your IMU callback
