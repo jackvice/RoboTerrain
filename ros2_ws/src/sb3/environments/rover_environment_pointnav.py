@@ -416,8 +416,8 @@ class RoverEnv(gym.Env):
         if climbing_status:
             reward -= 1.0 * climbing_severity  # Scales penalty with tilt severity
 
-        if self.total_steps % 10_000 == 0:
-            print(observation)
+        #if self.total_steps % 10_000 == 0:
+        #    print(observation)
         # Debug print statement
         if self.total_steps % 1000 == 0:
             temp_obs_target = observation["target"]

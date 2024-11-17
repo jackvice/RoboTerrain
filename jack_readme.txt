@@ -43,12 +43,12 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 ros2 control list_controllers
 
-#for headless use '-s' for server mode
+#Open an sdf world. for headless use '-s' for server mode
 ign gazebo -v 4 simplecave3.sdf -s
 
 # to open an sdf, first start gazebo with empty then run the ign command
-jack@HAL:~/worlds$ ign gazebo empty.sdf
-ign service -s /world/empty/create --reqtype ignition.msgs.EntityFactory --reptype ignition.msgs.Boolean --timeout 10000 --req 'sdf_filename: "/home/jack/worlds/harmonic/h_terrain/model.sdf"'
+#ign gazebo empty.sdf
+#ign service -s /world/empty/create --reqtype ignition.msgs.EntityFactory --reptype ignition.msgs.Boolean --timeout 10000 --req 'sdf_filename: "/home/jack/worlds/harmonic/h_terrain/model.sdf"'
 
 
 
