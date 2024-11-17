@@ -114,8 +114,10 @@ class RoverEnv(gym.Env):
         # Define action space
         # [linear_velocity, angular_velocity]
         self.action_space = spaces.Box(
-            low=np.array([-0.3, -1.0]),  # [min_linear_vel, min_angular_vel]
-            high=np.array([0.3, 1.0]),   # [max_linear_vel, max_angular_vel]
+            #low=np.array([-0.3, -1.0]),  # [min_linear_vel, min_angular_vel] old slow values so no climb
+            #high=np.array([0.3, 1.0]),   # [max_linear_vel, max_angular_vel] old slow values so no climb
+            low=np.array([-0.8, -2.0]),  # [min_linear_vel, min_angular_vel]
+            high=np.array([0.8, 2.0]),   # [max_linear_vel, max_angular_vel]
             dtype=np.float32
         )
 
@@ -177,7 +179,7 @@ class RoverEnv(gym.Env):
         
         # Success reward: if reached target
         if current_distance < self.success_distance:
-            reward = 50.0
+            reward = 100.0
             self.current_target_idx = (self.current_target_idx + 1) % len(self.target_positions)
             print('######################################################################')
             self.node.get_logger().info(f'Target reached! Moving to target {self.current_target_idx}')
@@ -362,19 +364,19 @@ class RoverEnv(gym.Env):
             if climbing_status == 'forward':
                 print('forward climbing')
                 # If pitched forward (nose up), just reverse straight back
-                twist.linear.x = -0.8  # Strong reverse
+                twist.linear.x = -2.0  # Strong reverse
                 twist.angular.z = 0.0  # Keep straight to avoid scrubbing
                 
             elif climbing_status == 'reverse':
                 print('reverse climbing')
                 # If pitched backward (nose down), move straight forward
-                twist.linear.x = 0.8  # Strong forward
+                twist.linear.x = 2.0  # Strong forward
                 twist.angular.z = 0.0  # Keep straight
                 
             elif climbing_status == 'right_tilt' or climbing_status == 'left_tilt':
                 # For side tilts, just back straight up
                 # Turning during a side tilt could cause more problems with a skid steer
-                twist.linear.x = -0.2
+                twist.linear.x = -1.0
                 twist.angular.z = 0.0
             
             self.publisher.publish(twist)

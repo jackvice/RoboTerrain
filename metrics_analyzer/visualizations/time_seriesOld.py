@@ -29,49 +29,76 @@ class TimeSeriesVisualizer:
         }
         plt.rcParams.update(self.style_settings)
 
+
     def plot_metric_time_series(self,
-                              df: pd.DataFrame,
-                              metric: str,
-                              title: Optional[str] = None,
-                              ci: bool = True) -> plt.Figure:
+                                df: pd.DataFrame,
+                                metric: str,
+                                title: Optional[str] = None,
+                                ci: bool = True) -> plt.Figure:
         """
         Create a publication-ready time series plot for a single metric.
-        
-        Args:
-            df (pd.DataFrame): Input DataFrame
-            metric (str): Metric to plot
-            title (Optional[str]): Plot title
-            ci (bool): Whether to show confidence interval
-            
-        Returns:
-            plt.Figure: Generated figure
         """
+        # Create a copy of the dataframe to modify
+        plot_df = df.copy()
+
+        # Convert Unix timestamp to minutes from start
+        start_time = plot_df['Timestamp'].min()
+        plot_df['Minutes'] = (plot_df['Timestamp'] - start_time) / 60
+        
+        # Define metric mapping from short names to actual column names
+        metric_mapping = {
+            'TC': 'Total Collisions',
+            'CS': 'Current Collision Status',
+            'SM': 'Smoothness Metric',
+            'CS': 'Current Smoothness',
+            'OC': 'Obstacle Clearance',
+            'DT': 'Distance Traveled',
+            'CV': 'Current Velocity',
+            'IM': 'IMU Acceleration Magnitude',
+            'RT': 'Is Rough Terrain'
+        }
+        
+        # Get the full column name
+        column_name = metric_mapping.get(metric, metric)
+        if column_name not in df.columns:
+            raise ValueError(f"Metric '{metric}' not found. Available metrics: {list(metric_mapping.keys())}")
+        
         fig, ax = plt.subplots()
         
         # Plot the main line
         sns.lineplot(
-            data=df,
-            x='Timestamp',
-            y=metric,
-            ci=95 if ci else None,
+            data=plot_df,
+            x='Minutes',
+            y=column_name,
+            errorbar=('ci', 95) if ci else None,
             ax=ax
         )
-        
+    
         # Customize the plot
-        ax.set_xlabel('Time' + (' (%)' if df['Timestamp'].max() <= 100 else ' (s)'))
-        ax.set_ylabel(metric)
+        ax.set_xlabel('Time (minutes)')
+        ax.set_ylabel(column_name)
         
+        # Format x-axis with appropriate intervals
+        max_minutes = plot_df['Minutes'].max()
+        if max_minutes <= 5:
+            ax.set_xticks(np.arange(0, max_minutes + 0.5, 0.5))
+        elif max_minutes <= 10:
+            ax.set_xticks(np.arange(0, max_minutes + 1, 1))
+        else:
+            ax.set_xticks(np.arange(0, max_minutes + 2, 2))
+    
         if title:
             ax.set_title(title)
-            
+        
         # Add grid
         ax.grid(True, linestyle='--', alpha=0.7)
-        
+    
         # Tight layout
         plt.tight_layout()
-        
+    
         return fig
 
+        
     def plot_multi_trial_comparison(self,
                                   trial_data: Dict[str, pd.DataFrame],
                                   metric: str,
@@ -192,7 +219,48 @@ class TimeSeriesVisualizer:
                     bbox_inches='tight'
                 )
 
-if __name__ == '__main__':
-    # Example usage
+
+def main():
+    """Main execution function."""
+    args = parse_args()
+    
+    # Initialize components
+    loader = MetricsDataLoader()
+    stats = MetricsStatistics()
     visualizer = TimeSeriesVisualizer()
-    # Add example usage code here
+    
+    # Create output directory
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Load the CSV file directly
+    try:
+        df = pd.read_csv(args.input_file)
+    except Exception as e:
+        print(f"Error loading CSV file: {e}")
+        return
+        
+    # Display available metrics if requested metric not found
+    available_metrics = [col for col in df.columns if col != 'Timestamp' and col != 'Notes']
+    print(f"Available metrics: {available_metrics}")
+    
+    # Generate plots
+    figs = {}
+    if 'time_series' in args.plot_types:
+        for metric in args.metrics:
+            try:
+                fig = visualizer.plot_metric_time_series(
+                    df,
+                    metric,
+                    title=f'{metric} Time Series'
+                )
+                figs[f'{metric}_time_series'] = fig
+            except ValueError as e:
+                print(f"Error plotting metric '{metric}': {e}")
+                continue
+    
+    # Save plots
+    if figs:
+        visualizer.save_plots(figs, args.output_dir)
+        print(f"Plots saved to {args.output_dir}")
+    else:
+        print("No plots were generated. Please check your metric names and data.")

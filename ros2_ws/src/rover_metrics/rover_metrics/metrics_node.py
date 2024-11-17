@@ -94,7 +94,8 @@ class MetricsNode(Node):
     def setup_logging(self):
         """Set up CSV logging with timestamp and create directory if needed"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_dir = os.path.join(os.getcwd(), 'metric_logs')
+        #log_dir = os.path.join(os.getcwd(), 'metric_logs')
+        log_dir = os.path.join('/home/jack/src/RoboTerrain/metrics_analyzer/data', 'metric_logs')
         os.makedirs(log_dir, exist_ok=True)
         
         self.file_path = os.path.join(log_dir, f'metrics_log_{timestamp}.csv')

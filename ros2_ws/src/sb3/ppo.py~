@@ -1,0 +1,122 @@
+import sys
+import argparse
+from datetime import datetime
+import os
+from stable_baselines3 import PPO
+from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
+from environments.rover_environment_pointnav import RoverEnv
+from stable_baselines3.common.callbacks import CheckpointCallback
+from custom_features_extractor import CustomCombinedExtractor
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Train PPO agent for rover navigation')
+    parser.add_argument('--load', type=str, choices=['True', 'False'], required=True,
+                      help='Whether to load from checkpoint')
+    parser.add_argument('--checkpoint_name', type=str,
+                      help='Path to checkpoint file to load')
+    return parser.parse_args()
+
+def make_env():
+    def _init():
+        return RoverEnv()
+    return _init
+
+def main():
+    args = parse_args()
+    
+    # Hyperparameters for PPO
+    policy_kwargs = dict(
+        features_extractor_class=CustomCombinedExtractor,
+        features_extractor_kwargs=dict(),
+        net_arch=dict(
+            pi=[128, 128],  # Policy network
+            vf=[128, 128]   # Value function network
+        )
+    )
+    
+    # Create timestamp for this training run
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    
+    # Set up environment with normalization
+    env = DummyVecEnv([make_env()])
+    env = VecNormalize(
+        env,
+        norm_obs=True,  # Normalize observations
+        norm_reward=True,  # Normalize rewards
+        clip_obs=20.,
+        clip_reward=30.,
+        gamma=0.99,
+        epsilon=1e-8
+    )
+    
+    # Set up directories
+    checkpoint_dir = "./checkpoints"
+    stats_path = os.path.join(checkpoint_dir, "vec_normalize.pkl")
+    tensorboard_dir = f"./tboard_logs/PPO_{timestamp}"
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    
+    if args.load == 'True':
+        if not args.checkpoint_name:
+            raise ValueError("Checkpoint name must be provided when load is True")
+        # Load existing model and normalization stats
+        model = PPO.load(
+            args.checkpoint_name,
+            env=env,
+            tensorboard_log=tensorboard_dir,
+            learning_rate=3e-4,
+            n_steps=2048,
+            batch_size=64,
+            n_epochs=10,
+            gamma=0.99,
+            gae_lambda=0.95,
+            clip_range=0.2,
+            policy_kwargs=policy_kwargs
+        )
+        # Load normalization statistics if they exist
+        if os.path.exists(stats_path):
+            env = VecNormalize.load(stats_path, env)
+            
+    else:
+        # Create new model with tuned hyperparameters
+        model = PPO(
+            "MultiInputPolicy",
+            env,
+            tensorboard_log=tensorboard_dir,
+            verbose=1,
+            learning_rate=3e-4,
+            n_steps=2048,
+            batch_size=64,
+            n_epochs=10,
+            gamma=0.99,
+            gae_lambda=0.95,
+            clip_range=0.2,
+            policy_kwargs=policy_kwargs
+        )
+
+    # Custom callback to save both model and normalization stats
+    class SaveVecNormalizeCallback(CheckpointCallback):
+        def on_step(self) -> bool:  # Remove the asterisks around on_step
+            if self.n_calls % self.save_freq == 0:
+                path = os.path.join(self.save_path, f"{self.name_prefix}_{self.num_timesteps}_steps")
+                model.save(path)
+                env.save(stats_path)
+            return True  # Return True to continue training
+                
+    # Set up checkpoint callback
+    checkpoint_callback = SaveVecNormalizeCallback(
+        save_freq=100_000,
+        save_path=checkpoint_dir,
+        name_prefix=f"ppo_zero_{timestamp}",
+        save_replay_buffer=False,
+        save_vecnormalize=True
+    )
+    print('now learn')
+    # Train model
+    model.learn(
+        total_timesteps=2_000_000,
+        callback=checkpoint_callback,
+        reset_num_timesteps=False if args.load == 'True' else True
+    )
+
+if __name__ == "__main__":
+    main()

@@ -24,13 +24,13 @@ class MetricsNode(Node):
             'total_collisions': 0,
             'collision_threshold': 0.2,  # 20cm collision threshold
             'smoothness_metric': 0.0,
-            'smoothness_threshold': 2.0,  # Threshold for "rough" movement
+            'smoothness_threshold': 10.0,  # Threshold for "rough" movement
             'obstacle_clearance': float('inf'),
             'min_safe_clearance': 0.5,  # 50cm minimum safe clearance
             'total_distance': 0.0,
             'distance_threshold': 0.5,  # Maximum reasonable distance per update
             'velocity_over_rough': 0.0,
-            'rough_terrain_threshold': 1.5  # m/s^2 acceleration threshold for rough terrain
+            'rough_terrain_threshold': 15.0  # m/s^2 acceleration threshold for rough terrain
         }
         
         # Buffers for metric calculation
@@ -94,7 +94,8 @@ class MetricsNode(Node):
     def setup_logging(self):
         """Set up CSV logging with timestamp and create directory if needed"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_dir = os.path.join(os.getcwd(), 'metric_logs')
+        #log_dir = os.path.join(os.getcwd(), 'metric_logs')
+        log_dir = os.path.join('/home/jack/src/RoboTerrain/metrics_analyzer/data', 'metric_logs')
         os.makedirs(log_dir, exist_ok=True)
         
         self.file_path = os.path.join(log_dir, f'metrics_log_{timestamp}.csv')
@@ -237,13 +238,14 @@ class MetricsNode(Node):
         
         # Prepare notes
         notes = []
+        """
         if current_clearance < self.metrics['min_safe_clearance']:
             notes.append("Low clearance")
         if latest_imu['is_rough']:
             notes.append("Rough terrain")
         if current_smoothness > self.metrics['smoothness_threshold']:
             notes.append("Rough movement")
-            
+        """ 
         # Log to CSV
         with open(self.file_path, mode='a', newline='') as file:
             writer = csv.writer(file)
