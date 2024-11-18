@@ -183,6 +183,21 @@ class MetricsDataLoader:
         Returns:
             Dict[str, pd.DataFrame]: Dictionary containing processed DataFrames
         """
+
+        # Add at the start of the method
+        metric_mapping = {
+            'TC': 'Total Collisions',
+            'SR': 'Success Rate',
+            'MTT': 'Mean Time to Traverse',
+            'TR': 'Traverse Rate',
+            'TSR': 'Total Smoothness of Route',
+            'OC': 'Obstacle Clearance',
+            'VOR': 'Velocity Over Rough Terrain'
+        }
+    
+        # Map the metric codes to actual column names
+        mapped_metrics = [metric_mapping.get(m, m) for m in metrics]
+        
         # Load data
         df = self.load_csv(file_path)
         

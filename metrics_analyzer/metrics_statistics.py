@@ -138,6 +138,22 @@ class MetricsStatistics:
         Returns:
             Dict[str, Dict]: Complete statistical analysis
         """
+
+
+        # Add at the start of the method
+        metric_mapping = {
+            'TC': 'Total Collisions',
+            'SR': 'Success Rate',
+            'MTT': 'Mean Time to Traverse',
+            'TR': 'Traverse Rate',
+            'TSR': 'Total Smoothness of Route',
+            'OC': 'Obstacle Clearance',
+            'VOR': 'Velocity Over Rough Terrain'
+        }
+    
+        # Map the metric codes to actual column names
+        mapped_metrics = [metric_mapping.get(m, m) for m in metrics]
+        
         results = {}
         
         for metric in metrics:

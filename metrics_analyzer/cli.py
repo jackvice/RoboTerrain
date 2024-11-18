@@ -1,136 +1,237 @@
 #!/usr/bin/env python3
 
-import seaborn as sns
-import matplotlib.pyplot as plt
-from pathlib import Path
-from typing import Dict, List, Optional
-import pandas as pd
-import numpy as np
 import argparse
+from pathlib import Path
+from typing import List, Dict, Any
+import sys
+import logging
+
 from data_loader import MetricsDataLoader
 from metrics_statistics import MetricsStatistics
+from visualizations.time_series import TimeSeriesVisualizer
 
-class TimeSeriesVisualizer:
-    """Visualization class for time series metrics data."""
+class MetricsAnalyzerCLI:
+    """Command line interface for the metrics analyzer."""
+    VALID_METRICS = {
+        'TC': 'Total Collisions',
+        'CS': 'Current Collision Status',
+        'SM': 'Smoothness Metric',
+        'OC': 'Obstacle Clearance',
+        'DT': 'Distance Traveled',
+        'CV': 'Current Velocity',
+        'IM': 'IMU Acceleration Magnitude',
+        'RT': 'Is Rough Terrain'
+    }
     
-    def __init__(self):
-        """Initialize the visualizer with publication-ready style settings."""
-        # Set up the style
-        sns.set_style("whitegrid")
-        sns.set_context("paper")
-        
-        # Custom style settings
-        self.style_settings = {
-            'figure.figsize': (10, 6),
-            'figure.dpi': 300,
-            'axes.titlesize': 11,
-            'axes.labelsize': 10,
-            'xtick.labelsize': 9,
-            'ytick.labelsize': 9,
-            'legend.fontsize': 9,
-            'legend.title_fontsize': 10
-        }
-        plt.rcParams.update(self.style_settings)
+    
+    VALID_PLOT_TYPES = [
+        'time_series',
+        'correlation',
+        'aggregate',
+        'comparison'
+    ]
+    
+    VALID_TIME_NORMS = [
+        'percentage',
+        'fixed_interval',
+        'none'
+    ]
 
-    def plot_metric_time_series(self,
-                              df: pd.DataFrame,
-                              metric: str,
-                              title: Optional[str] = None,
-                              ci: bool = True) -> plt.Figure:
-        """
-        Create a publication-ready time series plot for a single metric.
-        """
-        fig, ax = plt.subplots()
+    def __init__(self):
+        """Initialize the CLI parser and logging."""
+        self.parser = argparse.ArgumentParser(
+            description='Analyze and visualize navigation metrics from CSV files.',
+            formatter_class=argparse.RawDescriptionHelpFormatter
+        )
+        self._setup_arguments()
+        self._setup_logging()
         
-        # Plot the main line
-        sns.lineplot(
-            data=df,
-            x='Timestamp',
-            y=metric,
-            ci=95 if ci else None,
-            ax=ax
+    def _setup_logging(self):
+        """Set up logging configuration."""
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        self.logger = logging.getLogger(__name__)
+
+    def _setup_arguments(self):
+        """Set up command line arguments."""
+        # Required arguments
+        self.parser.add_argument(
+            'csv_files',
+            type=Path,
+            nargs='+',
+            help='One or more CSV files containing metrics data'
         )
         
-        # Customize the plot
-        ax.set_xlabel('Time' + (' (%)' if df['Timestamp'].max() <= 100 else ' (s)'))
-        ax.set_ylabel(metric)
+        # Optional arguments
+        self.parser.add_argument(
+            '-m', '--metrics',
+            choices=list(self.VALID_METRICS.keys()),
+            nargs='+',
+            default=list(self.VALID_METRICS.keys()),
+            help='Metrics to analyze (default: all)'
+        )
         
-        if title:
-            ax.set_title(title)
+        self.parser.add_argument(
+            '-p', '--plot-types',
+            choices=self.VALID_PLOT_TYPES,
+            nargs='+',
+            default=['time_series'],
+            help='Types of plots to generate (default: time_series)'
+        )
+        
+        self.parser.add_argument(
+            '-o', '--output-dir',
+            type=Path,
+            default=Path('output'),
+            help='Output directory for plots and analysis (default: ./output)'
+        )
+        
+        self.parser.add_argument(
+            '-n', '--normalize',
+            choices=self.VALID_TIME_NORMS,
+            default='percentage',
+            help='Time normalization method (default: percentage)'
+        )
+        
+        self.parser.add_argument(
+            '--iqr-multiplier',
+            type=float,
+            default=1.5,
+            help='IQR multiplier for outlier detection (default: 1.5)'
+        )
+        
+        self.parser.add_argument(
+            '--save-outliers',
+            action='store_true',
+            help='Save removed outliers to a separate file'
+        )
+        
+        self.parser.add_argument(
+            '--confidence-level',
+            type=float,
+            default=0.95,
+            help='Confidence level for statistical analysis (default: 0.95)'
+        )
+        
+        self.parser.add_argument(
+            '--fixed-interval',
+            type=float,
+            default=1.0,
+            help='Interval (seconds) for fixed-interval normalization (default: 1.0)'
+        )
+
+    def get_args(self) -> Dict[str, Any]:
+        """Parse and validate command line arguments."""
+        args = self.parser.parse_args()
+        
+        # Validate input files
+        self.validate_files(args.csv_files)
+        
+        # Validate output directory
+        self.validate_output_dir(args.output_dir)
+        
+        # Validate confidence level
+        if not 0 < args.confidence_level < 1:
+            sys.exit("Error: Confidence level must be between 0 and 1")
+        
+        # Validate IQR multiplier
+        if args.iqr_multiplier <= 0:
+            sys.exit("Error: IQR multiplier must be positive")
+        
+        # Validate fixed interval
+        if args.fixed_interval <= 0:
+            sys.exit("Error: Fixed interval must be positive")
+        
+        return vars(args)
+
+    def validate_files(self, files: List[Path]) -> None:
+        """Validate that all input files exist and are CSV files."""
+        for file in files:
+            if not file.exists():
+                sys.exit(f"Error: File {file} does not exist")
+            if file.suffix.lower() != '.csv':
+                sys.exit(f"Error: File {file} is not a CSV file")
+
+    def validate_output_dir(self, output_dir: Path) -> None:
+        """Validate and create output directory if it doesn't exist."""
+        try:
+            output_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            sys.exit(f"Error creating output directory: {e}")
+
+    def process_data(self, args: Dict[str, Any]) -> None:
+        """
+        Process data and generate visualizations.
+        """
+        self.logger.info("Starting data processing...")
+
+        metric_mapping = {
+            'TC': 'Total Collisions (TC)',
+            'CS': 'Current Collision Status (CS)',
+            'SM': 'Smoothness Metric (SM)',
+            'OC': 'Obstacle Clearance (OC)',
+            'DT': 'Distance Traveled (DT)',
+            'CV': 'Current Velocity (CV)',
+            'IM': 'IMU Acceleration Magnitude (IM)',
+            'RT': 'Is Rough Terrain (RT)'
+        }
+        
+        # Initialize components
+        data_loader = MetricsDataLoader(iqr_multiplier=args['iqr_multiplier'])
+        statistics = MetricsStatistics(confidence_level=args['confidence_level'])
+        time_series_viz = TimeSeriesVisualizer()
+    
+        # Process each input file
+        for csv_file in args['csv_files']:
+            self.logger.info(f"Processing file: {csv_file}")
+        
+            # Load and process data
+            processed_data = data_loader.process_data(
+                csv_file,
+                args['metrics'],
+                args['normalize'],
+                args['fixed_interval'],
+                args['save_outliers'],
+                args['output_dir']
+            )
+        
+            # Generate visualizations based on plot type
+            if 'time_series' in args['plot_types']:
+                self.logger.info("Generating time series plots...")
+                figures = {}
             
-        # Add grid
-        ax.grid(True, linestyle='--', alpha=0.7)
+                for metric in args['metrics']:
+                    self.logger.info(f"Plotting metric: {metric}")
+                    # Map the metric code to actual column name
+                    metric_name = self.VALID_METRICS[metric]
+                    title = f"{metric_mapping.get(metric, metric)}"
+                    # Basic time series
+                    fig = time_series_viz.plot_metric_time_series(
+                        processed_data['normalized'],
+                        metric_name,
+                        title=title
+                    )
+                    figures[f"{metric}_time_series"] = fig
+                
+                # Save plots
+                output_path = args['output_dir'] / csv_file.stem
+                time_series_viz.save_plots(figures, output_path)
+                self.logger.info(f"Plots saved to: {output_path}")
         
-        # Tight layout
-        plt.tight_layout()
-        
-        return fig
-
-    def save_plots(self,
-                  figs: Dict[str, plt.Figure],
-                  output_path: Path,
-                  formats: List[str] = ['png', 'pdf']) -> None:
-        """Save generated figures in multiple formats."""
-        output_path.mkdir(parents=True, exist_ok=True)
-        
-        for name, fig in figs.items():
-            for fmt in formats:
-                fig.savefig(
-                    output_path / f'{name}.{fmt}',
-                    dpi=300,
-                    bbox_inches='tight'
+            # Only do statistical analysis if needed
+            if 'correlation' in args['plot_types'] or 'aggregate' in args['plot_types']:
+                stats_results = statistics.analyze_trial(
+                    processed_data['normalized'],
+                    args['metrics']
                 )
-                plt.close(fig)  # Close the figure to free memory
-
-def parse_args():
-    """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description='Analyze and visualize metrics data.')
-    parser.add_argument('input_file', type=Path, help='Path to input CSV file')
-    parser.add_argument('--metrics', nargs='+', required=True,
-                      help='List of metrics to analyze')
-    parser.add_argument('--plot-types', nargs='+', default=['time_series'],
-                      choices=['time_series', 'statistics'],
-                      help='Types of plots to generate')
-    parser.add_argument('--output-dir', type=Path, default=Path('output'),
-                      help='Output directory for plots and statistics')
-    parser.add_argument('--time-normalize', choices=['percentage', 'fixed_interval', 'none'],
-                      default='percentage', help='Time normalization method')
-    return parser.parse_args()
 
 def main():
-    """Main execution function."""
-    args = parse_args()
-    
-    # Initialize components
-    loader = MetricsDataLoader()
-    stats = MetricsStatistics()
-    visualizer = TimeSeriesVisualizer()
-    
-    # Create output directory
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Load and process data
-    data_dict = loader.process_data(
-        args.input_file,
-        args.metrics,
-        normalize_method=args.time_normalize
-    )
-    
-    # Generate plots
-    figs = {}
-    if 'time_series' in args.plot_types:
-        for metric in args.metrics:
-            fig = visualizer.plot_metric_time_series(
-                data_dict['normalized'],
-                metric,
-                title=f'{metric} Time Series'
-            )
-            figs[f'{metric}_time_series'] = fig
-    
-    # Save plots
-    if figs:
-        visualizer.save_plots(figs, args.output_dir)
-        print(f"Plots saved to {args.output_dir}")
+    """Main entry point for the CLI."""
+    cli = MetricsAnalyzerCLI()
+    args = cli.get_args()  # Changed from parse_args() to get_args()
+    cli.process_data(args)
 
 if __name__ == '__main__':
     main()
