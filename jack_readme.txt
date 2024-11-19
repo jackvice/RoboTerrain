@@ -8,6 +8,9 @@ Please ask me any questions that you have or clarifications that you need. If yo
 Do not write the program yet. Let us work on getting all issues resolved and then write the program.
 
 
+
+
+
 # Dream Rover commands:
 
 python dreamerv3/main.py --configs rover --logdir ~/logdir/r_camera_test
@@ -17,7 +20,6 @@ python dreamerv3/main.py --configs rover --logdir ~/logdir/rover
 python dreamerv3/main.py --configs turtlebot --logdir ~/logdir/turtlebot
 
 python dreamerv3/main.py --logdir ~/logdir/{timestamp} --configs dmc_proprio
-
 
 
 

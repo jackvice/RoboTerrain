@@ -16,6 +16,7 @@
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/simplecave3.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/rubicon.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/office_cpr_construction.world
+/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/maze_simple.sdf~
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/inspection.world
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/agriculture.world
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/yosemite.world
@@ -24,6 +25,7 @@
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/depot.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/harmonic.sdf~
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/office_cpr_construction.world~
+/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/maze_simple.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/upb12.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/ament_index/resource_index/package_run_dependencies/roverrobotics_gazebo
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/ament_index/resource_index/parent_prefix_path/roverrobotics_gazebo

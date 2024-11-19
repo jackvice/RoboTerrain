@@ -20,7 +20,7 @@ from gazebo_msgs.srv import SetEntityState
 class RoverEnv(gym.Env):
     """Custom Environment that follows gymnasium interface"""
     metadata = {'render_modes': ['human']}
-    def __init__(self, size=(64, 64), length=6000, scan_topic='/scan', imu_topic='/imu/data',
+    def __init__(self, size=(64, 64), length=12000, scan_topic='/scan', imu_topic='/imu/data',
                  cmd_vel_topic='/cmd_vel', camera_topic='/camera/image_raw',
                  connection_check_timeout=30, lidar_points=640, max_lidar_range=12.0):
 
@@ -105,7 +105,7 @@ class RoverEnv(gym.Env):
         self.current_pose.orientation.w = 1.0  # w=1 represents no rotation
         
         #point navigation
-        #self.target_positions = [(-9,8),(-3,9),(-2,6),(-9,-5),(-2,-8),(-3,-1)]
+        self.target_positions = [(-9,8),(-3,9),(-2,6),(-9,-5),(-2,-8),(-3,-1)]
         self.target_positions = [(-2,6), (-4,3), (-2,-3)]
         self.current_target_idx = 0
         self.success_distance = 0.5  # Distance threshold to consider target reached
@@ -116,8 +116,8 @@ class RoverEnv(gym.Env):
         self.action_space = spaces.Box(
             #low=np.array([-0.3, -1.0]),  # [min_linear_vel, min_angular_vel] old slow values so no climb
             #high=np.array([0.3, 1.0]),   # [max_linear_vel, max_angular_vel] old slow values so no climb
-            low=np.array([-0.8, -2.0]),  # [min_linear_vel, min_angular_vel]
-            high=np.array([0.8, 2.0]),   # [max_linear_vel, max_angular_vel]
+            low=np.array([-0.8, -3.0]),  # [min_linear_vel, min_angular_vel]
+            high=np.array([0.8, 3.0]),   # [max_linear_vel, max_angular_vel]
             dtype=np.float32
         )
 
@@ -190,7 +190,7 @@ class RoverEnv(gym.Env):
         # 2. Collision penalty
         min_distance = np.min(self.lidar_data[np.isfinite(self.lidar_data)])
         if min_distance < collision_threshold:
-            return -1.0
+            return -10.0
 
 
         # Calculate reward
@@ -204,7 +204,7 @@ class RoverEnv(gym.Env):
         # Progress reward only when facing within 90 degrees of target
         distance_delta = self.previous_distance - current_distance
         if heading_diff < math.pi/2:  # 90 degrees
-            reward += distance_delta * 20.0
+            reward += distance_delta * 80.0
     
         # Update previous distance
         self.previous_distance = current_distance
@@ -416,7 +416,7 @@ class RoverEnv(gym.Env):
         }
         
         if climbing_status:
-            reward -= 1.0 * climbing_severity  # Scales penalty with tilt severity
+            reward -= 10.0 * climbing_severity  # Scales penalty with tilt severity
 
         #if self.total_steps % 10_000 == 0:
         #    print(observation)

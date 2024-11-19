@@ -2,15 +2,13 @@ import sys
 import argparse
 from datetime import datetime
 import os
-ros_path = '/opt/ros/humble/lib/python3.10/site-packages'
-if ros_path not in sys.path:
-    sys.path.append(ros_path)
-from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from environments.rover_environment_pointnav import RoverEnv
 from stable_baselines3.common.callbacks import CheckpointCallback
 from custom_features_extractor import CustomCombinedExtractor
+from stable_baselines3.common.monitor import Monitor
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train PPO agent for rover navigation')
@@ -19,6 +17,13 @@ def parse_args():
     parser.add_argument('--checkpoint_name', type=str,
                       help='Path to checkpoint file to load')
     return parser.parse_args()
+
+def make_env():
+    def _init():
+        env = RoverEnv()
+        env = Monitor(env)
+        return env
+    return _init
 
 def main():
     args = parse_args()
@@ -32,7 +37,16 @@ def main():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     
     # Set up environment
-    env = RoverEnv()
+    env = DummyVecEnv([make_env()])  # Note: Pass a list with make_env function
+    env = VecNormalize(
+        env,
+        norm_obs=True,  # Normalize observations
+        norm_reward=True,  # Normalize rewards
+        clip_obs=20.,
+        clip_reward=100.,
+        gamma=0.99,
+        epsilon=1e-8
+    )
     
     # Set up directories
     checkpoint_dir = "./checkpoints"
@@ -59,7 +73,7 @@ def main():
     checkpoint_callback = CheckpointCallback(
         save_freq=100_000,
         save_path=checkpoint_dir,
-        name_prefix=f"ppo_rover_model_{timestamp}",
+        name_prefix=f"ppo_zero_{timestamp}",
         save_replay_buffer=False,
         save_vecnormalize=True
     )
