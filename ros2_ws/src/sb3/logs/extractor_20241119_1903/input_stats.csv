@@ -1,1 +1,0 @@
-sequence,timestamp,lidar_min,lidar_max,lidar_mean,lidar_std,pose_min,pose_max,pose_mean,pose_std,imu_min,imu_max,imu_mean,imu_std,target_min,target_max,target_mean,target_std
