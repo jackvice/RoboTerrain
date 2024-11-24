@@ -3,6 +3,7 @@ import csv
 import time
 import torch as th
 from pathlib import Path
+import numpy as np
 
 import torch.nn as nn
 from torch import Tensor
@@ -47,7 +48,6 @@ class LoggingWrapper(nn.Module):
         self.sequence += 1
         
         return output
-
         
     def get_last_sequence(self):
         """Get the last sequence number from both files and return the max + 1"""
@@ -95,34 +95,52 @@ class LoggingWrapper(nn.Module):
                 writer = csv.writer(f)
                 writer.writerow(output_header)
     
-    def calculate_stats(self, tensor):
+    def calculate_stats(self, tensor, is_lidar=False):
         """Calculate statistics for a tensor, handling NaN values"""
         try:
             if th.isnan(tensor).any():
                 return 'NaN', 'NaN', 'NaN', 'NaN'
             
+            # If it's lidar data, sample every 5th point
+            if is_lidar:
+                tensor = tensor[::5]
+            
             return (
-                float(tensor.min().item()),
-                float(tensor.max().item()),
-                float(tensor.mean().item()),
-                float(tensor.std().item())
+                round(float(tensor.min().item()), 3),
+                round(float(tensor.max().item()), 3),
+                round(float(tensor.mean().item()), 3),
+                round(float(tensor.std().item()), 3)
             )
         except:
             return 'NaN', 'NaN', 'NaN', 'NaN'
-    
+
     def log_input_stats(self, observations, timestamp):
         """Log statistics for each input observation"""
+        # Debug print
+        lidar_tensor = observations['lidar']
+        if len(lidar_tensor.shape) > 1:
+            # If 2D array, flatten it first
+            lidar_tensor = lidar_tensor.flatten()
+            
+            # Take every 5th point
+        sampled_tensor = lidar_tensor[::5]
+    
+        # Calculate stats on sampled data
         stats = []
         for key in ['lidar', 'pose', 'imu', 'target']:
             tensor = observations[key]
-            stats.extend(self.calculate_stats(tensor))
-            
+            if key == 'lidar':
+                # Use the sampled tensor for lidar
+                tensor = sampled_tensor
+            stats.extend(self.calculate_stats(tensor, is_lidar=(key=='lidar')))
+    
         row = [self.sequence, timestamp] + stats
-        
+    
         with open(self.input_file, 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(row)
-    
+
+            
     def log_output_stats(self, output_tensor, timestamp):
         """Log statistics for the concatenated output"""
         stats = self.calculate_stats(output_tensor)
@@ -131,7 +149,6 @@ class LoggingWrapper(nn.Module):
         with open(self.output_file, 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(row)
-    
     
     def __call__(self, observations):
         """Allow the wrapper to be called like the original extractor"""

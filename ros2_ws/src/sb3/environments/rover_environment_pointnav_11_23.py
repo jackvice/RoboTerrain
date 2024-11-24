@@ -67,12 +67,6 @@ class RoverEnv(gym.Env):
             qos_profile
         )
 
-        # Create service client for resetting robot pose
-        #self.reset_client = self.node.create_client(SetEntityState, '/gazebo/set_entity_state')
-        # Wait for service to become available
-        #while not self.reset_client.wait_for_service(timeout_sec=1.0):
-        #    print('Waiting for /gazebo/set_entity_state service...')
-
         #self.set_entity_state_client = self.node.create_client(SetEntityState, '/set_entity_state')
         
         # Initialize environment parameters
@@ -189,7 +183,7 @@ class RoverEnv(gym.Env):
         
         # Success reward: if reached target
         if current_distance < self.success_distance:
-            reward = 50.0 #100.0
+            reward = 100.0
             self.current_target_idx = (self.current_target_idx + 1) % len(self.target_positions)
             print('######################################################################')
             self.node.get_logger().info(f'Target reached! Moving to target {self.current_target_idx}')
@@ -200,7 +194,7 @@ class RoverEnv(gym.Env):
         # 2. Collision penalty
         min_distance = np.min(self.lidar_data[np.isfinite(self.lidar_data)])
         if min_distance < collision_threshold:
-            return -1.0 #-10.0
+            return -10.0
 
 
         # Calculate reward
@@ -369,7 +363,7 @@ class RoverEnv(gym.Env):
             self.is_flipped = True
             return True
         return False
-    
+
 
     def reset(self, seed=None, options=None):
         """Reset the environment to its initial state"""
