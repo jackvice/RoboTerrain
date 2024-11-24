@@ -1,17 +1,18 @@
 import gymnasium as gym
 import numpy as np
 import rclpy
+import subprocess
+import time
+import math
 from geometry_msgs.msg import Twist, Pose, PoseArray, Point, Quaternion
 from sensor_msgs.msg import LaserScan, Imu
 from nav_msgs.msg import Odometry
 from cv_bridge import CvBridge
 from transforms3d.euler import quat2euler
 from gymnasium import spaces
-import time
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from std_srvs.srv import Empty
-import math
 from geometry_msgs.msg import Twist
 from gazebo_msgs.msg import EntityState
 from gazebo_msgs.srv import SetEntityState
@@ -371,7 +372,50 @@ class RoverEnv(gym.Env):
         return False
     
 
+
     def reset(self, seed=None, options=None):
+        """Reset the environment to its initial state"""
+        super().reset(seed=seed)
+    
+        # Reset robot pose using ign service
+        try:
+            reset_cmd = [
+                'ign', 'service', '-s', '/world/maze/set_pose',
+                '--reqtype', 'ignition.msgs.Pose',
+                '--reptype', 'ignition.msgs.Boolean',
+                '--timeout', '2000',
+                '--req', 'name: "rover_zero4wd", position: {x: 0, y: 0, z: 0.1}, orientation: {x: 0, y: 0, z: 0, w: 1}'
+            ]
+            result = subprocess.run(reset_cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                print(f"Failed to reset robot pose: {result.stderr}")
+        except Exception as e:
+            print(f"Error executing reset command: {str(e)}")
+
+        # Reset internal state
+        self._step = 0
+        self.last_linear_velocity = 0.0
+        self.steps_since_correction = self.cooldown_steps
+        self.is_flipped = False
+        # Reset PointNav-specific variables
+        self.current_target_idx = 0
+        self.previous_distance = None
+        
+        # Add a small delay to ensure the robot has time to reset
+        for _ in range(5):  # Increased from 3 to 5 to allow more time for pose reset
+            rclpy.spin_once(self.node, timeout_sec=0.1)
+    
+        observation = {
+            'lidar': self.lidar_data,
+            'pose': self.rover_position,
+            'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
+                            dtype=np.float32),
+            'target': self.get_target_info()
+        }
+
+        return observation, {}
+    
+    def resetOld(self, seed=None, options=None):
         """Reset the environment to its initial state"""
         super().reset(seed=seed)
 
@@ -382,8 +426,8 @@ class RoverEnv(gym.Env):
         self.is_flipped = False
 
         # Reset PointNav-specific variables
-        #self.current_target_idx = 0
-        #self.previous_distance = None
+        self.current_target_idx = 0
+        self.previous_distance = None
 
         # Ensure we get fresh sensor data after reset
         for _ in range(3):  # Spin a few times to get fresh data
