@@ -227,6 +227,8 @@ Contributions are welcome! Please follow these guidelines:
 2. **Ensure code quality** by following best practices and including docstrings.
 3. **Submit a pull request** with a detailed description of your changes.
 
+
+
 ## License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
@@ -238,8 +240,21 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
-   (Cite source models)
+
 ```
+
+
+## Third-Party Licenses
+
+This repository integrates components from several open-source projects. The licensing details for these components are as follows:
+
+- **Gazebo Fuel Terrain Models**: Apache 2.0 License. See [gazebosim.org](https://app.gazebosim.org/dashboard).
+- **Rover Zero Robot Model**: Apache 2.0 License. See [Rover Robotics Repository](https://github.com/roverrobotics).
+- **Leo Rover Robot Model**: MIT License. See [Leo Rover Repository](https://github.com/LeoRover/leo_robot).
+- **Clearpath Robotics Terrain and Husky Models**: BSD License. See [Clearpath Robotics Repositories](https://github.com/clearpathrobotics).
+
+Each license allows for reuse and distribution with proper attribution and adherence to their terms.
+
 
 For the full license text, please refer to the [LICENSE](LICENSE) file included in the repository.
 
