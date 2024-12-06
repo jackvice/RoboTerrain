@@ -59,6 +59,12 @@ The framework is designed to simulate the Rover Zero robot, but it can be extend
 - **X11 Server**: For GUI applications like Gazebo (usually available on Linux systems).
 
 ## Getting Started
+### Installation
+Main dependencies: 
+
+* [ROS2 Humble](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html)
+* [Gazebo Fortress](https://gazebosim.org/docs/latest/ros_installation/)
+* [Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3)
 
 ### Clone the Repository
 

@@ -9,7 +9,8 @@
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/launch/2wd_rover_gazebo.launch.py
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/launch/indoor_miti_gazebo.launch.py
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/maze.sdf
-/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/moon_garden.sdf
+/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/too_big/moon_garden.sdf
+/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/island.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/fortress.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/office_cpr_construction.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/warehouse.sdf
@@ -18,10 +19,11 @@
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/office_cpr_construction.world
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/maze_simple.sdf~
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/inspection.world
+/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/broken/harmonic.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/agriculture.world
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/yosemite.world
+/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/clearpath_LICENSE.txt
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/maze_and_person.sdf
-/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/harmonic.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/depot.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/harmonic.sdf~
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/office_cpr_construction.world~

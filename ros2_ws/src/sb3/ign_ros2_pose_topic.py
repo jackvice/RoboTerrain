@@ -1,4 +1,5 @@
 import rclpy
+import sys
 from rclpy.node import Node
 from geometry_msgs.msg import PoseArray, Pose, TransformStamped
 import tf2_ros
@@ -7,8 +8,11 @@ import threading
 import subprocess
 
 class PoseConverterNode(Node):
-    def __init__(self):
+    def __init__(self, world_name, robot_name):
         super().__init__('pose_converter')
+        
+        self.world_name = world_name
+        self.robot_name = robot_name
         
         # Initialize the pose lock
         self.pose_lock = threading.Lock()
@@ -29,10 +33,10 @@ class PoseConverterNode(Node):
             
         # TF2 broadcaster
         self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
-        
-        # Start the pose processing
+
+        # Start the pose processing with dynamic world name
         self.process = subprocess.Popen(
-            ['ign', 'topic', '-e', '-t', '/world/maze/dynamic_pose/info'],
+            ['ign', 'topic', '-e', '-t', f'/world/{self.world_name}/dynamic_pose/info'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True
@@ -71,8 +75,9 @@ class PoseConverterNode(Node):
                         line = self.process.stdout.readline()
                         if not line or '}' in line:
                             break
-                            
-                        if 'name: "rover_zero4wd"' in line:
+                        
+                        if f'name: "{self.robot_name}"' in line:
+                        #if 'name: "rover_zero4wd"' in line:
                             is_rover = True
                         elif 'position {' in line and is_rover:
                             # Read position
@@ -120,7 +125,8 @@ class PoseConverterNode(Node):
                         t = TransformStamped()
                         t.header.stamp = self.get_clock().now().to_msg()
                         t.header.frame_id = 'world'
-                        t.child_frame_id = 'rover_zero4wd'
+                        t.child_frame_id = self.robot_name
+                        #t.child_frame_id = 'rover_zero4wd'
                         t.transform.translation.x = current_pose.position.x
                         t.transform.translation.y = current_pose.position.y
                         t.transform.translation.z = current_pose.position.z
@@ -135,6 +141,27 @@ class PoseConverterNode(Node):
             self.process.terminate()
 
 def main(args=None):
+    if len(sys.argv) != 3:
+        print("Usage: python3 ign_ros2_pose_topic.py <world_name> <robot_name>")
+        sys.exit(1)
+        
+    world_name = sys.argv[1]
+    robot_name = sys.argv[2]
+    
+    rclpy.init(args=args)
+    node = PoseConverterNode(world_name, robot_name)
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+            
+def mainOld(args=None):
     rclpy.init(args=args)
     node = PoseConverterNode()
     try:
