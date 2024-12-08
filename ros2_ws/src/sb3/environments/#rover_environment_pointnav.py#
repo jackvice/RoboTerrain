@@ -210,9 +210,8 @@ class RoverEnv(gym.Env):
         # forward reward
         if self.last_linear_velocity > 0.0:
             reward += self.last_linear_velocity / 20
-        else:
-            reward += turn_penilty
-        #reward += self.last_linear_velocity / 20
+
+        reward += self.last_linear_velocity / 20
         if self.total_steps % 10000 == 0:
             print('######################### velocity reward', reward)
         reward -= abs(self.last_angular_velocity/20)

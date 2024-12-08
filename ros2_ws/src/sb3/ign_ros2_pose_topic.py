@@ -158,9 +158,11 @@ def main(args=None):
         node.destroy_node()
         rclpy.shutdown()
 
+
 if __name__ == '__main__':
     main()
-            
+
+
 def mainOld(args=None):
     rclpy.init(args=args)
     node = PoseConverterNode()
@@ -171,6 +173,3 @@ def mainOld(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
-
-if __name__ == '__main__':
-    main()
