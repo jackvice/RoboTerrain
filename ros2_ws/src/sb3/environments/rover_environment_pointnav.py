@@ -116,10 +116,15 @@ class RoverEnv(gym.Env):
         #point navigation
         #self.target_positions = [(-9,9),(0,0),(-9,-9),(-1,-2),(-9,-9)]
         #self.target_positions = [(-2,6), (-4,3), (-2,-3)]
-        self.target_positions = [(2,4), (-5,5), (-2,-1), (-8, 1)]
-        self.current_target_idx = 0
+        #self.target_positions = [(2, 2),(-2,-0), (-3,5), (-1,0), (2, 2), (-1,3)]
+        #self.current_target_idx
+        self.target_positions_x = 0
+        self.target_positions_y = 0
+
         self.success_distance = 1.0  # Distance threshold to consider target reached
         self.previous_distance = None  # For progress reward
+        self.the_world = 'maze'
+        self.world_pose_path = '/world/' + self.the_world + '/set_pose'
         
         # Define action space
         # [linear_velocity, angular_velocity]
@@ -165,10 +170,12 @@ class RoverEnv(gym.Env):
 
 
     def task_reward(self):
-        collision_threshold = 0.5
+        collision_threshold = 0.4
         max_radius = 12.0
         too_far_penilty = -10
-        turn_penilty = -0.05
+        turn_penilty = -.02
+        reverse_penilty = -0.05
+        distance_scaling_factor = 20
         """Simplified reward function for point navigation task"""
         if self.current_pose is None:
             return 0.0
@@ -176,7 +183,9 @@ class RoverEnv(gym.Env):
         # Get current position and target
         current_x = self.current_pose.position.x
         current_y = self.current_pose.position.y
-        target_x, target_y = self.target_positions[self.current_target_idx]
+        #target_x, target_y = self.target_positions[self.current_target_idx]
+        target_x = self.target_positions_x
+        target_y = self.target_positions_y 
 
         # Calculate distance to current target
         current_distance = math.sqrt(
@@ -192,9 +201,11 @@ class RoverEnv(gym.Env):
         # Success reward: if reached target
         if current_distance < self.success_distance:
             reward = 100.0
-            self.current_target_idx = (self.current_target_idx + 1) % len(self.target_positions)
+            self.target_positions_x = np.random.uniform(-3.5, 2.5)  # Random x between -3.5 and 2.5
+            self.target_positions_y = np.random.uniform(-2.5, 5.0)   # Random y between -2.5 and 5.0
+            #self.current_target_idx = (self.current_target_idx + 1) % len(self.target_positions)
             print('######################################################################')
-            self.node.get_logger().info(f'Target reached! Moving to target {self.current_target_idx}')
+            self.node.get_logger().info(f'Target reached! Moving to target x,y: ({self.target_positions_x}, {self.target_positions_y}), ')
             print('######################################################################')
             self.previous_distance = None
             return reward
@@ -202,45 +213,53 @@ class RoverEnv(gym.Env):
         # 2. Collision penalty
         min_distance = np.min(self.lidar_data[np.isfinite(self.lidar_data)])
         if min_distance < collision_threshold:
-            return -100.0 #-10.0
+            return -10.0
 
 
         # Calculate reward
         reward = 0.0
         # forward reward
         if self.last_linear_velocity > 0.0:
-            reward += self.last_linear_velocity / 20
+            reward += self.last_linear_velocity / 10
         else:
-            reward += turn_penilty
+            reward += reverse_penilty
+
         #reward += self.last_linear_velocity / 20
         if self.total_steps % 10000 == 0:
-            print('######################### velocity reward', reward)
-        reward -= abs(self.last_angular_velocity/20)
+            print('######################### lin velocity:',self.last_linear_velocity, ', reward', reward)
+            
+        if abs(self.last_angular_velocity) > 0.1:
+        #    reward += math.log( abs( self.last_angular_velocity ) ) / 20
+            reward += turn_penilty
         if self.total_steps % 10000 == 0:
-            print('######################### velocity reward - angular velocity', reward)
+            print('######################### angular velocity', self.last_angular_velocity, ', reward',
+                  reward)
+            
         # Calculate heading
         target_heading = math.atan2(target_y - current_y, target_x - current_x)
         heading_diff = abs(math.atan2(math.sin(target_heading - self.current_yaw), 
                                  math.cos(target_heading - self.current_yaw)))
     
-        # Progress reward only when facing within 90 degrees of target
         distance_delta = self.previous_distance - current_distance
-        #if heading_diff < math.pi/2:  # 90 degrees
-        #reward += distance_delta * 20.0
+        
+        # Progress reward only when facing within 90 degrees of target
+        if heading_diff < math.pi/2 and (distance_delta > 0):  
+            reward += distance_delta * distance_scaling_factor  
+            
 
-        if current_distance > max_radius:
-            reward += too_far_penilty
+        #if current_distance > max_radius:
+        #    reward += too_far_penilty
         
         # Update previous distance
         self.previous_distance = current_distance
 
         # Step penalty
         reward -= 0.01
-
+            
         # Debug info (simplified)
         if self.total_steps % 1000 == 0:
             self.node.get_logger().info(
-                f'Status: Target: {self.current_target_idx}, '
+                f'Status: Target x,y: ({self.target_positions_x}, {self.target_positions_y}), '
                 f'Distance: {current_distance:.2f}m, '
                 f'Target Heading: {math.degrees(target_heading):.1f}°, '
                 f'Heading diff: {math.degrees(heading_diff):.1f}°, '
@@ -259,7 +278,9 @@ class RoverEnv(gym.Env):
         
         current_x = self.current_pose.position.x
         current_y = self.current_pose.position.y
-        target_x, target_y = self.target_positions[self.current_target_idx]
+        #target_x, target_y = self.target_positions[self.current_target_idx]
+        target_x = self.target_positions_x
+        target_y = self.target_positions_y 
     
         # Calculate distance
         distance = math.sqrt(
@@ -369,7 +390,7 @@ class RoverEnv(gym.Env):
                 #f"climbing_status: {climbing_status},  climbing_severity: {climbing_severity},  "
                 #f"Pitch: {round(self.current_pitch,3)},  Roll: {round(self.current_roll,3)},  "
                 #f"min lidar: {round(np.nanmin(self.lidar_data),3)}   Yaw: {round(self.current_yaw,3)},  "
-                f"current target: {self.target_positions[self.current_target_idx]},  "
+                f"current target x,y: ({self.target_positions_x}, {self.target_positions_y}), "
                 f"distance and angle to target: {temp_obs_target},  "
                 #f"previous distance: {self.previous_distance},  "
                 f"Final Reward: {reward:.3f},  "
@@ -398,7 +419,7 @@ class RoverEnv(gym.Env):
         # Reset robot pose using ign service
         try:
             reset_cmd = [
-                'ign', 'service', '-s', '/world/moon/set_pose',
+                'ign', 'service', '-s', self.world_pose_path,
                 '--reqtype', 'ignition.msgs.Pose',
                 '--reptype', 'ignition.msgs.Boolean',
                 '--timeout', '2000',
@@ -416,11 +437,13 @@ class RoverEnv(gym.Env):
         self.steps_since_correction = self.cooldown_steps
         self.is_flipped = False
         # Reset PointNav-specific variables
-        self.current_target_idx = 0
+        self.target_positions_x = np.random.uniform(-3.5, 2.5)  # Random x between -3.5 and 2.5
+        self.target_positions_y = np.random.uniform(-2.5, 5.0)   # Random y between -2.5 and 5.0
+        #self.current_target_idx = 0
         self.previous_distance = None
         
         # Add a small delay to ensure the robot has time to reset
-        for _ in range(5):  # Increased from 3 to 5 to allow more time for pose reset
+        for _ in range(100):  # Increased from 3 to 5 to allow more time for pose reset
             rclpy.spin_once(self.node, timeout_sec=0.1)
     
         observation = {
@@ -433,34 +456,6 @@ class RoverEnv(gym.Env):
 
         return observation, {}
     
-
-    def resetOld(self, seed=None, options=None):
-        """Reset the environment to its initial state"""
-        super().reset(seed=seed)
-
-        # Reset internal state
-        self._step = 0
-        self.last_linear_velocity = 0.0
-        self.steps_since_correction = self.cooldown_steps
-        self.is_flipped = False
-
-        # Reset PointNav-specific variables
-        self.current_target_idx = 0
-        self.previous_distance = None
-
-        # Ensure we get fresh sensor data after reset
-        for _ in range(3):  # Spin a few times to get fresh data
-            rclpy.spin_once(self.node, timeout_sec=0.1)
-
-        observation = {
-            'lidar': self.lidar_data,
-            'pose': self.rover_position,  # Changed from 'odom' to 'pose'
-            'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
-                            dtype=np.float32),
-            'target': self.get_target_info()
-        }
-    
-        return observation, {}
 
 
     def is_climbing_wall(self):

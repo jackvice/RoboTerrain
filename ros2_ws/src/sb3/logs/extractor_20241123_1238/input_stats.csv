@@ -1,2 +1,0 @@
-sequence,timestamp,lidar_min,lidar_max,lidar_mean,lidar_std,pose_min,pose_max,pose_mean,pose_std,imu_min,imu_max,imu_mean,imu_std,target_min,target_max,target_mean,target_std
-1,1732383522833,2.985,12.0,7.636,3.177,-0.317,1.155,0.28,0.775,-1.372,0.001,-0.457,0.792,-2.505,11.702,4.599,10.045

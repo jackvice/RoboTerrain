@@ -161,7 +161,74 @@ class MetricsAnalyzerCLI:
         except Exception as e:
             sys.exit(f"Error creating output directory: {e}")
 
+            
     def process_data(self, args: Dict[str, Any]) -> None:
+        """
+        Process data and generate visualizations.
+        """
+        self.logger.info("Starting data processing...")
+
+        metric_mapping = {
+            'TC': 'Total Collisions (TC)',
+            'CS': 'Current Collision Status (CS)',
+            'SM': 'Smoothness Metric (SM)',
+            'OC': 'Obstacle Clearance (OC)',
+            'DT': 'Distance Traveled (DT)',
+            'CV': 'Current Velocity (CV)',
+            'IM': 'IMU Acceleration Magnitude (IM)',
+            'RT': 'Is Rough Terrain (RT)'
+        }
+        
+        # Initialize components
+        data_loader = MetricsDataLoader(iqr_multiplier=args['iqr_multiplier'])
+        statistics = MetricsStatistics(confidence_level=args['confidence_level'])
+        time_series_viz = TimeSeriesVisualizer()
+        
+        # Store all trial data
+        trial_data = {}
+        
+        # Process each input file
+        for csv_file in args['csv_files']:
+            self.logger.info(f"Processing file: {csv_file}")
+            
+            # Load and process data
+            processed_data = data_loader.process_data(
+                csv_file,
+                args['metrics'],
+                'none',
+                args['fixed_interval'],
+                args['save_outliers'],
+                args['output_dir']
+            )
+            
+            # Store processed data with trial name
+            trial_name = f"Trial_{csv_file.stem}"
+            trial_data[trial_name] = processed_data['normalized']
+        
+        # Generate visualizations based on plot type
+        if 'time_series' in args['plot_types']:
+            self.logger.info("Generating time series plots...")
+            figures = {}
+            
+            for metric in args['metrics']:
+                self.logger.info(f"Plotting metric: {metric}")
+                metric_name = self.VALID_METRICS[metric]
+                title = f"{metric_mapping.get(metric, metric)}"
+                
+                # Create combined plot for all trials
+                fig = time_series_viz.plot_multi_trial_comparison(
+                    trial_data,
+                    metric_name,
+                    title=title
+                )
+                figures[f"{metric}_comparison"] = fig
+            
+            # Save plots to output directory
+            output_path = args['output_dir'] / "combined_metrics"
+            time_series_viz.save_plots(figures, output_path)
+            self.logger.info(f"Combined plots saved to: {output_path}")
+            
+    def process_dataold(self, args: Dict[str, Any]) -> None:
         """
         Process data and generate visualizations.
         """

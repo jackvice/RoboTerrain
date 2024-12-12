@@ -30,6 +30,8 @@ class TimeSeriesVisualizer:
         plt.rcParams.update(self.style_settings)
 
 
+
+        
     def plot_metric_time_series(self,
                                 df: pd.DataFrame,
                                 metric: str,
@@ -65,6 +67,189 @@ class TimeSeriesVisualizer:
         return fig
 
     def plot_multi_trial_comparison(self,
+                                  trial_data: Dict[str, pd.DataFrame],
+                                  metric: str,
+                                  title: Optional[str] = None) -> plt.Figure:
+        """
+        Create a comparison plot of multiple trials for a single metric.
+        
+        Args:
+            trial_data (Dict[str, pd.DataFrame]): Dictionary of trial DataFrames
+            metric (str): Metric to plot
+            title (Optional[str]): Plot title
+            
+        Returns:
+            plt.Figure: Generated figure
+        """
+        fig, ax = plt.subplots()
+        
+        # Plot each trial
+        for trial_name, df in trial_data.items():
+            # Convert timestamp to proper minutes
+            df = df.copy()
+            start_time = df['Timestamp'].iloc[0]
+            # Convert elapsed seconds to minutes
+            df['Minutes'] = (df['Timestamp'] - start_time) / 60.0
+            
+            sns.lineplot(
+                data=df,
+                x='Minutes',
+                y=metric,
+                label=trial_name,
+                ax=ax
+            )
+        
+        # Add collision threshold line if this is Obstacle Clearance
+        if 'Obstacle Clearance' in metric:
+            ax.axhline(y=0.4, color='red', linestyle='--', alpha=0.7)
+            ax.text(ax.get_xlim()[1], 0.4, 'Collision Threshold', 
+                   color='red', va='bottom', ha='right')
+        
+        # Customize the plot
+        ax.set_xlabel('Time (minutes)')
+        if 'Obstacle Clearance' in metric:
+            ax.set_ylabel('Obstacle Clearance (meters)')
+        else:
+            ax.set_ylabel(metric)
+        
+        if title:
+            ax.set_title(title)
+        
+        # Add grid
+        ax.grid(True, linestyle='--', alpha=0.7)
+        
+        # Adjust legend
+        ax.legend(title='Trials', bbox_to_anchor=(1.05, 1), loc='upper left')
+        
+        # Tight layout
+        plt.tight_layout()
+        
+        return fig
+
+    
+    def plot_multi_trial_comparisonOld(self,
+                                  trial_data: Dict[str, pd.DataFrame],
+                                  metric: str,
+                                  title: Optional[str] = None) -> plt.Figure:
+        # Debug prints at start
+        for trial_name, df in trial_data.items():
+            print(f"\nDebug - {trial_name}:")
+            print(f"First timestamp: {df['Timestamp'].iloc[0]}")
+            print(f"Last timestamp: {df['Timestamp'].iloc[-1]}")
+            print(f"Timestamp type: {type(df['Timestamp'].iloc[0])}")
+            print(f"DataFrame info:")
+            print(df.info())
+        
+    
+
+        fig, ax = plt.subplots()
+        
+        # Plot each trial
+        for trial_name, df in trial_data.items():
+            # Convert timestamp to proper minutes
+            df = df.copy()  # Create a copy to avoid modifying original
+            start_time = float(df['Timestamp'].iloc[0])  # Ensure float conversion
+            # Convert to float and ensure proper arithmetic
+            df['Minutes'] = df['Timestamp'].astype(float).sub(start_time).div(60.0)
+            
+            print(f"Debug - Time range: {df['Minutes'].min():.2f} to {df['Minutes'].max():.2f} minutes")  # Debug print
+            
+            sns.lineplot(
+                data=df,
+                x='Minutes',
+                y=metric,
+                label=trial_name,
+                ax=ax
+            )
+        
+        # Add collision threshold line if this is Obstacle Clearance
+        if 'Obstacle Clearance' in metric:
+            ax.axhline(y=0.4, color='red', linestyle='--', alpha=0.7)
+            ax.text(ax.get_xlim()[1], 0.4, 'Collision Threshold', 
+                   color='red', va='bottom', ha='right')
+        
+        # Customize the plot
+        ax.set_xlabel('Time (minutes)')
+        if 'Obstacle Clearance' in metric:
+            ax.set_ylabel('Obstacle Clearance (meters)')
+        else:
+            ax.set_ylabel(metric)
+        
+        if title:
+            ax.set_title(title)
+        
+        # Add grid
+        ax.grid(True, linestyle='--', alpha=0.7)
+        
+        # Adjust legend
+        ax.legend(title='Trials', bbox_to_anchor=(1.05, 1), loc='upper left')
+        
+        # Tight layout
+        plt.tight_layout()
+        
+        return fig
+    
+    def plot_multi_trial_comparisonOld(self,
+                                  trial_data: Dict[str, pd.DataFrame],
+                                  metric: str,
+                                  title: Optional[str] = None) -> plt.Figure:
+        """
+        Create a comparison plot of multiple trials for a single metric.
+        
+        Args:
+            trial_data (Dict[str, pd.DataFrame]): Dictionary of trial DataFrames
+            metric (str): Metric to plot
+            title (Optional[str]): Plot title
+            
+        Returns:
+            plt.Figure: Generated figure
+        """
+        fig, ax = plt.subplots()
+        
+        # Plot each trial
+        for trial_name, df in trial_data.items():
+            # Convert timestamp to minutes
+            start_time = df['Timestamp'].min()
+            df = df.copy()  # Create a copy to avoid modifying original
+            df['Minutes'] = (df['Timestamp'] - start_time) / 60
+            
+            sns.lineplot(
+                data=df,
+                x='Minutes',
+                y=metric,
+                label=trial_name,
+                ax=ax
+            )
+        
+        # Add collision threshold line if this is Obstacle Clearance
+        if 'Obstacle Clearance' in metric:
+            ax.axhline(y=0.4, color='red', linestyle='--', alpha=0.7)
+            ax.text(ax.get_xlim()[1], 0.4, 'Collision Threshold', 
+                   color='red', va='bottom', ha='right')
+        
+        # Customize the plot
+        ax.set_xlabel('Time (minutes)')
+        # Modify y-label based on metric
+        if 'Obstacle Clearance' in metric:
+            ax.set_ylabel('Obstacle Clearance (meters)')
+        else:
+            ax.set_ylabel(metric)
+        
+        if title:
+            ax.set_title(title)
+        
+        # Add grid
+        ax.grid(True, linestyle='--', alpha=0.7)
+        
+        # Adjust legend
+        ax.legend(title='Trials', bbox_to_anchor=(1.05, 1), loc='upper left')
+        
+        # Tight layout
+        plt.tight_layout()
+        
+        return fig
+    
+    def plot_multi_trial_comparisonOld(self,
                                   trial_data: Dict[str, pd.DataFrame],
                                   metric: str,
                                   title: Optional[str] = None) -> plt.Figure:

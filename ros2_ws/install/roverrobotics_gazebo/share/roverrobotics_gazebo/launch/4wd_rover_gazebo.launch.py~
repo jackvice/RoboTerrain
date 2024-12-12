@@ -26,7 +26,9 @@ def generate_launch_description():
         #default_value='maze_and_person.sdf',
         #default_value='upb12.sdf',
         #default_value='office_cpr_construction.world',
-        default_value='maze_simple.sdf',
+        #default_value='maze_simple.sdf',
+        #default_value='inspection.world',
+        default_value='island.sdf',
         
         description='World file to use in Gazebo')
     
@@ -73,7 +75,7 @@ def generate_launch_description():
             '-allow_renaming', 'true',
             '-x', '0',
             '-y', '0',
-            '-z', '0.1',
+            '-z', '1.0',#'0.1',
         ],
         output='screen'
     )

@@ -80,7 +80,7 @@ def main():
     
     # Set up checkpoint callback
     checkpoint_callback = CheckpointCallback(
-        save_freq=100_000,
+        save_freq=200_000,
         save_path=checkpoint_dir,
         name_prefix=f"ppo_zero_{timestamp}",
         save_replay_buffer=False,
