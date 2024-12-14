@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
-from environments.rover_environment_pointnav import RoverEnv
+from environments.rover_env_heading_vel import RoverEnv
 from stable_baselines3.common.callbacks import CheckpointCallback
 from custom_features_extractor import CustomCombinedExtractor
 from stable_baselines3.common.monitor import Monitor
