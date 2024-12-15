@@ -9,8 +9,6 @@ Do not write the program yet. Let us work on getting all issues resolved and the
 
 
 
-
-
 # Dream Rover commands:
 
 python dreamerv3/main.py --configs rover --logdir ~/logdir/r_camera_test

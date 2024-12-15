@@ -494,8 +494,6 @@ class RoverEnv(gym.Env):
         # Small penalty per step to encourage efficiency
         reward += step_penalty
             
-
-            
         return reward
 
 
