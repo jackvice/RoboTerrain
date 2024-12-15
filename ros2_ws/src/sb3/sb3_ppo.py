@@ -29,18 +29,6 @@ def make_env():
 def main():
     args = parse_args()
 
-    #policy_kwargs = dict(
-    #    features_extractor_class=lambda observation_space: LoggingWrapper(
-    #        CustomCombinedExtractor(observation_space),
-    #        log_dir=f"./logs/extractor_{timestamp}"
-    #    ),
-    #    features_extractor_kwargs=dict(),
-    #)
-
-    #policy_kwargs = dict(
-    #    features_extractor_class=CustomCombinedExtractor,
-    #    features_extractor_kwargs=dict(),
-    #)
     
     # Create timestamp for this training run
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")

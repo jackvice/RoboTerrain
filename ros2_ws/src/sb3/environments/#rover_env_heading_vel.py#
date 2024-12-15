@@ -130,11 +130,13 @@ class RoverEnv(gym.Env):
         self.current_pose.orientation.w = 1.0
         
         # Navigation parameters
+        self.rand_x_range = (-5,5) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) # maze y(-2.5, 5.0) # maze
+        self.rand_y_range = (-5,5)
         self.target_positions_x = 0
         self.target_positions_y = 0
         self.success_distance = 1.0
         self.previous_distance = None
-        self.the_world = 'maze'
+        self.the_world = 'default'
         self.world_pose_path = '/world/' + self.the_world + '/set_pose'
         
         # Define action space
@@ -201,18 +203,24 @@ class RoverEnv(gym.Env):
     def step(self, action):
         """Execute one time step within the environment"""
         self.total_steps += 1
-        if self.current_pose.position.z < -20.0:
-            print('fell off the world, z is', self.current_pose.position.z, ', resetting.')
-            self.reset()
+        #if self.current_pose.position.z < -20.0: #fell off the world
+        if abs(self.current_pose.position.x) > 10.0 and abs(self.current_pose.position.y) > 10.0: # too far
+            print('too far, x, y is', self.current_pose.position.x, self.current_pose.position.y, ', episode done.')
+            return self.get_observation(), -100, True, False, {}  
+
+        flip_status = self.is_robot_flipped()
+        if flip_status:
+            print('Robot flipped', flip_status, ', episode done')
+            if self.total_steps > 100:
+                return self.get_observation(), -100, True, False, {}
+            else:
+                return self.get_observation(), 0, True, False, {} 
+
         
         # Wait for new sensor data
         while not self._received_scan:
             rclpy.spin_once(self.node, timeout_sec=0.01)
 
-        flip_status = self.is_robot_flipped()
-        if flip_status:
-            print('Robot flipped', flip_status, ', resetting')
-            self.reset()
         
         self._received_scan = False
         
@@ -227,60 +235,34 @@ class RoverEnv(gym.Env):
         # Calculate angular velocity using PID controller
         angular_velocity = self.heading_controller(desired_heading, self.current_yaw)
         
-        # Check for climbing and adjust movement with cooldown
-        climbing_status, climbing_severity = self.is_climbing_wall()
         twist = Twist()
-    
-        if climbing_status or self.steps_since_correction < self.cooldown_steps:
-            if climbing_status:
-                # Save the corrective action based on climbing type
-                if climbing_status == 'forward':
-                    self.corrective_speed = -1.0
-                    self.corrective_heading = self.current_yaw
-                elif climbing_status == 'reverse':
-                    self.corrective_speed = 1.0
-                    self.corrective_heading = self.current_yaw
-                elif climbing_status in ['right_tilt', 'left_tilt']:
-                    self.corrective_speed = -1.0
-                    self.corrective_heading = self.current_yaw
-                self.steps_since_correction = 0
-            
-            # Use stored corrective values
-            twist.linear.x = self.corrective_speed
-            twist.angular.z = self.heading_controller(self.corrective_heading, self.current_yaw)
-            self.steps_since_correction += 1
-        else:
-            # Normal operation
-            twist.linear.x = speed
-            twist.angular.z = angular_velocity
+
+        # Normal operation
+        twist.linear.x = speed
+        twist.angular.z = angular_velocity
         
         self.publisher.publish(twist)
         
-        # Calculate reward
-        reward = self.task_reward()
+
+        # Calculate reward and components
+        reward, reward_components = self.task_reward()
 
         # Check if episode is done
         self._step += 1
         done = (self._step >= self._length)
         
         # Get observation
-        observation = {
-            'lidar': self.lidar_data,
-            'pose': self.rover_position,
-            'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
-                            dtype=np.float32),
-            'target': self.get_target_info()
-        }
+        observation = self.get_observation()
+
         
         # Info dict for additional information
         info = {
             'steps': self._step,
-            'total_steps': self.total_steps
+            'total_steps': self.total_steps,
+            'reward_components': reward_components
         }
         
-        if climbing_status:
-            reward = -100.0
-            
+
         if self.total_steps % 1000 == 0:
             temp_obs_target = observation["target"]
             print(
@@ -291,19 +273,151 @@ class RoverEnv(gym.Env):
             )
             
         return observation, reward, done, False, info
+
+    def get_observation(self):
+        return {
+            'lidar': self.lidar_data,
+            'pose': self.rover_position,
+            'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
+                            dtype=np.float32),
+            'target': self.get_target_info()
+        }    
     
+
     def task_reward(self):
+        """Reward function with balanced rewards and detailed logging"""
+        # Constants
+        collision_threshold = 0.4
+        collision_reward = -5.0        # Increased due to recovery time
+        warning_distance = 0.8         # 2x collision threshold
+        distance_scaling_factor = 1.0  # Reduced from 20
+        goal_reward = 100.0           # Kept as requested
+        step_penalty = -0.0005        # Further reduced
+        heading_bonus = 0.005         # Further reduced
+        reverse_penalty = -0.02       # Reduced but still discouraged
+        
+        # Initialize reward components dictionary for logging
+        reward_components = {
+            'collision': 0.0,
+            'heading': 0.0,
+            'progress': 0.0,
+            'step': step_penalty,
+            'motion': 0.0,
+            'goal': 0.0
+        }
+        
+        if self.current_pose is None:
+            return 0.0, reward_components
+
+        # Calculate distance to current target
+        current_x = self.current_pose.position.x
+        current_y = self.current_pose.position.y
+        #current_distance = math.sqrt(
+        #    (current_x - self.target_positions_x)**2 + 
+        #    (current_y - self.target_positions_y)**2
+        #)
+
+
+        distance_and_angle = get_target_info()
+        current_distance = distance_and_angle[0]
+        heading_diff = distance_and_angle[1]
+        # Initialize previous_distance if not set
+        if self.previous_distance is None:
+            self.previous_distance = current_distance
+            return 0.0, reward_components
+        
+        # Success reward
+        if current_distance < self.success_distance:
+            reward_components['goal'] = goal_reward
+            self.target_positions_x = np.random.uniform(*self.rand_x_range)
+            self.target_positions_y = np.random.uniform(*self.rand_y_range)
+            self.previous_distance = None
+            return goal_reward, reward_components
+
+        # Collision checking with graduated penalty
+        min_distance = np.min(self.lidar_data[np.isfinite(self.lidar_data)])
+        if min_distance < collision_threshold:
+            reward_components['collision'] = collision_reward
+            return collision_reward, reward_components
+        elif min_distance < warning_distance:
+            warning_factor = (warning_distance - min_distance) / collision_threshold
+            reward_components['collision'] = collision_reward * 0.5 * warning_factor
+
+        # Movement rewards/penalties
+        if self.last_speed > 0.0:
+            motion_reward = self.last_speed / 20  # Reduced from /5
+            reward_components['motion'] = motion_reward
+        else:
+            reward_components['motion'] = reverse_penalty
+
+        # Calculate heading to target
+        target_heading = math.atan2(
+            self.target_positions_y - current_y,
+            self.target_positions_x - current_x
+        )
+        heading_diff = abs(math.atan2(
+            math.sin(target_heading - self.current_yaw),
+            math.cos(target_heading - self.current_yaw)
+        ))
+
+        # Progress rewards
+        distance_delta = self.previous_distance - current_distance
+        if heading_diff < math.pi/2:  # Facing generally towards target
+            reward_components['heading'] = heading_bonus
+            if distance_delta > 0:
+                progress_scale = min(current_distance / self.success_distance, 1.0)
+                progress_reward = distance_delta * distance_scaling_factor * progress_scale
+                reward_components['progress'] = progress_reward
+
+        # Update previous distance
+        self.previous_distance = current_distance
+
+        # Calculate total reward
+        total_reward = sum(reward_components.values())
+
+        # Debug info (every 1000 steps)
+        if self.total_steps % 1000 == 0:
+            self.node.get_logger().info(
+                f'Status: Target x,y: ({self.target_positions_x:.2f}, {self.target_positions_y:.2f}), '
+                f'Distance: {current_distance:.2f}m, '
+                f'Target Heading: {math.degrees(target_heading):.1f}°, '
+                f'Heading diff: {math.degrees(heading_diff):.1f}°, '
+                f'Distance delta: {distance_delta:.3f}m, '
+                f'Progress reward: {(distance_delta * distance_scaling_factor):.3f}, '
+                f'Min lidar distance: {min_distance:.2f}m, '
+                f'Total Reward: {reward:.3f}'
+            )
+        
+        # Debug logging (every 100 steps)
+        if self.total_steps % 1000 == 0:
+            self.node.get_logger().info(
+                #f'\nReward Components:'
+                #f'\n- Collision: {reward_components["collision"]:.3f}'
+                #f'\n- Heading: {reward_components["heading"]:.3f}'
+                #f'\n- Progress: {reward_components["progress"]:.3f}'
+                #f'\n- Step: {reward_components["step"]:.3f}'
+                #f'\n- Motion: {reward_components["motion"]:.3f}'
+                #f'\n- Goal: {reward_components["goal"]:.3f}'
+                f'\nTotal Reward: {total_reward:.3f}'
+                f'\nDistance to target: {current_distance:.2f}m'
+                f'\nHeading difference: {math.degrees(heading_diff):.1f}°'
+            )
+
+        return total_reward, reward_components
+
+    
+    def task_rewardOld(self):
         """Improved reward function for point navigationwith balanced rewards and penalties"""
         # Constants
         collision_threshold = 0.4
-        collision_reward = -20.0
+        collision_reward = -2.0
         warning_distance = collision_threshold * 2
-        distance_scaling_factor = 20
-        goal_reward = 20
+        distance_scaling_factor = 5
+        goal_reward = 100
         #turn_scale = 0.1
-        step_penalty = -0.01
-        heading_bonus = 0.05
-        reverse_penalty = -0.2
+        step_penalty = -0.001
+        heading_bonus = 0.01
+        reverse_penalty = -0.05
         
         if self.current_pose is None:
             return 0.0
@@ -329,8 +443,8 @@ class RoverEnv(gym.Env):
         if current_distance < self.success_distance:
             reward = goal_reward
             # Set new random target
-            self.target_positions_x = np.random.uniform(-3.5, 2.5)
-            self.target_positions_y = np.random.uniform(-2.5, 5.0)
+            self.target_positions_x = np.random.uniform(*self.rand_x_range)
+            self.target_positions_x = np.random.uniform(*self.rand_y_range)
             print('######################################################################')
             self.node.get_logger().info(f'Target reached! Moving to target x,y: ({self.target_positions_x}, {self.target_positions_y})')
             print('######################################################################')
@@ -380,18 +494,7 @@ class RoverEnv(gym.Env):
         # Small penalty per step to encourage efficiency
         reward += step_penalty
             
-        # Debug info (every 1000 steps)
-        if self.total_steps % 1000 == 0:
-            self.node.get_logger().info(
-                f'Status: Target x,y: ({self.target_positions_x:.2f}, {self.target_positions_y:.2f}), '
-                f'Distance: {current_distance:.2f}m, '
-                f'Target Heading: {math.degrees(target_heading):.1f}°, '
-                f'Heading diff: {math.degrees(heading_diff):.1f}°, '
-                f'Distance delta: {distance_delta:.3f}m, '
-                f'Progress reward: {(distance_delta * distance_scaling_factor):.3f}, '
-                f'Min lidar distance: {min_distance:.2f}m, '
-                f'Total Reward: {reward:.3f}'
-            )
+
             
         return reward
 
@@ -415,31 +518,29 @@ class RoverEnv(gym.Env):
     
         # Calculate azimuth (relative angle to target)
         target_heading = math.atan2(target_y - current_y, target_x - current_x)
-        relative_angle = math.atan2(math.sin(target_heading - self.current_yaw), 
-                               math.cos(target_heading - self.current_yaw))
+        relative_angle = abs(math.atan2(math.sin(target_heading - self.current_yaw), 
+                               math.cos(target_heading - self.current_yaw)
+                                        )
+                             )
     
         return np.array([distance, relative_angle], dtype=np.float32)
 
 
     def is_robot_flipped(self):
-        """Detect if robot has flipped forward/backward past 85 degrees"""
+        """Detect if robot has flipped in any direction past 85 degrees"""
         FLIP_THRESHOLD = 1.48  # ~85 degrees in radians
         
-        if self.current_pitch < -FLIP_THRESHOLD:
-            return 'forward'
-        elif self.current_pitch > FLIP_THRESHOLD:  
-            return 'backward'
+        # Check both roll and pitch angles
+        if abs(self.current_roll) > FLIP_THRESHOLD:
+            print('flipped')
+            return 'roll_left' if self.current_roll > 0 else 'roll_right'
+        elif abs(self.current_pitch) > FLIP_THRESHOLD:
+            print('flipped')
+            return 'pitch_forward' if self.current_pitch < 0 else 'pitch_backward'
+        
         return False
     
 
-    def check_flip_status(self):
-        """Check if the robot has flipped based on IMU data"""
-        # Use absolute roll and pitch to detect if robot is tilted too much
-        if (abs(self.current_roll) > self.flip_threshold
-            or abs(self.current_pitch) > self.flip_threshold):
-            self.is_flipped = True
-            return True
-        return False
     
 
     def reset(self, seed=None, options=None):
@@ -455,7 +556,7 @@ class RoverEnv(gym.Env):
                 '--reqtype', 'ignition.msgs.Pose',
                 '--reptype', 'ignition.msgs.Boolean',
                 '--timeout', '2000',
-                '--req', 'name: "rover_zero4wd", position: {x: 0, y: 0, z: 1.0}, orientation: {x: 0, y: 0, z: 0, w: 1}'
+                '--req', 'name: "rover_zero4wd", position: {x: 0, y: 0, z: 0.5}, orientation: {x: 0, y: 0, z: 0, w: 1}'
             ]
             result = subprocess.run(reset_cmd, capture_output=True, text=True)
             if result.returncode != 0:
@@ -469,30 +570,23 @@ class RoverEnv(gym.Env):
         self.steps_since_correction = self.cooldown_steps
         self.is_flipped = False
         # Reset PointNav-specific variables
-        self.target_positions_x = np.random.uniform(-3.5, 2.5)  # Random x between -3.5 and 2.5
-        self.target_positions_y = np.random.uniform(-2.5, 5.0)   # Random y between -2.5 and 5.0
-        #self.current_target_idx = 0
+        self.target_positions_x = np.random.uniform(*self.rand_x_range)  # Random x between -3.5 and 2.5
+        self.target_positions_y = np.random.uniform(*self.rand_y_range)   # Random y between -2.5 and 5.0
         self.previous_distance = None
         
         # Add a small delay to ensure the robot has time to reset
         for _ in range(100):  # Increased from 3 to 5 to allow more time for pose reset
             rclpy.spin_once(self.node, timeout_sec=0.1)
     
-        observation = {
-            'lidar': self.lidar_data,
-            'pose': self.rover_position,
-            'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
-                            dtype=np.float32),
-            'target': self.get_target_info()
-        }
+        observation = self.get_observation()
 
         return observation, {}
     
 
     def is_climbing_wall(self):
         """Detect if robot is climbing based solely on IMU data"""
-        pitch_threshold = 0.2
-        roll_threshold = 0.2
+        pitch_threshold = 0.5
+        roll_threshold = 0.4
         
         # Check IMU angles
         is_pitch_steep = abs(self.current_pitch) > pitch_threshold
@@ -500,7 +594,8 @@ class RoverEnv(gym.Env):
         
         climbing_status = False
         severity = 0.0
-        
+
+    
         # Only check IMU angles and velocity
         if is_pitch_steep or is_roll_steep:
             #if abs(self.last_linear_velocity) > 0.05:  # Confirm we're moving
