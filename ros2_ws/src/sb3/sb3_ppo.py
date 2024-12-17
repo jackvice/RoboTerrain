@@ -61,11 +61,12 @@ def main():
     else:
         # Create new model
         model = PPO("MultiInputPolicy",
-                   env,
-                   tensorboard_log=tensorboard_dir,
-                   verbose=1)
-                   #policy_kwargs=policy_kwargs)
-    
+                    env,
+                    tensorboard_log=tensorboard_dir,
+                    verbose=1,
+                    n_steps=4096,         # increase for GPU
+                    batch_size=256)       # increase for GPU
+
     # Set up checkpoint callback
     checkpoint_callback = CheckpointCallback(
         save_freq=200_000,
