@@ -114,7 +114,6 @@ class RoverEnv(gym.Env):
         self.rand_y_range = (-28,-18.4) # -27,-19 for inspection
         self.target_positions_x = 0
         self.target_positions_y = 0
-        self.success_distance = 0.5
         self.previous_distance = None
         self.the_world = 'default'
         self.world_pose_path = '/world/' + self.the_world + '/set_pose'
@@ -122,6 +121,7 @@ class RoverEnv(gym.Env):
         self.too_far_away_high_x = -13  # 29 for inspection
         self.too_far_away_low_y = -29 # 17 for inspection
         self.too_far_away_high_y = -17.4  # 29 for inspection
+        self.too_far_away_penilty = -20.0
         # Define action space
         # [speed, desired_heading]
         self.action_space = spaces.Box(
@@ -200,7 +200,7 @@ class RoverEnv(gym.Env):
         self.total_steps += 1
 
         if self.too_far_away():
-            return self.get_observation(), -10, True, False, {}  
+            return self.get_observation(), self.too_far_away_penilty, True, False, {}  
 
         flip_status = self.is_robot_flipped()
         if flip_status:
@@ -265,7 +265,11 @@ class RoverEnv(gym.Env):
                 f"Speed: {speed:.2f}, Heading: {math.degrees(desired_heading):.1f}°"
                 f"Final Reward: {reward:.3f}, "
             )
-            
+        if self.total_steps % 2000 == 0:
+            print('Observation: Pose:', observation['pose'],
+                  ', IMU:', observation['imu'],
+                  ', target:', observation['target'],
+                  )
         return observation, reward, done, False, info
 
 
@@ -289,7 +293,9 @@ class RoverEnv(gym.Env):
         goal_reward = 100.0           # Kept as requested
         step_penalty = -0.001        # Further reduced
         heading_bonus = 0.02         # Further reduced
-        reverse_penalty = -0.05       # Reduced but still discouraged
+        reverse_penalty = -0.1       # Reduced but still discouraged
+        success_distance = 0.5
+
         
         # Initialize reward components dictionary for logging
         reward_components = {
@@ -318,7 +324,7 @@ class RoverEnv(gym.Env):
             return 0.0, reward_components
         
         # Success reward
-        if current_distance < self.success_distance:
+        if current_distance < success_distance:
             reward_components['goal'] = goal_reward
             print('###################################################### GOAL ACHIVED!')
             self.target_positions_x = np.random.uniform(*self.rand_x_range)

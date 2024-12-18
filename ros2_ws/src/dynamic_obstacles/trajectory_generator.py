@@ -57,7 +57,8 @@ def main(args=None):
     metrics_node = MetricsNode()
 
     # Provide the waypoints and velocity
-    waypoints_2d = [(-2, -1), (-3, -1), (-3, 2), (-2, 2)]
+    waypoints_2d = [(-15, -23), (-28, -28), (-28, -17), (-23, -23)]
+    #waypoints_2d = [(-2, -1), (-3, -1), (-3, 2), (-2, 2)]
     velocity = 0.5  # meters per second
 
     # Calculate the 3D waypoints with timing

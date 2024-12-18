@@ -1,8 +1,18 @@
+# launch gazeob
+ros2 launch roverrobotics_gazebo 4wd_rover_gazebo.launch.py
 
+#pose converter:
+python3 ign_ros2_pose_topic.py default rover_zero4wd
+
+# agent
+conda activate sb3
 python sb3_ppo.py --load False
 python sb3_ppo.py --load True --checkpoint_name checkpoints/ppo_rover_model_20241115_1152_900000_steps.zip
 
+# tensorboard
+~/src/RoboTerrain/ros2_ws/src/sb3$ tensorboar --logdir tboard_logs/
 
+# Claude prompt
 How will you go about writing this program?
 Please ask me any questions that you have or clarifications that you need. If you have any suggestions please let me know.
 Do not write the program yet. Let us work on getting all issues resolved and then write the program.
