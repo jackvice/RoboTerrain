@@ -6,7 +6,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from environments.rover_env_heading_vel import RoverEnv
 from stable_baselines3.common.callbacks import CheckpointCallback
-from custom_features_extractor import CustomCombinedExtractor
+#from custom_features_extractor import CustomCombinedExtractor
 from stable_baselines3.common.monitor import Monitor
 #from logging_wrapper import LoggingWrapper  # Add this with other imports
 

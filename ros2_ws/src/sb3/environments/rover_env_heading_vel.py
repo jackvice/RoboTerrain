@@ -110,17 +110,17 @@ class RoverEnv(gym.Env):
         self.current_pose.orientation.w = 1.0
         
         # Navigation parameters
-        self.rand_x_range = (-28,-14) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-        self.rand_y_range = (-28,-18.4) # -27,-19 for inspection
+        self.rand_x_range = (-26,-16) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+        self.rand_y_range = (-26,-20) # -27,-19 for inspection
         self.target_positions_x = 0
         self.target_positions_y = 0
         self.previous_distance = None
         self.the_world = 'default'
         self.world_pose_path = '/world/' + self.the_world + '/set_pose'
         self.too_far_away_low_x = -29 # 17 for inspection
-        self.too_far_away_high_x = -13  # 29 for inspection
-        self.too_far_away_low_y = -29 # 17 for inspection
-        self.too_far_away_high_y = -17.4  # 29 for inspection
+        self.too_far_away_high_x =-13  # 29 for inspection
+        self.too_far_away_low_y = -29 # for inspection
+        self.too_far_away_high_y = -17.5  # 29 for inspection
         self.too_far_away_penilty = -20.0
         # Define action space
         # [speed, desired_heading]
@@ -289,12 +289,13 @@ class RoverEnv(gym.Env):
         collision_threshold = 0.4
         collision_reward = -5.0        # Increased due to recovery time
         warning_distance = 0.8         # 2x collision threshold
-        distance_scaling_factor = 5.0  # Reduced from 20
+        distance_scaling_factor = 12.0  # Reduced from 20
         goal_reward = 100.0           # Kept as requested
-        step_penalty = -0.001        # Further reduced
-        heading_bonus = 0.02         # Further reduced
-        reverse_penalty = -0.1       # Reduced but still discouraged
+        step_penalty = -0.01        # Further reduced
+        heading_bonus = 0.08         # Further reduced
+        reverse_penalty = -0.25       # Reduced but still discouraged
         success_distance = 0.5
+        max_possible_distance = 18.0
 
         
         # Initialize reward components dictionary for logging
@@ -353,7 +354,7 @@ class RoverEnv(gym.Env):
         if heading_diff < math.pi/2:  # Facing generally towards target
             reward_components['heading'] = heading_bonus
             if distance_delta > 0:
-                progress_scale = min(current_distance / self.success_distance, 1.0)
+                progress_scale = min(current_distance / max_possible_distance, 1.0)
                 progress_reward = distance_delta * distance_scaling_factor * progress_scale
                 reward_components['progress'] = progress_reward
 
