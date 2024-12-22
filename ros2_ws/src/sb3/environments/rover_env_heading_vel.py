@@ -110,8 +110,8 @@ class RoverEnv(gym.Env):
         self.current_pose.orientation.w = 1.0
         
         # Navigation parameters
-        self.rand_x_range = (-26,-16) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-        self.rand_y_range = (-26,-20) # -27,-19 for inspection
+        self.rand_x_range = (-23,-18) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+        self.rand_y_range = (-25,-20) # -27,-19 for inspection
         self.target_positions_x = 0
         self.target_positions_y = 0
         self.previous_distance = None
@@ -121,7 +121,7 @@ class RoverEnv(gym.Env):
         self.too_far_away_high_x =-13  # 29 for inspection
         self.too_far_away_low_y = -29 # for inspection
         self.too_far_away_high_y = -17.5  # 29 for inspection
-        self.too_far_away_penilty = -20.0
+        self.too_far_away_penilty = -5.0
         # Define action space
         # [speed, desired_heading]
         self.action_space = spaces.Box(
@@ -287,12 +287,12 @@ class RoverEnv(gym.Env):
         """Reward function with balanced rewards and detailed logging"""
         # Constants
         collision_threshold = 0.4
-        collision_reward = -5.0        # Increased due to recovery time
-        warning_distance = 0.8         # 2x collision threshold
-        distance_scaling_factor = 12.0  # Reduced from 20
-        goal_reward = 100.0           # Kept as requested
+        collision_reward = -1.0        # Increased due to recovery time
+        warning_distance = 1.0         # 2x collision threshold
+        distance_scaling_factor = 20.0  # Reduced from 20
+        goal_reward = 50.0           # Kept as requested
         step_penalty = -0.01        # Further reduced
-        heading_bonus = 0.08         # Further reduced
+        heading_bonus = 0.2         # Further reduced
         reverse_penalty = -0.25       # Reduced but still discouraged
         success_distance = 0.5
         max_possible_distance = 18.0
@@ -427,8 +427,8 @@ class RoverEnv(gym.Env):
         print('')
         """Reset the environment to its initial state"""
         super().reset(seed=seed)
-        x_insert = np.random.uniform(-28,-14)
-        y_insert = np.random.uniform(-28,-19.5)
+        x_insert = np.random.uniform(*self.rand_x_range)
+        y_insert = np.random.uniform(*self.rand_y_range)
         z_insert = 5.5
         if x_insert < -24.5 and y_insert < -24.5:
             z_insert = 6.5
