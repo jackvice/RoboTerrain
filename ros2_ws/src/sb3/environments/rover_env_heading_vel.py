@@ -62,6 +62,7 @@ class RoverEnv(gym.Env):
             qos_profile
         )
 
+        
         # Initialize environment parameters
         self.pose_node = None
         self.lidar_points = lidar_points
@@ -78,6 +79,17 @@ class RoverEnv(gym.Env):
         self.current_roll = 0.0
         self.current_yaw = 0.0
         self.rover_position = (0, 0, 0)
+        self.min_raw_lidar = 100
+        
+        # Stuck detection parameters
+        self.position_history = []
+        self.stuck_threshold = 0.08  # Minimum distance the robot should move
+        self.stuck_window = 600    # Number of steps to check for being stuck
+        self.stuck_penilty = -10.0
+
+        # Collision detection parameters
+        self.collision_history = []
+        self.collision_window = 10  # Number of steps to check for persistent collision
         
         # PID control parameters for heading
         self.Kp = 2.0  # Proportional gain
@@ -110,18 +122,24 @@ class RoverEnv(gym.Env):
         self.current_pose.orientation.w = 1.0
         
         # Navigation parameters
-        self.rand_x_range = (-23,-18) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-        self.rand_y_range = (-25,-20) # -27,-19 for inspection
+        self.rand_x_range = (-27,-22) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+        self.rand_y_range = (-27,-22) # -27,-19 for inspection
         self.target_positions_x = 0
         self.target_positions_y = 0
         self.previous_distance = None
         self.the_world = 'default'
         self.world_pose_path = '/world/' + self.the_world + '/set_pose'
         self.too_far_away_low_x = -29 # 17 for inspection
-        self.too_far_away_high_x =-13  # 29 for inspection
+        self.too_far_away_high_x = -13  # 29 for inspection
         self.too_far_away_low_y = -29 # for inspection
-        self.too_far_away_high_y = -17.5  # 29 for inspection
+        self.too_far_away_high_y = -13  # 29 for inspection
         self.too_far_away_penilty = -5.0
+
+        # Add at the end of your existing __init__ 
+        self.heading_log = []  # To store headings
+        self.heading_log_file = "initial_headings.csv"
+        self.heading_log_created = False
+        
         # Define action space
         # [speed, desired_heading]
         self.action_space = spaces.Box(
@@ -199,6 +217,23 @@ class RoverEnv(gym.Env):
         """Execute one time step within the environment"""
         self.total_steps += 1
 
+        # Log headings for first 1000 steps
+        if self.total_steps <= 1000:
+            desired_heading = float(action[1])
+            self.heading_log.append({
+                'step': self.total_steps,
+                'heading_rad': desired_heading,
+                'heading_deg': math.degrees(desired_heading)
+            })
+        
+            # Write to CSV when we reach 1000 steps
+            if self.total_steps == 1000 and not self.heading_log_created:
+                import pandas as pd
+                df = pd.DataFrame(self.heading_log)
+                df.to_csv(self.heading_log_file, index=False)
+                print(f"Saved {len(self.heading_log)} heading commands to {self.heading_log_file}")
+                self.heading_log_created = True
+        
         if self.too_far_away():
             return self.get_observation(), self.too_far_away_penilty, True, False, {}  
 
@@ -209,8 +244,26 @@ class RoverEnv(gym.Env):
                 return self.get_observation(), -100, True, False, {}
             else:
                 return self.get_observation(), 0, True, False, {} 
+            
 
-        
+        # Update position history
+        self.position_history.append((self.current_pose.position.x, self.current_pose.position.y))
+        if len(self.position_history) > self.stuck_window:
+            self.position_history.pop(0)
+
+        # Check if robot is stuck - do this every step once we have enough history
+        if len(self.position_history) >= self.stuck_window:
+            start_pos = self.position_history[0]
+            end_pos = self.position_history[-1]
+            distance_moved = math.sqrt((end_pos[0] - start_pos[0])**2 +
+                                       (end_pos[1] - start_pos[1])**2)
+
+            if distance_moved < self.stuck_threshold:
+                print('Robot is stuck, has moved only', distance_moved,
+                      'meters in', self.stuck_window, 'steps')
+                return self.get_observation(), self.stuck_penilty, True, False, {}
+            
+                
         # Wait for new sensor data
         while not self._received_scan:
             rclpy.spin_once(self.node, timeout_sec=0.01)
@@ -239,7 +292,7 @@ class RoverEnv(gym.Env):
         
 
         # Calculate reward and components
-        reward, reward_components = self.task_reward()
+        reward = self.task_reward()
 
         # Check if episode is done
         self._step += 1
@@ -249,15 +302,7 @@ class RoverEnv(gym.Env):
         observation = self.get_observation()
 
         
-        # Info dict for additional information
-        info = {
-            'steps': self._step,
-            'total_steps': self.total_steps,
-            'reward_components': reward_components
-        }
-        
-
-        if self.total_steps % 1000 == 0:
+        if False:# self.total_steps % 1000 == 0:
             temp_obs_target = observation["target"]
             print(
                 f"current target x,y: ({self.target_positions_x}, {self.target_positions_y}), "
@@ -270,6 +315,12 @@ class RoverEnv(gym.Env):
                   ', IMU:', observation['imu'],
                   ', target:', observation['target'],
                   )
+        
+        info = {
+            'steps': self._step,
+            'total_steps': self.total_steps,
+            'reward': reward
+        }
         return observation, reward, done, False, info
 
 
@@ -281,16 +332,23 @@ class RoverEnv(gym.Env):
                             dtype=np.float32),
             'target': self.get_target_info()
         }    
+
+
+    def update_target_pos(self):
+        print('###################################################### GOAL ACHIVED!')
+        self.target_positions_x = np.random.uniform(*self.rand_x_range)
+        self.target_positions_y = np.random.uniform(*self.rand_y_range)
+        self.previous_distance = None
+        return
     
 
     def task_reward(self):
         """Reward function with balanced rewards and detailed logging"""
         # Constants
-        collision_threshold = 0.4
+        collision_threshold = 0.2
         collision_reward = -1.0        # Increased due to recovery time
-        warning_distance = 1.0         # 2x collision threshold
+        goal_reward = 50.0           # Kept as requested        
         distance_scaling_factor = 20.0  # Reduced from 20
-        goal_reward = 50.0           # Kept as requested
         step_penalty = -0.01        # Further reduced
         heading_bonus = 0.2         # Further reduced
         reverse_penalty = -0.25       # Reduced but still discouraged
@@ -309,7 +367,7 @@ class RoverEnv(gym.Env):
         }
         
         if self.current_pose is None:
-            return 0.0, reward_components
+            return 0.0
 
         # Calculate distance to current target
         current_x = self.current_pose.position.x
@@ -318,30 +376,36 @@ class RoverEnv(gym.Env):
         distance_heading_angle = self.get_target_info()
         current_distance = distance_heading_angle[0]
         heading_diff = distance_heading_angle[1]
-        
         # Initialize previous_distance if not set
         if self.previous_distance is None:
             self.previous_distance = current_distance
-            return 0.0, reward_components
+            return 0.0
         
         # Success reward
         if current_distance < success_distance:
-            reward_components['goal'] = goal_reward
-            print('###################################################### GOAL ACHIVED!')
-            self.target_positions_x = np.random.uniform(*self.rand_x_range)
-            self.target_positions_y = np.random.uniform(*self.rand_y_range)
-            self.previous_distance = None
-            return goal_reward, reward_components
+            self.update_target_pos()
+            return goal_reward
 
-        # Collision checking with graduated penalty
+
+        # Collision detection with persistence check
         min_distance = np.min(self.lidar_data[np.isfinite(self.lidar_data)])
-        if min_distance < collision_threshold:
-            reward_components['collision'] = collision_reward
-            return collision_reward, reward_components
-        elif min_distance < warning_distance:
-            warning_factor = (warning_distance - min_distance) / collision_threshold
-            reward_components['collision'] = collision_reward * 0.5 * warning_factor
+        self.collision_history.append(min_distance < collision_threshold)
 
+        # Keep only the last N steps
+        if len(self.collision_history) > self.collision_window:
+            self.collision_history.pop(0)
+
+        # Check if we've been in collision state for the entire window
+        if len(self.collision_history) == self.collision_window and all(self.collision_history):
+            print(f'Persistent collision detected, min distance is {min_distance:3f}')
+            reward_components['collision'] = collision_reward
+        
+        #min_distance = np.min(self.lidar_data[np.isfinite(self.lidar_data)])
+        #if min_distance < collision_threshold:
+        #    print(f'collision, min distance is {min_distance:3f}', )
+        #    reward_components['collision'] = collision_reward
+            #return collision_reward, reward_components
+            
         # Movement rewards/penalties
         if self.last_speed > 0.0:
             motion_reward = self.last_speed / 40  # Reduced from /5
@@ -366,22 +430,27 @@ class RoverEnv(gym.Env):
 
         # Debug logging (every 100 steps)
         if self.total_steps % 1000 == 0:
-            self.node.get_logger().info(
-                f'\nReward Components:'
+                self.debug_logging(heading_diff, current_distance, reward_components, total_reward)
+                
+        return total_reward
+
+
+    def debug_logging(self, heading_diff, current_distance, reward_components, total_reward):
+           self.node.get_logger().info(
+                f'\nTarget x,y: {self.target_positions_x:3f}, {self.target_positions_y:3f}'
+                f'\nCurrent x,y: {self.current_pose.position.x:3f}, {self.current_pose.position.y:3f}'
+                f'\nHeading difference: {math.degrees(heading_diff):.1f}° '
+                f'\nDistance to target: {current_distance:.2f}m'
                 f'\n- Collision: {reward_components["collision"]:.3f}'
                 f'\n- Heading: {reward_components["heading"]:.3f}'
                 f'\n- Progress: {reward_components["progress"]:.3f}'
                 f'\n- Step: {reward_components["step"]:.3f}'
                 f'\n- Motion: {reward_components["motion"]:.3f}'
                 f'\n- Goal: {reward_components["goal"]:.3f}'
-                f'\nDistance to target: {current_distance:.2f}m'
-                f'\nHeading difference: {math.degrees(heading_diff):.1f}°'
                 f'\nTotal Reward: {total_reward:.3f}'
             )
-            
-        return total_reward, reward_components
 
-    
+
     def get_target_info(self):
         """Calculate distance and azimuth to current target"""
         if self.current_pose is None:
@@ -422,11 +491,109 @@ class RoverEnv(gym.Env):
         
         return False
         
+
     def reset(self, seed=None, options=None):
+        print('################ Environment Reset')
+        print('')
+        twist = Twist()
+        # Normal operation
+        twist.linear.x = 0.0
+        twist.angular.z = 0.0
+        self.publisher.publish(twist)
+        time.sleep(.3)
+        """Reset the environment to its initial state"""
+        super().reset(seed=seed)
+        self.collision_history = []  # Clear collision history on reset
+        x_insert = np.random.uniform(*self.rand_x_range)
+        y_insert = np.random.uniform(*self.rand_y_range)
+        z_insert = 5.5
+        if x_insert < -24.5 and y_insert < -24.5:
+            z_insert = 6.5
+        
+        # Base orientation of pi (180 degrees) plus random rotation
+        #base_yaw = np.pi  # This gives us the correct "up" orientation
+        #random_rotation = np.random.uniform(-np.pi, np.pi)
+        #final_yaw = base_yaw + random_rotation
+
+        base_yaw = 0  # Base orientation 
+        fixed_rotation = np.pi  # Rotate 180 degrees to face negative X
+        random_rotation = np.random.uniform(-np.pi, np.pi)  # Add random rotation if desired
+        final_yaw = base_yaw + fixed_rotation + random_rotation
+        
+        # Normalize to [-pi, pi] range
+        final_yaw = np.arctan2(np.sin(final_yaw), np.cos(final_yaw))
+        
+        quat_w = np.cos(final_yaw / 2)
+        quat_z = np.sin(final_yaw / 2)
+
+        # Add our debug logging
+        #print("\nFull Reset State:")
+        #print(f"Position: x={x_insert}, y={y_insert}, z={z_insert}")
+        #print(f"Base yaw: {math.degrees(base_yaw)} degrees")
+        #print(f"Random rotation: {math.degrees(random_rotation)} degrees")
+        #print(f"Final yaw: {math.degrees(final_yaw)} degrees")
+        #print(f"Quaternion components - w: {quat_w}, x: 0, y: 0, z: {quat_z}")
+
+        # Print the full reset command
+        reset_cmd_str = ('name: "rover_zero4wd", ' +
+                        f'position: {{x: {x_insert}, y: {y_insert}, z: {z_insert}}}, ' +
+                        f'orientation: {{x: 0, y: 0, z: {quat_z}, w: {quat_w}}}')
+        #print("\nFull reset command:")
+        #print(reset_cmd_str)
+        
+        # Reset robot pose using ign service
+        try:
+            reset_cmd = [
+                'ign', 'service', '-s', self.world_pose_path,
+                '--reqtype', 'ignition.msgs.Pose',
+                '--reptype', 'ignition.msgs.Boolean',
+                '--timeout', '2000',
+                '--req', 'name: "rover_zero4wd", position: {x: ' + str(x_insert) +
+                ',y: '+ str(y_insert) +
+                ', z: '+ str(z_insert) + '}, orientation: {x: 0, y: 0, z: ' +
+                str(quat_z) + ', w: ' + str(quat_w) + '}'
+            ]
+            result = subprocess.run(reset_cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                print(f"Failed to reset robot pose: {result.stderr}")
+        except Exception as e:
+            print(f"Error executing reset command: {str(e)}")
+
+        # Reset internal state
+        self._step = 0
+        self.last_linear_velocity = 0.0
+        self.steps_since_correction = self.cooldown_steps
+        self.is_flipped = False
+        # Reset PointNav-specific variables
+        self.target_positions_x = np.random.uniform(*self.rand_x_range)
+        self.target_positions_y = np.random.uniform(*self.rand_y_range)
+        self.previous_distance = None
+        
+        # Add a small delay to ensure the robot has time to reset
+        for _ in range(100):  # Increased from 3 to 5 to allow more time for pose reset
+            rclpy.spin_once(self.node, timeout_sec=0.1)
+        
+        # Add IMU logging HERE
+        #print("\nInitial IMU readings:")
+        #print(f"Roll: {math.degrees(self.current_roll)} degrees")
+        #print(f"Pitch: {math.degrees(self.current_pitch)} degrees")
+        #print(f"Yaw: {math.degrees(self.current_yaw)} degrees")
+        
+        observation = self.get_observation()
+
+        # Normal operation
+        twist.linear.x = 0.0
+        twist.angular.z = 0.0
+        
+        self.publisher.publish(twist)
+        return observation, {}
+    
+    def reset_old(self, seed=None, options=None):
         print('################ Environment Reset')
         print('')
         """Reset the environment to its initial state"""
         super().reset(seed=seed)
+        self.collision_history = []  # Clear collision history on reset
         x_insert = np.random.uniform(*self.rand_x_range)
         y_insert = np.random.uniform(*self.rand_y_range)
         z_insert = 5.5
@@ -435,14 +602,21 @@ class RoverEnv(gym.Env):
         
         # Generate random yaw angle (in radians) between -π and π
         random_yaw = np.random.uniform(-np.pi, np.pi)
-        
-        # Convert yaw to quaternion (keeping roll and pitch as 0)
-        # For yaw only, the conversion is:
-        # w = cos(yaw/2)
-        # z = sin(yaw/2)
-        # x and y remain 0
         quat_w = np.cos(random_yaw / 2)
         quat_z = np.sin(random_yaw / 2)
+
+        # Right before the reset_cmd
+        print("\nFull Reset State:")
+        print(f"Position: x={x_insert}, y={y_insert}, z={z_insert}")
+        print(f"Generated random_yaw: {random_yaw} radians ({math.degrees(random_yaw)} degrees)")
+        print(f"Quaternion components - w: {quat_w}, x: 0, y: 0, z: {quat_z}")
+
+        # Print the full reset command
+        reset_cmd_str = ('name: "rover_zero4wd", ' +
+                         f'position: {{x: {x_insert}, y: {y_insert}, z: {z_insert}}}, ' +
+                         f'orientation: {{x: 0, y: 0, z: {quat_z}, w: {quat_w}}}')
+        print("\nFull reset command:")
+        print(reset_cmd_str)
         
         # Reset robot pose using ign service
         try:
@@ -468,14 +642,21 @@ class RoverEnv(gym.Env):
         self.steps_since_correction = self.cooldown_steps
         self.is_flipped = False
         # Reset PointNav-specific variables
-        self.target_positions_x = np.random.uniform(*self.rand_x_range)  # Random x between -3.5 and 2.5
-        self.target_positions_y = np.random.uniform(*self.rand_y_range)   # Random y between -2.5 and 5.0
+        self.target_positions_x = np.random.uniform(*self.rand_x_range)
+        self.target_positions_y = np.random.uniform(*self.rand_y_range)
         self.previous_distance = None
         
         # Add a small delay to ensure the robot has time to reset
         for _ in range(100):  # Increased from 3 to 5 to allow more time for pose reset
             rclpy.spin_once(self.node, timeout_sec=0.1)
-            
+
+
+        # Add IMU logging HERE
+        print("\nInitial IMU readings:")
+        print(f"Roll: {math.degrees(self.current_roll)} degrees")
+        print(f"Pitch: {math.degrees(self.current_pitch)} degrees")
+        print(f"Yaw: {math.degrees(self.current_yaw)} degrees")
+        
         observation = self.get_observation()
         twist = Twist()
         # Normal operation
@@ -485,6 +666,7 @@ class RoverEnv(gym.Env):
         self.publisher.publish(twist)
         return observation, {}
     
+
     def render(self):
         """Render the environment (optional)"""
         pass
@@ -509,79 +691,72 @@ class RoverEnv(gym.Env):
         
 
     def lidar_callback(self, msg):
-        if not self.first:
-            print("First scan received:")
-            print(f"Number of points: {len(msg.ranges)}")
-            print(f"Angle min: {msg.angle_min}, Angle max: {msg.angle_max}")
-            print(f"Angle increment: {msg.angle_increment}")
-            print(f"Range min: {msg.range_min}, Range max: {msg.range_max}")
-            print(f"First 20 ranges: {msg.ranges[:20]}")
-            print(f"Last 20 ranges: {msg.ranges[-20:]}")
-            print(f"Observation lidar size: {self.lidar_points}")
-            self.angle_min = msg.angle_min
-            self.angle_max = msg.angle_max
-            self.angle_increment = msg.angle_increment
-            self.first = True
+        """Process LIDAR data with error checking and downsampling."""
 
-        # Convert to numpy array and clip values
-        lidar_data = np.array(msg.ranges, dtype=np.float32)
-    
-        # Add Gaussian noise
-        gaussian_noise = np.random.normal(0, 0.05, size=lidar_data.shape)  # 0.1m standard deviation
-        lidar_data = lidar_data + gaussian_noise
-    
-        # Add random dropouts (set some measurements to max_range)
-        dropout_mask = np.random.random(lidar_data.shape) < 0.05  # 5% chance of dropout
-        lidar_data[dropout_mask] = self.max_lidar_range
-        
-        # Add distance-dependent noise (noise increases with distance)
-        #distance_noise = np.random.normal(0, 0.02 * lidar_data, size=lidar_data.shape)
-        #lidar_data = lidar_data + distance_noise
-    
-        # Add some spurious short readings
-        #short_readings_mask = np.random.random(lidar_data.shape) < 0.02  # 2% chance of spurious short reading
-        #lidar_data[short_readings_mask] = lidar_data[short_readings_mask] * np.random.un
-     
+        # Convert to numpy array
+        try:
+            lidar_data = np.array(msg.ranges, dtype=np.float32)
+        except Exception as e:
+            print(f"Error converting LIDAR data to numpy array: {e}")
+            return
+
+        # Check for invalid values before processing
+        #if np.any(np.isneginf(lidar_data)):
+        #    print(f"WARNING: Found {np.sum(np.isneginf(lidar_data))} negative infinity values")
+            
+        if np.any(np.isnan(lidar_data)):
+            print(f"WARNING: Found {np.sum(np.isnan(lidar_data))} NaN values")
+            
+        #if np.any(lidar_data < 0):
+        #    print(f"WARNING: Found {np.sum(lidar_data < 0)} negative values")
+            #print("Negative values:", lidar_data[lidar_data < 0])
+
+        # Replace inf values with max_lidar_range
+        inf_mask = np.isinf(lidar_data)
+        if np.any(inf_mask):
+            #print(f"INFO: Replaced {np.sum(inf_mask)} infinity values with max_lidar_range")
+            lidar_data[inf_mask] = self.max_lidar_range
+
+        # Replace any remaining invalid values (NaN, negative) with max_range
+        invalid_mask = np.logical_or(np.isnan(lidar_data), lidar_data < 0)
+        if np.any(invalid_mask):
+            print(f"INFO: Replaced {np.sum(invalid_mask)} invalid values with max_lidar_range")
+            lidar_data[invalid_mask] = self.max_lidar_range
+
         # Clip values to valid range
         lidar_data = np.clip(lidar_data, 0, self.max_lidar_range)
-    
-        # Reshape into segments and take mean of each segment
-        segment_size = len(lidar_data) // self.lidar_points
-        reshaped_data = lidar_data[:segment_size *
-                                   self.lidar_points].reshape(self.lidar_points, segment_size)
-        self.lidar_data = np.mean(reshaped_data, axis=1)
-    
-        self._received_scan = True
-            
 
-    def lidar_callback_origin(self, msg):
-        if not self.first:
-            print("First scan received:")
-            print(f"Number of points: {len(msg.ranges)}")
-            print(f"Angle min: {msg.angle_min}, Angle max: {msg.angle_max}")
-            print(f"Angle increment: {msg.angle_increment}")
-            print(f"Range min: {msg.range_min}, Range max: {msg.range_max}")
-            print(f"First 20 ranges: {msg.ranges[:20]}")
-            print(f"Last 20 ranges: {msg.ranges[-20:]}")
-            print(f"Observation lidar size: {self.lidar_points}")
-            self.angle_min = msg.angle_min
-            self.angle_max = msg.angle_max
-            self.angle_increment = msg.angle_increment
-            self.first = True
+        # Verify we have enough data points for downsampling
+        expected_points = self.lidar_points * (len(lidar_data) // self.lidar_points)
+        if expected_points == 0:
+            print(f"ERROR: Not enough LIDAR points for downsampling. Got {len(lidar_data)} points")
+            return
 
-        # Convert to numpy array and clip values
-        lidar_data = np.array(msg.ranges, dtype=np.float32)
-        lidar_data = np.clip(lidar_data, 0, self.max_lidar_range)
-        
-        # Reshape into 16 segments and take mean of each segment
-        segment_size = len(lidar_data) // self.lidar_points
-        reshaped_data = lidar_data[:segment_size * self.lidar_points].reshape(self.lidar_points,
-                                                                              segment_size)
-        self.lidar_data = np.mean(reshaped_data, axis=1)
-        
+        # Downsample by taking minimum value in each segment
+        try:
+            segment_size = len(lidar_data) // self.lidar_points
+            reshaped_data = lidar_data[:segment_size * self.lidar_points].reshape(self.lidar_points,
+                                                                                  segment_size)
+            self.lidar_data = np.min(reshaped_data, axis=1)
+            
+            # Verify downsampled data
+            if len(self.lidar_data) != self.lidar_points:
+                print(f"ERROR: Downsampled has wrong size. Expected {self.lidar_points}, got {len(self.lidar_data)}")
+                return
+                
+            if np.any(np.isnan(self.lidar_data)) or np.any(np.isinf(self.lidar_data)):
+                print("ERROR: Downsampled data contains invalid values")
+                print("NaN count:", np.sum(np.isnan(self.lidar_data)))
+                print("Inf count:", np.sum(np.isinf(self.lidar_data)))
+                return
+                
+        except Exception as e:
+            print(f"Error during downsampling: {e}")
+            return
+
         self._received_scan = True
-            
-            
+
+
     def imu_callback(self, msg):
         try:
             quat = np.array([msg.orientation.w, msg.orientation.x, msg.orientation.y,

@@ -26,6 +26,8 @@
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/urdf/accessories/rover_dev_payload.urdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/urdf/accessories/rplidar_s2.urdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/urdf/accessories/imu.urdf
+/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/urdf/accessories/rplidar_s2_orgin.urdf
+/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/urdf/accessories/rplidar_s2.urdf~
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/urdf/flipper.urdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/urdf/camera_rover_4wd.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_description/share/roverrobotics_description/urdf/camera_rover_4wd.sdf~
