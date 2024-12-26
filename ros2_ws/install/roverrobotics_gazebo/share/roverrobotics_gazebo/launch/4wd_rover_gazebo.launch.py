@@ -9,8 +9,129 @@ from launch.actions import IncludeLaunchDescription
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, TextSubstitution, Command
 from launch_ros.substitutions import FindPackageShare
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
+    # Create the launch configuration variables
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    world = LaunchConfiguration('world')
+    
+    declare_use_sim_time_cmd = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='true',
+        description='Use simulation (Gazebo) clock if true')
+    
+    declare_world_cmd = DeclareLaunchArgument(
+        'world',
+        default_value='inspection_simple.world',
+        description='World file to use in Gazebo')
+    
+    # Construct the world path using substitutions
+    world_path = PathJoinSubstitution([
+        FindPackageShare('roverrobotics_gazebo'),
+        'worlds',
+        world
+    ])
+
+    # Get both source and install directories
+    pkg_share = get_package_share_directory('roverrobotics_gazebo')
+    pkg_source = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(pkg_share)))),  # go up to workspace
+        'src/roverrobotics_ros2/roverrobotics_gazebo'  # go down to package
+    )
+    
+    # Create combined resource path
+    resource_path = ':'.join([
+        os.path.join(os.path.expanduser('~'), 'worlds/gazebo_models_worlds_collection/models/cpr_office_construction'),
+        pkg_source,                   # Source directory
+        os.path.dirname(pkg_source)   # Parent of source directory
+    ])
+
+    print(f"Package share directory: {pkg_share}")
+    print(f"Package source directory: {pkg_source}")
+    print(f"Resource path: {resource_path}")
+    
+    # Set up environment variables
+    resource_env = SetEnvironmentVariable(
+        name='IGN_GAZEBO_RESOURCE_PATH',
+        value=resource_path
+    )
+
+    model_env = SetEnvironmentVariable(
+        name='IGN_GAZEBO_MODEL_PATH',
+        value=f"{pkg_source}"
+    )
+
+    
+    # Set up all environment variables
+    path_env = SetEnvironmentVariable(
+        name='PATH',
+        value=os.environ['PATH']
+    )
+
+    
+    # Launch Gazebo
+    gz_sim = ExecuteProcess(
+        cmd=['ign', 'gazebo', world_path],
+        output='screen'
+    )
+    
+    # Spawn Rover Robot
+    gz_spawn_entity = Node(
+        package='ros_gz_sim',
+        executable='create',
+        arguments=[
+            '-file', os.path.join(
+                get_package_share_directory('roverrobotics_description'),
+                'urdf', 'camera_rover_4wd.sdf'),
+            '-name', 'rover_zero4wd',
+            '-allow_renaming', 'true',
+            '-x', '0',
+            '-y', '0',
+            '-z', '1.0',
+        ],
+        output='screen'
+    )
+    
+    # Bridge between ROS 2 and Ignition Gazebo
+    gz_ros2_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=[
+            '/cmd_vel@geometry_msgs/msg/Twist@ignition.msgs.Twist',
+            '/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock',
+            '/odometry/wheels@nav_msgs/msg/Odometry@ignition.msgs.Odometry',
+            '/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',
+            '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
+            '/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
+            '/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU',
+            '/camera/image_raw@sensor_msgs/msg/Image@gz.msgs.Image',
+            '/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
+            '/world/default/dynamic_pose/info@ignition.msgs.Pose_V@geometry_msgs/msg/PoseArray'
+        ],
+        output='screen'
+    )
+    
+    # Create the launch description and populate
+    ld = LaunchDescription()
+    
+    # Add all actions to the launch description
+    ld.add_action(declare_use_sim_time_cmd)
+    ld.add_action(declare_world_cmd)
+    
+    # Add environment variables
+    ld.add_action(path_env)
+    ld.add_action(resource_env)
+    ld.add_action(model_env)
+    
+    # Add nodes and processes
+    ld.add_action(gz_sim)
+    ld.add_action(gz_spawn_entity)
+    ld.add_action(gz_ros2_bridge)
+    
+    return ld
+
+def generate_launch_descriptionold():
     # Create the launch configuration variables
     use_sim_time = LaunchConfiguration('use_sim_time')
     world = LaunchConfiguration('world')
@@ -47,6 +168,12 @@ def generate_launch_description():
         value=os.environ['PATH']
     )
 
+    #env = {
+    #    'IGN_GAZEBO_RESOURCE_PATH': [
+    #        os.path.join(os.path.expanduser('~'), 'worlds/gazebo_models_worlds_collection/models/cpr_office_construction'),
+    #        os.path.join(get_package_share_directory('roverrobotics_gazebo'))
+    #    ]
+    #}
     env = {
         'IGN_GAZEBO_RESOURCE_PATH': os.path.join(
             os.path.expanduser('~'),
@@ -96,11 +223,8 @@ def generate_launch_description():
             '/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU',
             '/camera/image_raw@sensor_msgs/msg/Image@gz.msgs.Image',
             '/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
-            #'/world/maze/reset@std_srvs/srv/Empty',
-            #'/world/maze/reset@std_srvs/srv/Empty@ignition.msgs.Empty@ignition.msgs.Empty',
-            #'/world/maze/control@ros_gz_interfaces/srv/ControlWorld@ignition.msgs.WorldControl@ignition.msgs.Boolean',
-            #'/world/maze/dynamic_pose/info@ignition.msgs.Pose_V@ros2_geometry_msgs/PoseArray'
             '/world/default/dynamic_pose/info@ignition.msgs.Pose_V@geometry_msgs/msg/PoseArray'
+            #'/world/default/state@ros_gz_interfaces/msg/WorldState@ignition.msgs.WorldState',
         ],
         output='screen'
     )

@@ -48,11 +48,17 @@ def generate_launch_description():
     )
 
     env = {
-        'IGN_GAZEBO_RESOURCE_PATH': os.path.join(
-            os.path.expanduser('~'),
-            'worlds/gazebo_models_worlds_collection/models/cpr_office_construction'
-        )
+        'IGN_GAZEBO_RESOURCE_PATH': [
+            os.path.join(os.path.expanduser('~'), 'worlds/gazebo_models_worlds_collection/models/cpr_office_construction'),
+            os.path.join(get_package_share_directory('roverrobotics_gazebo'))
+        ]
     }
+    #env = {
+    #    'IGN_GAZEBO_RESOURCE_PATH': os.path.join(
+    #        os.path.expanduser('~'),
+    #        'worlds/gazebo_models_worlds_collection/models/cpr_office_construction'
+    #    )
+    #}
 
 
     
@@ -100,7 +106,8 @@ def generate_launch_description():
             #'/world/maze/reset@std_srvs/srv/Empty@ignition.msgs.Empty@ignition.msgs.Empty',
             #'/world/maze/control@ros_gz_interfaces/srv/ControlWorld@ignition.msgs.WorldControl@ignition.msgs.Boolean',
             #'/world/maze/dynamic_pose/info@ignition.msgs.Pose_V@ros2_geometry_msgs/PoseArray'
-            '/world/maze/dynamic_pose/info@ignition.msgs.Pose_V@geometry_msgs/msg/PoseArray'
+            '/world/default/dynamic_pose/info@ignition.msgs.Pose_V@geometry_msgs/msg/PoseArray'
+            #'/world/default/state@ros_gz_interfaces/msg/WorldState@ignition.msgs.WorldState',
         ],
         output='screen'
     )

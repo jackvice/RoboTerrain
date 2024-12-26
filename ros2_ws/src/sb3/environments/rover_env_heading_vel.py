@@ -122,8 +122,8 @@ class RoverEnv(gym.Env):
         self.current_pose.orientation.w = 1.0
         
         # Navigation parameters
-        self.rand_x_range = (-27,-22) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-        self.rand_y_range = (-27,-22) # -27,-19 for inspection
+        self.rand_x_range = (-26,-22) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+        self.rand_y_range = (-27,-20) # -27,-19 for inspection
         self.target_positions_x = 0
         self.target_positions_y = 0
         self.previous_distance = None
@@ -133,7 +133,7 @@ class RoverEnv(gym.Env):
         self.too_far_away_high_x = -13  # 29 for inspection
         self.too_far_away_low_y = -29 # for inspection
         self.too_far_away_high_y = -13  # 29 for inspection
-        self.too_far_away_penilty = -5.0
+        self.too_far_away_penilty = -25.0
 
         # Add at the end of your existing __init__ 
         self.heading_log = []  # To store headings
@@ -235,6 +235,9 @@ class RoverEnv(gym.Env):
                 self.heading_log_created = True
         
         if self.too_far_away():
+            if self.current_pose.position.x > self.too_far_away_high_x:
+                print('too far high x, top of map')
+                return self.get_observation(), -50, True, False, {}  
             return self.get_observation(), self.too_far_away_penilty, True, False, {}  
 
         flip_status = self.is_robot_flipped()
@@ -352,7 +355,7 @@ class RoverEnv(gym.Env):
         step_penalty = -0.01        # Further reduced
         heading_bonus = 0.2         # Further reduced
         reverse_penalty = -0.25       # Reduced but still discouraged
-        success_distance = 0.5
+        success_distance = 0.3
         max_possible_distance = 18.0
 
         
