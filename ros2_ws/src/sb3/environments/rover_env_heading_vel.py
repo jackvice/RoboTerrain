@@ -693,6 +693,70 @@ class RoverEnv(gym.Env):
             ], dtype=np.float32)
         
 
+    def lidar_callbackNoise(self, msg):# function needs to be double checked!!!!
+        """Process LIDAR data with error checking and downsampling."""
+        # Convert to numpy array
+        try:
+            lidar_data = np.array(msg.ranges, dtype=np.float32)
+        except Exception as e:
+            print(f"Error converting LIDAR data to numpy array: {e}")
+            return
+
+        # First handle all invalid values
+        # Replace inf values with max_lidar_range
+        inf_mask = np.isinf(lidar_data)
+        if np.any(inf_mask):
+            lidar_data[inf_mask] = self.max_lidar_range
+
+        # Replace any remaining invalid values (NaN, negative)
+        invalid_mask = np.logical_or(np.isnan(lidar_data), lidar_data < 0)
+        if np.any(invalid_mask):
+            print(f"INFO: Replaced {np.sum(invalid_mask)} invalid values with max_lidar_range")
+            lidar_data[invalid_mask] = self.max_lidar_range
+
+        # Clip values to valid range
+        lidar_data = np.clip(lidar_data, 0, self.max_lidar_range)
+
+        # Now add noise to valid data
+        gaussian_noise = np.random.normal(0, 0.05, size=lidar_data.shape)
+        lidar_data = lidar_data + gaussian_noise
+
+        # Clip again after adding noise to ensure no invalid values
+        lidar_data = np.clip(lidar_data, 0, self.max_lidar_range)
+
+        # Add random dropouts last (after noise)
+        dropout_mask = np.random.random(lidar_data.shape) < 0.05  # 5% chance of dropout
+        lidar_data[dropout_mask] = self.max_lidar_range
+
+        # Verify we have enough data points for downsampling
+        expected_points = self.lidar_points * (len(lidar_data) // self.lidar_points)
+        if expected_points == 0:
+            print(f"ERROR: Not enough LIDAR points for downsampling. Got {len(lidar_data)} points")
+            return
+
+        # Downsample by taking minimum value in each segment
+        try:
+            segment_size = len(lidar_data) // self.lidar_points
+            reshaped_data = lidar_data[:segment_size * self.lidar_points].reshape(self.lidar_points, segment_size)
+            self.lidar_data = np.min(reshaped_data, axis=1)
+            
+            # Verify downsampled data
+            if len(self.lidar_data) != self.lidar_points:
+                print(f"ERROR: Downsampled has wrong size. Expected {self.lidar_points}, got {len(self.lidar_data)}")
+                return
+                
+            if np.any(np.isnan(self.lidar_data)) or np.any(np.isinf(self.lidar_data)):
+                print("ERROR: Downsampled data contains invalid values")
+                print("NaN count:", np.sum(np.isnan(self.lidar_data)))
+                print("Inf count:", np.sum(np.isinf(self.lidar_data)))
+                return
+                
+        except Exception as e:
+            print(f"Error during downsampling: {e}")
+            return
+
+        self._received_scan = True
+            
     def lidar_callback(self, msg):
         """Process LIDAR data with error checking and downsampling."""
 
@@ -713,6 +777,14 @@ class RoverEnv(gym.Env):
         #if np.any(lidar_data < 0):
         #    print(f"WARNING: Found {np.sum(lidar_data < 0)} negative values")
             #print("Negative values:", lidar_data[lidar_data < 0])
+
+        # Add Gaussian noise
+        gaussian_noise = np.random.normal(0, 0.05, size=lidar_data.shape)  # 0.1m standard deviation
+        lidar_data = lidar_data + gaussian_noise
+    
+        # Add random dropouts (set some measurements to max_range)
+        dropout_mask = np.random.random(lidar_data.shape) < 0.05  # 5% chance of dropout
+        lidar_data[dropout_mask] = self.max_lidar_range
 
         # Replace inf values with max_lidar_range
         inf_mask = np.isinf(lidar_data)

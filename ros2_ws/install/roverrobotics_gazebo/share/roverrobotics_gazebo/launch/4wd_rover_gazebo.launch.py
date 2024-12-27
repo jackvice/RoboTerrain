@@ -68,7 +68,6 @@ def generate_launch_description():
         name='PATH',
         value=os.environ['PATH']
     )
-
     
     # Launch Gazebo
     gz_sim = ExecuteProcess(
@@ -92,25 +91,31 @@ def generate_launch_description():
         ],
         output='screen'
     )
-    
+
+
     # Bridge between ROS 2 and Ignition Gazebo
     gz_ros2_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         arguments=[
+            # Fix bi-directional topics (use '@' instead of mixed symbols)
             '/cmd_vel@geometry_msgs/msg/Twist@ignition.msgs.Twist',
-            '/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock',
+            '/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock',  # This one-way is correct
             '/odometry/wheels@nav_msgs/msg/Odometry@ignition.msgs.Odometry',
-            '/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',
-            '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
+            '/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',     # This one-way is correct
+            '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',  # This one-way is correct
             '/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
             '/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU',
             '/camera/image_raw@sensor_msgs/msg/Image@gz.msgs.Image',
             '/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
-            '/world/default/dynamic_pose/info@ignition.msgs.Pose_V@geometry_msgs/msg/PoseArray'
+            # Fix this direction (it was reversed)
+            '/world/default/dynamic_pose/info@geometry_msgs/msg/PoseArray[ignition.msgs.Pose_V',
+            # Remove the spawn service bridge as it's causing issues
+            #'/world/default/create@ros_gz_interfaces/srv/SpawnEntity@ignition.msgs.EntityFactory',
         ],
         output='screen'
     )
+    
     
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -131,7 +136,7 @@ def generate_launch_description():
     
     return ld
 
-def generate_launch_descriptionold():
+def generate_launch_descriptionOld():
     # Create the launch configuration variables
     use_sim_time = LaunchConfiguration('use_sim_time')
     world = LaunchConfiguration('world')
