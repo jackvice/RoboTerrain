@@ -10,6 +10,70 @@ from data_loader import MetricsDataLoader
 from metrics_statistics import MetricsStatistics
 from visualizations.time_series import TimeSeriesVisualizer
 
+
+"""
+MetricsAnalyzerCLI Class
+========================
+
+A command-line interface for analyzing and visualizing robot navigation metrics data. 
+This class ties together the MetricsDataLoader, MetricsStatistics, and TimeSeriesVisualizer 
+components into a unified command-line tool.
+
+Key Features:
+------------
+- Process multiple CSV files containing metrics data
+- Generate various types of visualizations (time series, correlations, etc.)
+- Support for multiple metrics tracking (collisions, smoothness, velocity, etc.)
+- Configurable data processing options (outlier detection, confidence levels)
+- Flexible time normalization options
+- Publication-ready output generation
+
+Available Metrics:
+----------------
+- TC: Total Collisions
+- CS: Current Collision Status
+- SM: Smoothness Metric
+- OC: Obstacle Clearance
+- DT: Distance Traveled
+- CV: Current Velocity
+- IM: IMU Acceleration Magnitude
+- RT: Is Rough Terrain
+
+Usage Example:
+------------
+    # Basic usage with default settings
+    python cli.py path/to/metrics.csv
+    
+    # Advanced usage with multiple options
+    python cli.py data1.csv data2.csv \
+        --metrics TC OC CV \
+        --plot-types time_series correlation \
+        --normalize percentage \
+        --confidence-level 0.95 \
+        --output-dir ./results
+        
+CLI Arguments:
+-------------
+Required:
+- csv_files: One or more input CSV files
+
+Optional:
+- metrics (-m): Specific metrics to analyze
+- plot-types (-p): Types of plots to generate
+- output-dir (-o): Output directory for results
+- normalize (-n): Time normalization method
+- iqr-multiplier: Outlier detection sensitivity
+- confidence-level: Statistical confidence level
+- fixed-interval: Time interval for normalization
+
+Dependencies:
+-----------
+- data_loader.py
+- metrics_statistics.py
+- visualizations/time_series.py
+"""
+
+
 class MetricsAnalyzerCLI:
     """Command line interface for the metrics analyzer."""
     VALID_METRICS = {

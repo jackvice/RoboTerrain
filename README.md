@@ -45,7 +45,6 @@ The framework is designed to simulate the Rover Zero robot, but it can be extend
 
 ## Features
 
-- **Dockerized Environment**: Easy setup with a Docker image that includes all dependencies.
 - **Off Road Robot Simulation**: Models of the Rover Zero, Leo Rover and Clearpath Husky platforms in Gazebo Fortress.
 - **Reinforcement Learning Integration**: Placeholder and structure for implementing SB3 PPO PointNav RL agents.
 - **ROS 2 Workspace**: Includes necessary ROS 2 packages and custom code.
@@ -53,7 +52,6 @@ The framework is designed to simulate the Rover Zero robot, but it can be extend
 
 ## Prerequisites
 
-- **Docker**: Ensure you have Docker installed on your system.
 - **NVIDIA Container Toolkit**: Required if you plan to use GPU acceleration.
   - Installation instructions: [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
 - **X11 Server**: For GUI applications like Gazebo (usually available on Linux systems).
@@ -72,36 +70,6 @@ Main dependencies:
 git clone https://github.com/your_username/your_repository.git
 cd your_repository
 ```
-
-### Build the Docker Image
-
-Build the Docker image using the provided `Dockerfile`.
-
-```bash
-docker build -t ros2-humble-gazebo-pytorch:latest .
-```
-
-### Run the Docker Container
-
-Run the container with GUI support for Gazebo and GPU acceleration.
-
-```bash
-# Allow X server connections (run on host)
-xhost +local:root
-
-# Run the detached container
-docker run -d --gpus all --name ros2_rl_container \
-    -e DISPLAY=$DISPLAY \
-    -e QT_X11_NO_MITSHM=1 \
-    -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
-    ros2-humble-gazebo-pytorch:latest
-
-# Open a shell in the container
-docker exec -it ros2_rl_container bash
-
-```
-
-**Note**: If you're using an NVIDIA GPU, ensure that the NVIDIA Container Toolkit is properly installed.
 
 ## Using the Framework
 
@@ -197,11 +165,84 @@ This section provides a placeholder for integrating your SB3 PPO PointNav RL age
 
 **Note**: Ensure that all ROS 2 nodes and the simulation are running before starting the training script.
 
+# Robot Navigation Metrics Analysis
+
+This system provides tools for logging and visualizing robot navigation metrics in ROS2, particularly useful for analyzing robot performance over rough terrain.
+
+## System Components
+
+1. **Metrics Node** (`metrics_node.py`): 
+   - ROS2 node that collects real-time metrics
+   - Subscribes to key topics: `/scan`, `/imu/data`, `/rover/pose_array`, `/odometry/wheels`
+   - Logs data to timestamped CSV files
+
+2. **Metrics Analyzer** (`cli_main.py`):
+   - Command-line tool for analyzing and visualizing the collected metrics
+   - Supports multiple data files for trial comparison
+   - Generates publication-ready plots
+
+## Usage Instructions
+
+### 1. Data Collection
+
+First, ensure ROS2 and your robot simulation/hardware are running. Then:
+
+# Launch the metrics logging node
+ros2 run rover_metrics metrics_node
+
+This will create a CSV file in `/metric_logs` with timestamp and metrics including:
+- Total Collisions
+- Obstacle Clearance
+- Current Velocity
+- IMU Acceleration Magnitude
+- Rough Terrain Detection
+
+### 2. Data Visualization
+
+After collecting data, use the metrics analyzer to visualize results:
+
+# Basic usage (plot all metrics)
+python cli_main.py path/to/metrics_log.csv
+
+# Compare velocity and IMU data from multiple trials
+python cli_main.py trial1.csv trial2.csv -m CV IM -p time_series
+
+# Available metrics flags:
+# TC: Total Collisions
+# CS: Current Collision Status
+# SM: Smoothness Metric
+# OC: Obstacle Clearance
+# DT: Distance Traveled
+# CV: Current Velocity
+# IM: IMU Acceleration Magnitude
+# RT: Is Rough Terrain
+
+### 3. Output
+
+The visualization tool will create:
+- Individual metric plots
+- Combined comparison plots for multiple trials
+- Special visualization for velocity vs. terrain roughness
+
+Output files are saved in:
+output/combined_metrics/
+
+## Examples
+
+### Single Trial Analysis
+python cli_main.py metrics_log_20250105_190453.csv -m CV IM -p time_series
+
+### Multiple Trial Comparison
+python cli_main.py \
+    metrics_log_20250105_190453.csv \
+    metrics_log_20250105_190759.csv \
+    -m CV IM -p time_series
+
 ## Repository Structure
 
 ```
 project_root/
-├── Dockerfile
+├── metrics_analyzer
 ├── ros2_ws/
 │   ├── src/
 │   │   ├── roverrobotics_ros2/       # Rover Robotics packages
@@ -214,7 +255,6 @@ project_root/
 └── README.md
 ```
 
-- **Dockerfile**: Dockerfile for building the simulation and RL environment.
 - **ros2_ws/**: ROS 2 workspace containing all source code.
   - **src/**: Source directory for ROS 2 packages and PPO agent.
   - **install/**, **build/**, **log/**: Generated after building the workspace.

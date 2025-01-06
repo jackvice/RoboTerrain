@@ -30,7 +30,8 @@ class MetricsNode(Node):
             'total_distance': 0.0,
             'distance_threshold': 0.5,  # Maximum reasonable distance per update
             'velocity_over_rough': 0.0,
-            'rough_terrain_threshold': 15.0  # m/s^2 acceleration threshold for rough terrain
+            'rough_terrain_threshold': 15.0,  # m/s^2 acceleration threshold for rough terrain
+            'vertical_roughness': 0.0
         }
         
         # Buffers for metric calculation
@@ -117,6 +118,7 @@ class MetricsNode(Node):
                 'Current Velocity',
                 'IMU Acceleration Magnitude',
                 'Is Rough Terrain',
+                'Vertical Roughness',
                 'Notes'
             ])
 
@@ -149,37 +151,32 @@ class MetricsNode(Node):
 
     def imu_callback(self, msg):
         """Process IMU data for smoothness and terrain roughness detection"""
-        # Calculate acceleration magnitude
+        # Calculate acceleration magnitude (existing)
         accel = msg.linear_acceleration
         accel_magnitude = math.sqrt(accel.x**2 + accel.y**2 + accel.z**2)
         
-        # Update smoothness metric
+        # Add continuous vertical roughness metric (new)
+        vertical_accel = abs(accel.z)  # Assuming z is perpendicular to ground
+        self.metrics['vertical_roughness'] = vertical_accel
+        
+        # Update smoothness metric (existing)
         angular_vel = msg.angular_velocity
         angular_magnitude = math.sqrt(angular_vel.x**2 + angular_vel.y**2 + angular_vel.z**2)
         
         current_smoothness = accel_magnitude + angular_magnitude
         self.metrics['smoothness_metric'] += current_smoothness
         
-        # Check for rough terrain
+        # Check for rough terrain (existing binary metric)
         is_rough = accel_magnitude > self.metrics['rough_terrain_threshold']
         
         # Store in buffer
         self.buffer['imu_readings'].append({
             'accel_magnitude': accel_magnitude,
+            'vertical_roughness': vertical_accel,  # add to buffer
             'angular_magnitude': angular_magnitude,
             'is_rough': is_rough
         })
-        
-        # Buffer management
-        if len(self.buffer['imu_readings']) > self.buffer['buffer_size']:
-            self.buffer['imu_readings'].pop(0)
-            
-        if self.debug_mode and self.update_count % self.debug_interval == 0:
-            self.get_logger().info(
-                f"IMU Update - Accel Mag: {accel_magnitude:.2f}, "
-                f"Angular Mag: {angular_magnitude:.2f}, "
-                f"Is Rough: {is_rough}"
-            )
+                
 
     def pose_array_callback(self, msg):
         """Process pose data for distance calculation"""
@@ -235,7 +232,14 @@ class MetricsNode(Node):
         current_velocity = np.mean(self.buffer['velocity_readings']) if self.buffer['velocity_readings'] else 0
         
         # Get latest IMU reading
-        latest_imu = self.buffer['imu_readings'][-1] if self.buffer['imu_readings'] else {'accel_magnitude': 0, 'is_rough': False}
+        #latest_imu = self.buffer['imu_readings'][-1] if self.buffer['imu_readings'] else {'accel_magnitude': 0, 'is_rough': False}
+        # Get latest IMU reading
+        latest_imu = self.buffer['imu_readings'][-1] if self.buffer['imu_readings'] else {
+            'accel_magnitude': 0, 
+            'vertical_roughness': 0,
+            'is_rough': False
+        }
+
         
         # Prepare notes
         notes = []
@@ -261,9 +265,10 @@ class MetricsNode(Node):
                 round(current_velocity, 4),
                 round(latest_imu['accel_magnitude'], 4),
                 1 if latest_imu['is_rough'] else 0,
+                round(latest_imu['vertical_roughness'], 4),  # new metric
                 "; ".join(notes) if notes else "Normal operation"
             ])
-        
+
         self.update_count += 1
 
 def main(args=None):
