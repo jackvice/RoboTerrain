@@ -1,5 +1,84 @@
 #!/usr/bin/env python3
 
+
+"""
+MetricsStatistics Class
+======================
+
+A statistical analysis toolkit specifically designed for processing navigation metrics data.
+This class provides comprehensive statistical analysis for robot navigation data including
+basic statistics, confidence intervals, rolling statistics, and correlation analysis.
+
+Key Features:
+------------
+- Basic statistical measures (mean, median, std, min, max)
+- Confidence interval calculations using t-distribution
+- Rolling statistics with configurable windows
+- Correlation analysis between different metrics
+- Multi-trial comparison capabilities
+- Statistical results persistence to CSV files
+
+Metrics Supported:
+----------------
+- TC: Total Collisions
+- SR: Success Rate
+- MTT: Mean Time to Traverse
+- TR: Traverse Rate
+- TSR: Total Smoothness of Route
+- OC: Obstacle Clearance
+- VOR: Velocity Over Rough Terrain
+
+Usage Example:
+------------
+    # Initialize the statistics module
+    stats = MetricsStatistics(confidence_level=0.95)
+    
+    # Analyze a single trial
+    results = stats.analyze_trial(
+        df=your_dataframe,
+        metrics=['TC', 'VOR', 'OC']
+    )
+    
+    # Compare multiple trials
+    trial_comparison = stats.compare_trials(
+        trial_data={'trial1': df1, 'trial2': df2},
+        metrics=['TC', 'VOR', 'OC']
+    )
+    
+    # Save results
+    from pathlib import Path
+    stats.save_statistics(
+        results,
+        output_path=Path('./output'),
+        prefix='trial1_'
+    )
+
+Main Methods:
+-----------
+analyze_trial(): Comprehensive analysis of a single trial
+compare_trials(): Statistical comparison across multiple trials
+calculate_basic_stats(): Basic statistical measures
+calculate_confidence_interval(): Confidence interval calculations
+calculate_rolling_stats(): Rolling window statistics
+calculate_correlation_matrix(): Correlation analysis between metrics
+save_statistics(): Save results to CSV files
+
+Dependencies:
+-----------
+- numpy
+- pandas
+- scipy.stats
+- logging
+- pathlib
+
+Notes:
+-----
+- All statistical calculations handle NaN values appropriately
+- Results are logged using Python's logging module
+- Output files are saved with optional prefixes for organization
+- Default confidence level is 95% but can be configured
+"""
+
 import numpy as np
 import pandas as pd
 from scipy import stats

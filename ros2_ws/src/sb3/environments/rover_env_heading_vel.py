@@ -16,6 +16,9 @@ from std_srvs.srv import Empty
 from geometry_msgs.msg import Twist
 from gazebo_msgs.msg import EntityState
 from gazebo_msgs.srv import SetEntityState
+from sensor_msgs.msg import Image
+import cv2
+
 
 class RoverEnv(gym.Env):
     """Custom Environment that follows gymnasium interface"""
@@ -62,6 +65,13 @@ class RoverEnv(gym.Env):
             qos_profile
         )
 
+        self.bridge = CvBridge()
+        self.camera_subscriber = self.node.create_subscription(
+            Image,
+            camera_topic,
+            self.camera_callback,
+            10)
+        self.current_image = np.zeros((64, 64), dtype=np.float32)  # grayscale image buffer
         
         # Initialize environment parameters
         self.pose_node = None
@@ -83,13 +93,14 @@ class RoverEnv(gym.Env):
         
         # Stuck detection parameters
         self.position_history = []
-        self.stuck_threshold = 0.08  # Minimum distance the robot should move
+        self.stuck_threshold = 0.1  # Minimum distance the robot should move
         self.stuck_window = 600    # Number of steps to check for being stuck
-        self.stuck_penilty = -10.0
+        self.stuck_penilty = -25.0
 
         # Collision detection parameters
         self.collision_history = []
         self.collision_window = 10  # Number of steps to check for persistent collision
+        self.collision_count = 0
         
         # PID control parameters for heading
         self.Kp = 2.0  # Proportional gain
@@ -135,6 +146,9 @@ class RoverEnv(gym.Env):
         self.too_far_away_high_y = -13  # 29 for inspection
         self.too_far_away_penilty = -25.0
 
+        self.goal_reward = 50.0      
+
+
         # Add at the end of your existing __init__ 
         self.heading_log = []  # To store headings
         self.heading_log_file = "initial_headings.csv"
@@ -170,6 +184,12 @@ class RoverEnv(gym.Env):
                 low=np.array([0, -np.pi]),
                 high=np.array([100, np.pi]),
                 shape=(2,),
+                dtype=np.float32
+            ),
+            'image': spaces.Box(
+                low=0,
+                high=255,
+                shape=(64, 64),
                 dtype=np.float32
             )
         })
@@ -237,14 +257,20 @@ class RoverEnv(gym.Env):
         if self.too_far_away():
             if self.current_pose.position.x > self.too_far_away_high_x:
                 print('too far high x, top of map')
-                return self.get_observation(), -50, True, False, {}  
-            return self.get_observation(), self.too_far_away_penilty, True, False, {}  
+                return self.get_observation(), -1 * self.goal_reward, True, False, {}  
+            return self.get_observation(), self.too_far_away_penilty, True, False, {}
+
+        if self.collision_count > self.stuck_window:
+            self.collision_count = 0
+            print('stuck in collision, ending episode')
+            return self.get_observation(), -1 * self.goal_reward, True, False, {}  
 
         flip_status = self.is_robot_flipped()
         if flip_status:
             print('Robot flipped', flip_status, ', episode done')
-            if self.total_steps > 100:
-                return self.get_observation(), -100, True, False, {}
+            if self._step > 500:
+                print('Robot flipped on its own')
+                return self.get_observation(), -1 * self.goal_reward, True, False, {}
             else:
                 return self.get_observation(), 0, True, False, {} 
             
@@ -263,7 +289,7 @@ class RoverEnv(gym.Env):
 
             if distance_moved < self.stuck_threshold:
                 print('Robot is stuck, has moved only', distance_moved,
-                      'meters in', self.stuck_window, 'steps')
+                      'meters in', self.stuck_window, 'steps, resetting')
                 return self.get_observation(), self.stuck_penilty, True, False, {}
             
                 
@@ -333,7 +359,8 @@ class RoverEnv(gym.Env):
             'pose': self.rover_position,
             'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
                             dtype=np.float32),
-            'target': self.get_target_info()
+            'target': self.get_target_info(),
+            'image': self.current_image 
         }    
 
 
@@ -350,13 +377,13 @@ class RoverEnv(gym.Env):
         # Constants
         collision_threshold = 0.2
         collision_reward = -1.0        # Increased due to recovery time
-        goal_reward = 50.0           # Kept as requested        
         distance_scaling_factor = 20.0  # Reduced from 20
         step_penalty = -0.01        # Further reduced
         heading_bonus = 0.2         # Further reduced
         reverse_penalty = -0.25       # Reduced but still discouraged
         success_distance = 0.3
         max_possible_distance = 18.0
+        
 
         
         # Initialize reward components dictionary for logging
@@ -387,7 +414,7 @@ class RoverEnv(gym.Env):
         # Success reward
         if current_distance < success_distance:
             self.update_target_pos()
-            return goal_reward
+            return self.goal_reward
 
 
         # Collision detection with persistence check
@@ -402,6 +429,9 @@ class RoverEnv(gym.Env):
         if len(self.collision_history) == self.collision_window and all(self.collision_history):
             print(f'Persistent collision detected, min distance is {min_distance:3f}')
             reward_components['collision'] = collision_reward
+            self.collision_count +=1
+        else:
+            self.collision_count = 0
         
         #min_distance = np.min(self.lidar_data[np.isfinite(self.lidar_data)])
         #if min_distance < collision_threshold:
@@ -693,6 +723,16 @@ class RoverEnv(gym.Env):
             ], dtype=np.float32)
         
 
+    def camera_callback(self, msg):
+        try:
+            # Convert ROS Image to CV2, then to grayscale
+            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='mono8')
+            # Resize to 64x64
+            self.current_image = cv2.resize(cv_image, (64, 64))
+        except Exception as e:
+            self.node.get_logger().warn(f"Failed to process image: {e}")
+
+            
     def lidar_callbackNoise(self, msg):# function needs to be double checked!!!!
         """Process LIDAR data with error checking and downsampling."""
         # Convert to numpy array
