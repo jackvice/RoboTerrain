@@ -99,7 +99,7 @@ class RoverEnv(gym.Env):
 
         # Collision detection parameters
         self.collision_history = []
-        self.collision_window = 10  # Number of steps to check for persistent collision
+        self.collision_window = 15  # Number of steps to check for persistent collision
         self.collision_count = 0
         
         # PID control parameters for heading
@@ -133,21 +133,24 @@ class RoverEnv(gym.Env):
         self.current_pose.orientation.w = 1.0
         
         # Navigation parameters
-        self.rand_x_range = (-26,-22) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-        self.rand_y_range = (-27,-20) # -27,-19 for inspection
+        self.rand_goal_x_range = (-26, -21) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+        self.rand_goal_y_range = (-25, -20) # -27,-19 for inspection
+        self.rand_x_range = (-28.5, -14) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+        self.rand_y_range = (-28.5, -19.5) # -27,-19 for inspection
         self.target_positions_x = 0
         self.target_positions_y = 0
         self.previous_distance = None
         self.the_world = 'default'
         self.world_pose_path = '/world/' + self.the_world + '/set_pose'
-        self.too_far_away_low_x = -29 # 17 for inspection
+        self.too_far_away_low_x = -30 # 17 for inspection
         self.too_far_away_high_x = -13  # 29 for inspection
-        self.too_far_away_low_y = -29 # for inspection
+        self.too_far_away_low_y = -30 # for inspection
         self.too_far_away_high_y = -13  # 29 for inspection
         self.too_far_away_penilty = -25.0
 
         self.goal_reward = 50.0      
 
+        self.min_sample_rate = 13.0
 
         # Add at the end of your existing __init__ 
         self.heading_log = []  # To store headings
@@ -253,6 +256,11 @@ class RoverEnv(gym.Env):
                 df.to_csv(self.heading_log_file, index=False)
                 print(f"Saved {len(self.heading_log)} heading commands to {self.heading_log_file}")
                 self.heading_log_created = True
+
+        if self.check_sample_rate_performance() > 20.0: # greater than some seconds
+            print('Robot is in a low fps zone, reseting')
+            return self.get_observation(), self.too_far_away_penilty, True, False, {}
+
         
         if self.too_far_away():
             if self.current_pose.position.x > self.too_far_away_high_x:
@@ -270,7 +278,7 @@ class RoverEnv(gym.Env):
             print('Robot flipped', flip_status, ', episode done')
             if self._step > 500:
                 print('Robot flipped on its own')
-                return self.get_observation(), -1 * self.goal_reward, True, False, {}
+                return self.get_observation(), (-1 * self.goal_reward), True, False, {}
             else:
                 return self.get_observation(), 0, True, False, {} 
             
@@ -366,8 +374,8 @@ class RoverEnv(gym.Env):
 
     def update_target_pos(self):
         print('###################################################### GOAL ACHIVED!')
-        self.target_positions_x = np.random.uniform(*self.rand_x_range)
-        self.target_positions_y = np.random.uniform(*self.rand_y_range)
+        self.target_positions_x = np.random.uniform(*self.rand_goal_x_range)
+        self.target_positions_y = np.random.uniform(*self.rand_goal_y_range)
         self.previous_distance = None
         return
     
@@ -467,6 +475,45 @@ class RoverEnv(gym.Env):
                 
         return total_reward
 
+    def check_sample_rate_performance(self):
+        """
+        Monitors the sample rate and returns the duration (in seconds) that it has been below threshold.
+        Returns 0.0 if sample rate is currently above threshold.
+        """
+        current_time = time.time()
+        
+        # Initialize tracking attributes if they don't exist
+        if not hasattr(self, '_last_sample_time'):
+            self._last_sample_time = current_time
+            self._below_threshold_start = None
+            self._frame_times = []
+            return 0.0
+        
+        # Calculate current sample rate
+        sample_interval = current_time - self._last_sample_time
+        current_rate = 1.0 / sample_interval if sample_interval > 0 else float('inf')
+        
+        # Update frame times list (keep last 10 frames for smoothing)
+        self._frame_times.append(current_rate)
+        if len(self._frame_times) > 10:
+            self._frame_times.pop(0)
+        
+        # Calculate average frame rate over the last 10 frames
+        avg_rate = sum(self._frame_times) / len(self._frame_times)
+        
+        # Check if we're below threshold
+        if avg_rate < self.min_sample_rate:
+            if self._below_threshold_start is None:
+                self._below_threshold_start = current_time
+            duration_below_threshold = current_time - self._below_threshold_start
+        else:
+            self._below_threshold_start = None
+            duration_below_threshold = 0.0
+        
+        # Update last sample time
+        self._last_sample_time = current_time
+        
+        return duration_below_threshold    
 
     def debug_logging(self, heading_diff, current_distance, reward_components, total_reward):
            self.node.get_logger().info(
@@ -543,29 +590,14 @@ class RoverEnv(gym.Env):
         if x_insert < -24.5 and y_insert < -24.5:
             z_insert = 6.5
         
-        # Base orientation of pi (180 degrees) plus random rotation
-        #base_yaw = np.pi  # This gives us the correct "up" orientation
-        #random_rotation = np.random.uniform(-np.pi, np.pi)
-        #final_yaw = base_yaw + random_rotation
-
-        base_yaw = 0  # Base orientation 
-        fixed_rotation = np.pi  # Rotate 180 degrees to face negative X
-        random_rotation = np.random.uniform(-np.pi, np.pi)  # Add random rotation if desired
-        final_yaw = base_yaw + fixed_rotation + random_rotation
+        final_yaw = np.random.uniform(-np.pi, np.pi)
+        print(f"Generated heading: {math.degrees(final_yaw)}°")
         
         # Normalize to [-pi, pi] range
         final_yaw = np.arctan2(np.sin(final_yaw), np.cos(final_yaw))
         
         quat_w = np.cos(final_yaw / 2)
         quat_z = np.sin(final_yaw / 2)
-
-        # Add our debug logging
-        #print("\nFull Reset State:")
-        #print(f"Position: x={x_insert}, y={y_insert}, z={z_insert}")
-        #print(f"Base yaw: {math.degrees(base_yaw)} degrees")
-        #print(f"Random rotation: {math.degrees(random_rotation)} degrees")
-        #print(f"Final yaw: {math.degrees(final_yaw)} degrees")
-        #print(f"Quaternion components - w: {quat_w}, x: 0, y: 0, z: {quat_z}")
 
         # Print the full reset command
         reset_cmd_str = ('name: "rover_zero4wd", ' +
@@ -614,84 +646,6 @@ class RoverEnv(gym.Env):
         
         observation = self.get_observation()
 
-        # Normal operation
-        twist.linear.x = 0.0
-        twist.angular.z = 0.0
-        
-        self.publisher.publish(twist)
-        return observation, {}
-    
-    def reset_old(self, seed=None, options=None):
-        print('################ Environment Reset')
-        print('')
-        """Reset the environment to its initial state"""
-        super().reset(seed=seed)
-        self.collision_history = []  # Clear collision history on reset
-        x_insert = np.random.uniform(*self.rand_x_range)
-        y_insert = np.random.uniform(*self.rand_y_range)
-        z_insert = 5.5
-        if x_insert < -24.5 and y_insert < -24.5:
-            z_insert = 6.5
-        
-        # Generate random yaw angle (in radians) between -π and π
-        random_yaw = np.random.uniform(-np.pi, np.pi)
-        quat_w = np.cos(random_yaw / 2)
-        quat_z = np.sin(random_yaw / 2)
-
-        # Right before the reset_cmd
-        print("\nFull Reset State:")
-        print(f"Position: x={x_insert}, y={y_insert}, z={z_insert}")
-        print(f"Generated random_yaw: {random_yaw} radians ({math.degrees(random_yaw)} degrees)")
-        print(f"Quaternion components - w: {quat_w}, x: 0, y: 0, z: {quat_z}")
-
-        # Print the full reset command
-        reset_cmd_str = ('name: "rover_zero4wd", ' +
-                         f'position: {{x: {x_insert}, y: {y_insert}, z: {z_insert}}}, ' +
-                         f'orientation: {{x: 0, y: 0, z: {quat_z}, w: {quat_w}}}')
-        print("\nFull reset command:")
-        print(reset_cmd_str)
-        
-        # Reset robot pose using ign service
-        try:
-            reset_cmd = [
-                'ign', 'service', '-s', self.world_pose_path,
-                '--reqtype', 'ignition.msgs.Pose',
-                '--reptype', 'ignition.msgs.Boolean',
-                '--timeout', '2000',
-                '--req', 'name: "rover_zero4wd", position: {x: ' + str(x_insert) +
-                ',y: '+ str(y_insert) +
-                ', z: '+ str(z_insert) + '}, orientation: {x: 0, y: 0, z: ' +
-                str(quat_z) + ', w: ' + str(quat_w) + '}'
-            ]
-            result = subprocess.run(reset_cmd, capture_output=True, text=True)
-            if result.returncode != 0:
-                print(f"Failed to reset robot pose: {result.stderr}")
-        except Exception as e:
-            print(f"Error executing reset command: {str(e)}")
-    
-        # Reset internal state
-        self._step = 0
-        self.last_linear_velocity = 0.0
-        self.steps_since_correction = self.cooldown_steps
-        self.is_flipped = False
-        # Reset PointNav-specific variables
-        self.target_positions_x = np.random.uniform(*self.rand_x_range)
-        self.target_positions_y = np.random.uniform(*self.rand_y_range)
-        self.previous_distance = None
-        
-        # Add a small delay to ensure the robot has time to reset
-        for _ in range(100):  # Increased from 3 to 5 to allow more time for pose reset
-            rclpy.spin_once(self.node, timeout_sec=0.1)
-
-
-        # Add IMU logging HERE
-        print("\nInitial IMU readings:")
-        print(f"Roll: {math.degrees(self.current_roll)} degrees")
-        print(f"Pitch: {math.degrees(self.current_pitch)} degrees")
-        print(f"Yaw: {math.degrees(self.current_yaw)} degrees")
-        
-        observation = self.get_observation()
-        twist = Twist()
         # Normal operation
         twist.linear.x = 0.0
         twist.angular.z = 0.0

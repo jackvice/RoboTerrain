@@ -4,6 +4,7 @@ from datetime import datetime
 import os
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
+from stable_baselines3.common.utils import get_linear_fn
 from environments.rover_env_heading_vel import RoverEnv
 from stable_baselines3.common.callbacks import CheckpointCallback
 #from custom_features_extractor import CustomCombinedExtractor
@@ -28,7 +29,6 @@ def make_env():
 
 def main():
     args = parse_args()
-
     
     # Create timestamp for this training run
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
@@ -62,10 +62,14 @@ def main():
         # Create new model
         model = PPO("MultiInputPolicy",
                     env,
+                    learning_rate = get_linear_fn(3e-4, 5e-5, 1.0),  # Starts at 3e-4, decays to 5e-5
                     tensorboard_log=tensorboard_dir,
                     verbose=1,
-                    n_steps=4096,         # increase for GPU
-                    batch_size=256)       # increase for GPU
+                    clip_range=0.15,
+                    n_steps=8192,         # increase long episodes
+                    batch_size=256,
+                    ent_coef= 0.01
+                    )       
 
     # Set up checkpoint callback
     checkpoint_callback = CheckpointCallback(
@@ -78,7 +82,7 @@ def main():
     
     # Train model
     model.learn(
-        total_timesteps=2_000_000,
+        total_timesteps=10_000_000,
         callback=checkpoint_callback,
         reset_num_timesteps=False if args.load == 'True' else True
     )
