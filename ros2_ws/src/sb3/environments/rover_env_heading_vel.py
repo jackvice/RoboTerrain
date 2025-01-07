@@ -23,7 +23,7 @@ import cv2
 class RoverEnv(gym.Env):
     """Custom Environment that follows gymnasium interface"""
     metadata = {'render_modes': ['human']}
-    def __init__(self, size=(64, 64), length=6000, scan_topic='/scan', imu_topic='/imu/data',
+    def __init__(self, size=(64, 64), length=3000, scan_topic='/scan', imu_topic='/imu/data',
                  cmd_vel_topic='/cmd_vel', camera_topic='/camera/image_raw',
                  connection_check_timeout=30, lidar_points=32, max_lidar_range=12.0):
 
@@ -132,11 +132,16 @@ class RoverEnv(gym.Env):
         self.current_pose.orientation.z = 0.0
         self.current_pose.orientation.w = 1.0
         
-        # Navigation parameters
-        self.rand_goal_x_range = (-26, -21) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-        self.rand_goal_y_range = (-25, -20) # -27,-19 for inspection
-        self.rand_x_range = (-28.5, -14) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-        self.rand_y_range = (-28.5, -19.5) # -27,-19 for inspection
+        # Navigation parameters previous
+        #self.rand_goal_x_range = (-26, -21) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+        #self.rand_goal_y_range = (-25, -20) # -27,-19 for inspection
+        #self.rand_x_range = (-21, -14) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+        #self.rand_y_range = (-28.5, -19.5) # -27,-19 for inspection
+
+        self.rand_goal_x_range = (-21, -14) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+        self.rand_goal_y_range = (-27, -17) # -27,-19 for inspection
+        self.rand_x_range = (-28.5, -23) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+        self.rand_y_range = (-28.5, -16.5) # -27,-19 for inspection
         self.target_positions_x = 0
         self.target_positions_y = 0
         self.previous_distance = None
@@ -257,9 +262,9 @@ class RoverEnv(gym.Env):
                 print(f"Saved {len(self.heading_log)} heading commands to {self.heading_log_file}")
                 self.heading_log_created = True
 
-        if self.check_sample_rate_performance() > 20.0: # greater than some seconds
-            print('Robot is in a low fps zone, reseting')
-            return self.get_observation(), self.too_far_away_penilty, True, False, {}
+        #if self.check_sample_rate_performance() > 20.0: # greater than some seconds
+        #    print('Robot is in a low fps zone, reseting')
+        #    return self.get_observation(), self.too_far_away_penilty, True, False, {}
 
         
         if self.too_far_away():
@@ -311,7 +316,8 @@ class RoverEnv(gym.Env):
         # Extract speed and desired heading from action
         speed = float(action[0])
         desired_heading = float(action[1])
-        
+        with open('heading_log.txt', 'a') as f:
+            f.write(f"{desired_heading}\n")
         # Store last actions
         self.last_speed = speed
         self.last_heading = desired_heading
@@ -590,11 +596,13 @@ class RoverEnv(gym.Env):
         if x_insert < -24.5 and y_insert < -24.5:
             z_insert = 6.5
         
-        final_yaw = np.random.uniform(-np.pi, np.pi)
-        print(f"Generated heading: {math.degrees(final_yaw)}°")
-        
+        #final_yaw = np.random.uniform(-np.pi, np.pi)
+        #print(f"Generated heading: {math.degrees(final_yaw)}°")
         # Normalize to [-pi, pi] range
-        final_yaw = np.arctan2(np.sin(final_yaw), np.cos(final_yaw))
+        #final_yaw = np.arctan2(np.sin(final_yaw), np.cos(final_yaw))
+
+        #make final yaw point down cause normal action distribution pointing up.
+        final_yaw = np.pi + np.random.uniform(-0.2, 0.2)
         
         quat_w = np.cos(final_yaw / 2)
         quat_z = np.sin(final_yaw / 2)
@@ -630,8 +638,8 @@ class RoverEnv(gym.Env):
         self.steps_since_correction = self.cooldown_steps
         self.is_flipped = False
         # Reset PointNav-specific variables
-        self.target_positions_x = np.random.uniform(*self.rand_x_range)
-        self.target_positions_y = np.random.uniform(*self.rand_y_range)
+        self.target_positions_x = np.random.uniform(*self.rand_goal_x_range)
+        self.target_positions_y = np.random.uniform(*self.rand_goal_y_range)
         self.previous_distance = None
         
         # Add a small delay to ensure the robot has time to reset

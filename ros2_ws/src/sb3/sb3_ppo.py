@@ -68,7 +68,7 @@ def main():
                     clip_range=0.15,
                     n_steps=8192,         # increase long episodes
                     batch_size=256,
-                    ent_coef= 0.01
+                    ent_coef= 0.04
                     )       
 
     # Set up checkpoint callback
