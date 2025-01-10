@@ -18,6 +18,7 @@ from gazebo_msgs.msg import EntityState
 from gazebo_msgs.srv import SetEntityState
 from sensor_msgs.msg import Image
 import cv2
+from collections import deque
 
 
 class RoverEnv(gym.Env):
@@ -132,6 +133,8 @@ class RoverEnv(gym.Env):
         self.current_pose.orientation.z = 0.0
         self.current_pose.orientation.w = 1.0
 
+        self.yaw_history = deque(maxlen=200)
+        
         # Add these as class variables in your environment's __init__
         self.down_facing_training_steps = 200000  # Duration of temporary training
         self.heading_steps = 0  # Add this to track when training began
@@ -390,7 +393,7 @@ class RoverEnv(gym.Env):
         self.previous_distance = None
         return
     
-
+    
     def task_reward(self):
         """Reward function with balanced rewards and detailed logging"""
         # Constants
@@ -493,6 +496,29 @@ class RoverEnv(gym.Env):
                 
         return total_reward
 
+    def get_yaw_delta(self):
+        """
+        Calculate absolute difference between current yaw and yaw from 200 steps ago.
+        Returns 0 if there isn't 200 steps of history yet.
+        """
+        # Add current yaw to history
+        self.yaw_history.append(self.current_yaw)
+    
+        # If we don't have enough history yet, return 0
+        if len(self.yaw_history) < 200:
+            return 0.0
+        
+        # Get yaw from 200 steps ago
+        old_yaw = self.yaw_history[0]
+    
+        # Calculate absolute difference
+        # Using atan2 to handle the circular nature of angles
+        yaw_diff = abs(math.atan2(math.sin(self.current_yaw - old_yaw), 
+                                  math.cos(self.current_yaw - old_yaw)))
+                             
+        return yaw_diff
+
+    
     def check_sample_rate_performance(self):
         """
         Monitors the sample rate and returns the duration (in seconds) that it has been below threshold.
