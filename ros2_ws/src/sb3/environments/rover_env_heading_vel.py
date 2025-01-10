@@ -18,6 +18,7 @@ from gazebo_msgs.msg import EntityState
 from gazebo_msgs.srv import SetEntityState
 from sensor_msgs.msg import Image
 import cv2
+from collections import deque
 
 
 class RoverEnv(gym.Env):
@@ -95,7 +96,7 @@ class RoverEnv(gym.Env):
         self.position_history = []
         self.stuck_threshold = 0.1  # Minimum distance the robot should move
         self.stuck_window = 600    # Number of steps to check for being stuck
-        self.stuck_penilty = -25.0
+        self.stuck_penilty = -50.0
 
         # Collision detection parameters
         self.collision_history = []
@@ -132,6 +133,8 @@ class RoverEnv(gym.Env):
         self.current_pose.orientation.z = 0.0
         self.current_pose.orientation.w = 1.0
 
+        self.yaw_history = deque(maxlen=200)
+        
         # Add these as class variables in your environment's __init__
         self.down_facing_training_steps = 200000  # Duration of temporary training
         self.heading_steps = 0  # Add this to track when training began
@@ -155,9 +158,9 @@ class RoverEnv(gym.Env):
         self.too_far_away_high_x = -13  # 29 for inspection
         self.too_far_away_low_y = -30 # for inspection
         self.too_far_away_high_y = -17.5  # 29 for inspection
-        self.too_far_away_penilty = -25.0
+        self.too_far_away_penilty = -50#-25.0
 
-        self.goal_reward = 50.0      
+        self.goal_reward = 100.0
 
         self.min_sample_rate = 13.0
 
@@ -390,7 +393,7 @@ class RoverEnv(gym.Env):
         self.previous_distance = None
         return
     
-
+    
     def task_reward(self):
         """Reward function with balanced rewards and detailed logging"""
         # Constants
@@ -411,7 +414,8 @@ class RoverEnv(gym.Env):
             'step': step_penalty,
             'motion': 0.0,
             'goal': 0.0,
-            'down_facing': 0.0  # New component
+            'down_facing': 0.0,  # New component
+            'yaw_alignment': 0.0
         }
         
         if self.current_pose is None:
@@ -477,6 +481,7 @@ class RoverEnv(gym.Env):
 
         if self.heading_steps < self.down_facing_training_steps:  # Only apply for period
             #self.too_far_away_penilty = -50.0
+            reward_components['yaw_alignment'] = yaw_to_reward(self.current_yaw)
             if abs(current_heading_deg) > 170:
                 reward_components['down_facing'] = -0.5
         #else:
@@ -493,6 +498,43 @@ class RoverEnv(gym.Env):
                 
         return total_reward
 
+
+    def yaw_to_reward(yaw_rad):
+        """
+        Maps absolute yaw to reward value:
+        |yaw| = 180° (π rad) -> 0.0
+        |yaw| = 0° (0 rad) -> 0.5
+        """
+        abs_yaw_deg = abs(math.degrees(yaw_rad))
+        # Linear interpolation: (180 - abs_yaw) * (0.5/180)
+        reward = (180 - abs_yaw_deg) * (0.5/180)
+        # Clamp between 0 and 0.5 to handle angles > 180
+        return max(0.0, min(0.5, reward))
+
+    
+    def get_yaw_delta(self):
+        """
+        Calculate absolute difference between current yaw and yaw from 200 steps ago.
+        Returns 0 if there isn't 200 steps of history yet.
+        """
+        # Add current yaw to history
+        self.yaw_history.append(self.current_yaw)
+    
+        # If we don't have enough history yet, return 0
+        if len(self.yaw_history) < 200:
+            return 0.0
+        
+        # Get yaw from 200 steps ago
+        old_yaw = self.yaw_history[0]
+    
+        # Calculate absolute difference
+        # Using atan2 to handle the circular nature of angles
+        yaw_diff = abs(math.atan2(math.sin(self.current_yaw - old_yaw), 
+                                  math.cos(self.current_yaw - old_yaw)))
+                             
+        return yaw_diff
+
+    
     def check_sample_rate_performance(self):
         """
         Monitors the sample rate and returns the duration (in seconds) that it has been below threshold.
