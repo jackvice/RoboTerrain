@@ -17,6 +17,7 @@
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/warehouse.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/simplecave3.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/rubicon.sdf
+/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/maze_clean.sdf~
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/office_cpr_construction.world
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/simple_40m2.world
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/maze_simple.sdf~
@@ -28,6 +29,7 @@
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/inspection_simple.world
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/clearpath_LICENSE.txt
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/maze_and_person.sdf
+/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/maze_clean.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/depot.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/harmonic.sdf~
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/office_cpr_construction.world~

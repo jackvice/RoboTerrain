@@ -35,6 +35,8 @@ class RoverEnv(gym.Env):
         self.bridge = CvBridge()
         self.node = rclpy.create_node('turtlebot_controller')
 
+        self.current_world = 'maze'
+
         # Initialize publishers and subscribers
         self.publisher = self.node.create_publisher(
             Twist,
@@ -72,7 +74,20 @@ class RoverEnv(gym.Env):
             camera_topic,
             self.camera_callback,
             10)
+
+        # Add this in __init__ with your other subscribers
+        self.odom_subscriber = self.node.create_subscription(
+            Odometry,
+            '/odometry/wheels',  
+            self.odom_callback,
+            10)
+
         self.current_image = np.zeros((64, 64), dtype=np.float32)  # grayscale image buffer
+
+        # Initialize these in __init__
+        self.current_linear_velocity = 0.0
+        self.current_angular_velocity = 0.0
+
         
         # Initialize environment parameters
         self.pose_node = None
@@ -94,9 +109,9 @@ class RoverEnv(gym.Env):
         
         # Stuck detection parameters
         self.position_history = []
-        self.stuck_threshold = 0.1  # Minimum distance the robot should move
+        self.stuck_threshold = 0.02  # Minimum distance the robot should move
         self.stuck_window = 600    # Number of steps to check for being stuck
-        self.stuck_penilty = -50.0
+        self.stuck_penilty = -25.0
 
         # Collision detection parameters
         self.collision_history = []
@@ -145,22 +160,22 @@ class RoverEnv(gym.Env):
         #self.rand_x_range = (-21, -14) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
         #self.rand_y_range = (-28.5, -19.5) # -27,-19 for inspection
 
-        self.rand_goal_x_range = (-28, -14) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-        self.rand_goal_y_range = (-28, -19) # -27,-19 for inspection
-        self.rand_x_range = (-28, -15) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-        self.rand_y_range = (-28, -19) # -27,-19 for inspection
+        self.rand_goal_x_range = (-7, 7) #(-23, -14) 
+        self.rand_goal_y_range = (-7, 7)# (-28, -19) 
+        self.rand_x_range =  (-7, 7) #(-23, -14) #x(-5.4, -1) # moon y(-9.3, -0.5) moon, x(-3.5, 2.5) 
+        self.rand_y_range =  (-7, 7) #(-28, -19) 
         self.target_positions_x = 0
         self.target_positions_y = 0
         self.previous_distance = None
         self.the_world = 'default'
         self.world_pose_path = '/world/' + self.the_world + '/set_pose'
         self.too_far_away_low_x = -30 # 17 for inspection
-        self.too_far_away_high_x = -13  # 29 for inspection
+        self.too_far_away_high_x = 30#-13  # 29 for inspection
         self.too_far_away_low_y = -30 # for inspection
         self.too_far_away_high_y = -17.5  # 29 for inspection
         self.too_far_away_penilty = -50#-25.0
 
-        self.goal_reward = 100.0
+        self.goal_reward = 50
 
         self.min_sample_rate = 13.0
 
@@ -186,8 +201,8 @@ class RoverEnv(gym.Env):
                 dtype=np.float32
             ),
             'pose': spaces.Box(
-                low=np.array([-20.0, -20.0, 0.0]),
-                high=np.array([20.0, 20.0, 0.0]),
+                low=np.array([-30.0, -30.0, -10.0]),
+                high=np.array([30.0, 30.0, 10.0]),
                 dtype=np.float32
             ),
             'imu': spaces.Box(
@@ -206,7 +221,13 @@ class RoverEnv(gym.Env):
                 high=255,
                 shape=(64, 64),
                 dtype=np.float32
-            )
+            ),
+            'velocities': spaces.Box(
+                low=np.array([-10.0, -10.0]),
+                high=np.array([10.0, 10.0]),
+                shape=(2,),
+                dtype=np.float32
+            ),
         })
 
         # Check robot connection
@@ -275,11 +296,11 @@ class RoverEnv(gym.Env):
         #    return self.get_observation(), self.too_far_away_penilty, True, False, {}
 
         
-        if self.too_far_away():
+        #if self.too_far_away():
             #if self.current_pose.position.x > self.too_far_away_high_x:
             #    print('too far high x, top of map')
             #    return self.get_observation(), -1 * self.goal_reward, True, False, {}  
-            return self.get_observation(), self.too_far_away_penilty, True, False, {}
+            #return self.get_observation(), self.too_far_away_penilty, True, False, {}
 
         if self.collision_count > self.stuck_window:
             self.collision_count = 0
@@ -353,7 +374,7 @@ class RoverEnv(gym.Env):
         observation = self.get_observation()
 
         
-        if False:# self.total_steps % 1000 == 0:
+        if self.total_steps % 1000 == 0:
             temp_obs_target = observation["target"]
             print(
                 f"current target x,y: ({self.target_positions_x}, {self.target_positions_y}), "
@@ -361,7 +382,7 @@ class RoverEnv(gym.Env):
                 f"Speed: {speed:.2f}, Heading: {math.degrees(desired_heading):.1f}°"
                 f"Final Reward: {reward:.3f}, "
             )
-        if self.total_steps % 2000 == 0:
+        if self.total_steps % 1000 == 0:
             print('Observation: Pose:', observation['pose'],
                   ', IMU:', observation['imu'],
                   ', target:', observation['target'],
@@ -382,7 +403,9 @@ class RoverEnv(gym.Env):
             'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
                             dtype=np.float32),
             'target': self.get_target_info(),
-            'image': self.current_image 
+            'image': self.current_image,
+            'velocities': np.array([self.current_linear_velocity, self.current_angular_velocity],
+                                   dtype=np.float32)
         }    
 
 
@@ -474,19 +497,19 @@ class RoverEnv(gym.Env):
         # Update previous distance
         self.previous_distance = current_distance
 
-
+        """
         # Then in task_reward(), add this before calculating total_reward:
         # Convert current yaw from radians to degrees
         current_heading_deg = math.degrees(self.current_yaw)
-
         if self.heading_steps < self.down_facing_training_steps:  # Only apply for period
-            #self.too_far_away_penilty = -50.0
-            reward_components['yaw_alignment'] = yaw_to_reward(self.current_yaw)
+            self.too_far_away_penilty = -50.0
+            reward_components['yaw_alignment'] = self.yaw_to_reward(self.current_yaw)
             if abs(current_heading_deg) > 170:
                 reward_components['down_facing'] = -0.5
-        #else:
-        #    self.too_far_away_penilty = -25.0
+        else:
+            self.too_far_away_penilty = -25.0
         self.heading_steps += 1
+        """
         
         # Calculate total reward
         total_reward = sum(reward_components.values())
@@ -499,7 +522,7 @@ class RoverEnv(gym.Env):
         return total_reward
 
 
-    def yaw_to_reward(yaw_rad):
+    def yaw_to_reward(self, yaw_rad):
         """
         Maps absolute yaw to reward value:
         |yaw| = 180° (π rad) -> 0.0
@@ -576,19 +599,21 @@ class RoverEnv(gym.Env):
         return duration_below_threshold    
 
     def debug_logging(self, heading_diff, current_distance, reward_components, total_reward):
-           self.node.get_logger().info(
-                f'\nTarget x,y: {self.target_positions_x:3f}, {self.target_positions_y:3f}'
-                f'\nCurrent x,y: {self.current_pose.position.x:3f}, {self.current_pose.position.y:3f}'
-                f'\nHeading difference: {math.degrees(heading_diff):.1f}° '
-                f'\nDistance to target: {current_distance:.2f}m'
-                f'\n- Collision: {reward_components["collision"]:.3f}'
-                f'\n- Heading: {reward_components["heading"]:.3f}'
-                f'\n- Progress: {reward_components["progress"]:.3f}'
-                f'\n- Step: {reward_components["step"]:.3f}'
-                f'\n- Motion: {reward_components["motion"]:.3f}'
-                f'\n- Goal: {reward_components["goal"]:.3f}'
-                f'\nTotal Reward: {total_reward:.3f}'
-            )
+        self.node.get_logger().info(
+            f'\nTarget x,y: {self.target_positions_x:3f}, {self.target_positions_y:3f}'
+            f'\nCurrent x,y: {self.current_pose.position.x:3f}, {self.current_pose.position.y:3f}'
+            f'\nHeading difference: {math.degrees(heading_diff):.1f}° '
+            f'\nDistance to target: {current_distance:.2f}m'
+            f'\n- Collision: {reward_components["collision"]:.3f}'
+            f'\n- Heading: {reward_components["heading"]:.3f}'
+            f'\n- Progress: {reward_components["progress"]:.3f}'
+            f'\n- Step: {reward_components["step"]:.3f}'
+            f'\n- Motion: {reward_components["motion"]:.3f}'
+            f'\n- Goal: {reward_components["goal"]:.3f}'
+            f'\n- down facing: {reward_components["down_facing"]:.3f}'
+            f'\n- yaw_alignment: {reward_components["yaw_alignment"]:.3f}'
+            f'\nTotal Reward: {total_reward:.3f}'
+        )
 
 
     def get_target_info(self):
@@ -640,15 +665,15 @@ class RoverEnv(gym.Env):
         twist.linear.x = 0.0
         twist.angular.z = 0.0
         self.publisher.publish(twist)
-        time.sleep(.3)
         """Reset the environment to its initial state"""
         super().reset(seed=seed)
         self.collision_history = []  # Clear collision history on reset
         x_insert = np.random.uniform(*self.rand_x_range)
         y_insert = np.random.uniform(*self.rand_y_range)
-        z_insert = 5.5
-        if x_insert < -24.5 and y_insert < -24.5:
-            z_insert = 6.5
+        z_insert = 2 # for maze
+        #z_insert = 5.5 # for inspection
+        #if x_insert < -24.5 and y_insert < -24.5: inspection
+        #    z_insert = 6.5 
 
         ##  Random Yaw
         final_yaw = np.random.uniform(-np.pi, np.pi)
@@ -700,7 +725,7 @@ class RoverEnv(gym.Env):
         # Add a small delay to ensure the robot has time to reset
         for _ in range(100):  # Increased from 3 to 5 to allow more time for pose reset
             rclpy.spin_once(self.node, timeout_sec=0.1)
-        
+        time.sleep(1.0)        
         observation = self.get_observation()
 
         # Normal operation
@@ -769,15 +794,15 @@ class RoverEnv(gym.Env):
         lidar_data = np.clip(lidar_data, 0, self.max_lidar_range)
 
         # Now add noise to valid data
-        gaussian_noise = np.random.normal(0, 0.05, size=lidar_data.shape)
-        lidar_data = lidar_data + gaussian_noise
+        #gaussian_noise = np.random.normal(0, 0.05, size=lidar_data.shape)
+        #lidar_data = lidar_data + gaussian_noise
 
         # Clip again after adding noise to ensure no invalid values
         lidar_data = np.clip(lidar_data, 0, self.max_lidar_range)
 
         # Add random dropouts last (after noise)
-        dropout_mask = np.random.random(lidar_data.shape) < 0.05  # 5% chance of dropout
-        lidar_data[dropout_mask] = self.max_lidar_range
+        #dropout_mask = np.random.random(lidar_data.shape) < 0.05  # 5% chance of dropout
+        #lidar_data[dropout_mask] = self.max_lidar_range
 
         # Verify we have enough data points for downsampling
         expected_points = self.lidar_points * (len(lidar_data) // self.lidar_points)
@@ -788,12 +813,13 @@ class RoverEnv(gym.Env):
         # Downsample by taking minimum value in each segment
         try:
             segment_size = len(lidar_data) // self.lidar_points
-            reshaped_data = lidar_data[:segment_size * self.lidar_points].reshape(self.lidar_points, segment_size)
+            reshaped_data = lidar_data[:segment_size * self.lidar_points].reshape(self.lidar_points,
+                                                                                  segment_size)
             self.lidar_data = np.min(reshaped_data, axis=1)
             
             # Verify downsampled data
             if len(self.lidar_data) != self.lidar_points:
-                print(f"ERROR: Downsampled has wrong size. Expected {self.lidar_points}, got {len(self.lidar_data)}")
+                print(f"ERROR: Downsampled wrong size. Expected {self.lidar_points}, got {len(self.lidar_data)}")
                 return
                 
             if np.any(np.isnan(self.lidar_data)) or np.any(np.isinf(self.lidar_data)):
@@ -830,12 +856,12 @@ class RoverEnv(gym.Env):
             #print("Negative values:", lidar_data[lidar_data < 0])
 
         # Add Gaussian noise
-        gaussian_noise = np.random.normal(0, 0.05, size=lidar_data.shape)  # 0.1m standard deviation
-        lidar_data = lidar_data + gaussian_noise
+        #gaussian_noise = np.random.normal(0, 0.05, size=lidar_data.shape)  # 0.1m standard deviation
+        #lidar_data = lidar_data + gaussian_noise
     
         # Add random dropouts (set some measurements to max_range)
-        dropout_mask = np.random.random(lidar_data.shape) < 0.05  # 5% chance of dropout
-        lidar_data[dropout_mask] = self.max_lidar_range
+        #dropout_mask = np.random.random(lidar_data.shape) < 0.05  # 5% chance of dropout
+        #lidar_data[dropout_mask] = self.max_lidar_range
 
         # Replace inf values with max_lidar_range
         inf_mask = np.isinf(lidar_data)
@@ -899,6 +925,12 @@ class RoverEnv(gym.Env):
             self.node.get_logger().error(f"Error processing IMU data: {e}")
 
 
+    # Add this callback
+    def odom_callback(self, msg):
+        """Process odometry data for velocities"""
+        self.current_linear_velocity = msg.twist.twist.linear.x
+        self.current_angular_velocity = msg.twist.twist.angular.z
+
     def _check_robot_connection(self, timeout):
         start_time = time.time()
         while not self._received_scan:
@@ -910,3 +942,4 @@ class RoverEnv(gym.Env):
         return False
 
 
+    
