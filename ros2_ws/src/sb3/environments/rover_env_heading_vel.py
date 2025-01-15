@@ -24,7 +24,7 @@ from collections import deque
 class RoverEnv(gym.Env):
     """Custom Environment that follows gymnasium interface"""
     metadata = {'render_modes': ['human']}
-    def __init__(self, size=(64, 64), length=3000, scan_topic='/scan', imu_topic='/imu/data',
+    def __init__(self, size=(64, 64), length=2000, scan_topic='/scan', imu_topic='/imu/data',
                  cmd_vel_topic='/cmd_vel', camera_topic='/camera/image_raw',
                  connection_check_timeout=30, lidar_points=32, max_lidar_range=12.0):
 
@@ -35,7 +35,8 @@ class RoverEnv(gym.Env):
         self.bridge = CvBridge()
         self.node = rclpy.create_node('turtlebot_controller')
 
-        self.current_world = 'maze'
+
+        self.the_world = 'maze' #'default' #default for inspection
 
         # Initialize publishers and subscribers
         self.publisher = self.node.create_publisher(
@@ -109,7 +110,7 @@ class RoverEnv(gym.Env):
         
         # Stuck detection parameters
         self.position_history = []
-        self.stuck_threshold = 0.02  # Minimum distance the robot should move
+        self.stuck_threshold = 0.001  # Minimum distance the robot should move
         self.stuck_window = 600    # Number of steps to check for being stuck
         self.stuck_penilty = -25.0
 
@@ -138,6 +139,8 @@ class RoverEnv(gym.Env):
         self.initial_position = None
         self.initial_orientation = None
 
+        self.last_pose = None
+        
         # Ground truth pose
         self.current_pose = Pose()
         self.current_pose.position.x = 0.0
@@ -167,7 +170,7 @@ class RoverEnv(gym.Env):
         self.target_positions_x = 0
         self.target_positions_y = 0
         self.previous_distance = None
-        self.the_world = 'default'
+
         self.world_pose_path = '/world/' + self.the_world + '/set_pose'
         self.too_far_away_low_x = -30 # 17 for inspection
         self.too_far_away_high_x = 30#-13  # 29 for inspection
@@ -175,10 +178,9 @@ class RoverEnv(gym.Env):
         self.too_far_away_high_y = -17.5  # 29 for inspection
         self.too_far_away_penilty = -50#-25.0
 
-        self.goal_reward = 50
-
-        self.min_sample_rate = 13.0
-
+        self.goal_reward = 100
+        
+        self.last_time = time.time()
         # Add at the end of your existing __init__ 
         self.heading_log = []  # To store headings
         self.heading_log_file = "initial_headings.csv"
@@ -216,12 +218,12 @@ class RoverEnv(gym.Env):
                 shape=(2,),
                 dtype=np.float32
             ),
-            'image': spaces.Box(
-                low=0,
-                high=255,
-                shape=(64, 64),
-                dtype=np.float32
-            ),
+            #'image': spaces.Box(
+            #    low=0,
+            #    high=255,
+            #    shape=(64, 64),
+            #    dtype=np.float32
+            #),
             'velocities': spaces.Box(
                 low=np.array([-10.0, -10.0]),
                 high=np.array([10.0, 10.0]),
@@ -235,25 +237,34 @@ class RoverEnv(gym.Env):
         if not self._robot_connected:
             self.node.get_logger().warn("No actual robot detected. Running in simulation mode.")
 
+
     def heading_controller(self, desired_heading, current_heading):
-        """PID controller for heading with time step consideration"""
-        dt = 0.05  # 20 Hz -> 0.05 seconds per step
+        """
+        PID controller given a desired *absolute* heading,
+        but the 'desired_heading' here is computed from
+        (current_heading + relative_heading_command).
+        """
+        now = time.time()
+        dt = now - self.last_time
+        self.last_time = now
         
-        # Normalize angle difference to [-pi, pi]
-        error = math.atan2(math.sin(desired_heading - current_heading), 
-                           math.cos(desired_heading - current_heading))
-    
-        # Update integral and derivative terms with dt
+        # Compute the heading error in [-pi, pi]
+        error = math.atan2(
+            math.sin(desired_heading - current_heading),
+            math.cos(desired_heading - current_heading)
+        )
+        
+        # PID update
         self.integral_error += error * dt
         derivative_error = (error - self.last_error) / dt
         self.last_error = error
         
-        # Calculate control output
-        control = (self.Kp * error + 
-                   self.Ki * self.integral_error + 
-                   self.Kd * derivative_error)
-        
-        # Limit the control output
+        control = (
+            self.Kp * error
+            + self.Ki * self.integral_error
+            + self.Kd * derivative_error
+        )
+
         return np.clip(control, -self.max_angular_velocity, self.max_angular_velocity)
 
 
@@ -273,34 +284,6 @@ class RoverEnv(gym.Env):
     def step(self, action):
         """Execute one time step within the environment"""
         self.total_steps += 1
-
-        # Log headings for first 1000 steps
-        if self.total_steps <= 1000:
-            desired_heading = float(action[1])
-            self.heading_log.append({
-                'step': self.total_steps,
-                'heading_rad': desired_heading,
-                'heading_deg': math.degrees(desired_heading)
-            })
-        
-            # Write to CSV when we reach 1000 steps
-            if self.total_steps == 1000 and not self.heading_log_created:
-                import pandas as pd
-                df = pd.DataFrame(self.heading_log)
-                df.to_csv(self.heading_log_file, index=False)
-                print(f"Saved {len(self.heading_log)} heading commands to {self.heading_log_file}")
-                self.heading_log_created = True
-
-        #if self.check_sample_rate_performance() > 20.0: # greater than some seconds
-        #    print('Robot is in a low fps zone, reseting')
-        #    return self.get_observation(), self.too_far_away_penilty, True, False, {}
-
-        
-        #if self.too_far_away():
-            #if self.current_pose.position.x > self.too_far_away_high_x:
-            #    print('too far high x, top of map')
-            #    return self.get_observation(), -1 * self.goal_reward, True, False, {}  
-            #return self.get_observation(), self.too_far_away_penilty, True, False, {}
 
         if self.collision_count > self.stuck_window:
             self.collision_count = 0
@@ -341,28 +324,24 @@ class RoverEnv(gym.Env):
 
         
         self._received_scan = False
-        
-        # Extract speed and desired heading from action
+
+
+        # action = [speed, desired_relative_heading]
         speed = float(action[0])
-        desired_heading = float(action[1])
-        with open('heading_log.txt', 'a') as f:
-            f.write(f"{desired_heading}\n")
-        # Store last actions
-        self.last_speed = speed
-        self.last_heading = desired_heading
+        relative_heading_command = float(action[1])
+    
+        # Instead of passing (desired_relative_heading, current_yaw) directly,
+        # we compute the *new desired absolute heading*:
+        desired_heading = self.current_yaw + relative_heading_command
         
-        # Calculate angular velocity using PID controller
         angular_velocity = self.heading_controller(desired_heading, self.current_yaw)
         
         twist = Twist()
-
-        # Normal operation
         twist.linear.x = speed
         twist.angular.z = angular_velocity
-        
         self.publisher.publish(twist)
+        self.last_speed = speed
         
-
         # Calculate reward and components
         reward = self.task_reward()
 
@@ -373,15 +352,19 @@ class RoverEnv(gym.Env):
         # Get observation
         observation = self.get_observation()
 
-        
+
         if self.total_steps % 1000 == 0:
             temp_obs_target = observation["target"]
             print(
-                f"current target x,y: ({self.target_positions_x}, {self.target_positions_y}), "
-                f"distance and angle to target: {temp_obs_target}, "
-                f"Speed: {speed:.2f}, Heading: {math.degrees(desired_heading):.1f}°"
-                f"Final Reward: {reward:.3f}, "
+                f"current pose x,y: ({self.current_pose.position.x:.2f}, {self.current_pose.position.y:.2f}), "
+                f"Speed: {speed:.2f}, Heading: {math.degrees(self.current_yaw):.1f}°, "
             )
+            print(
+                f"current target x,y: ({self.target_positions_x:.2f}, {self.target_positions_y:.2f}), "
+                f"distance and angle to target: ({temp_obs_target[0]:.3f}, {temp_obs_target[1]:.3f}), "
+                f"Final Reward: {reward:.3f}"
+            )
+        
         if self.total_steps % 1000 == 0:
             print('Observation: Pose:', observation['pose'],
                   ', IMU:', observation['imu'],
@@ -403,7 +386,7 @@ class RoverEnv(gym.Env):
             'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
                             dtype=np.float32),
             'target': self.get_target_info(),
-            'image': self.current_image,
+            #'image': self.current_image,
             'velocities': np.array([self.current_linear_velocity, self.current_angular_velocity],
                                    dtype=np.float32)
         }    
@@ -413,207 +396,156 @@ class RoverEnv(gym.Env):
         print('###################################################### GOAL ACHIVED!')
         self.target_positions_x = np.random.uniform(*self.rand_goal_x_range)
         self.target_positions_y = np.random.uniform(*self.rand_goal_y_range)
+        print(f'\nNew target x,y: {self.target_positions_x:.2f}, {self.target_positions_y:.2f}')
         self.previous_distance = None
         return
-    
-    
+
+
+
     def task_reward(self):
-        """Reward function with balanced rewards and detailed logging"""
+        """
+        Reward function that accounts for robot dynamics and gradual acceleration
+        """
         # Constants
-        collision_threshold = 0.2
-        collision_reward = -1.0        # Increased due to recovery time
-        distance_scaling_factor = 20.0  # Reduced from 20
-        step_penalty = -0.01        # Further reduced
-        heading_bonus = 0.2         # Further reduced
-        reverse_penalty = -0.25       # Reduced but still discouraged
-        success_distance = 0.3
-        max_possible_distance = 18.0
-        
-        # Initialize reward components dictionary for logging
-        reward_components = {
-            'collision': 0.0,
-            'heading': 0.0,
-            'progress': 0.0,
-            'step': step_penalty,
-            'motion': 0.0,
-            'goal': 0.0,
-            'down_facing': 0.0,  # New component
-            'yaw_alignment': 0.0
-        }
-        
-        if self.current_pose is None:
-            return 0.0
+        final_reward_multiplier = 1.5
+        collision_threshold = 0.3
+        collision_penalty = -0.5
+        success_distance = 0.75
+        distance_delta_scale = 0.3
+        heading_tolerance = math.pi/4  # 45 degrees
 
-        # Calculate distance to current target
-        current_x = self.current_pose.position.x
-        current_y = self.current_pose.position.y
+        # Get current state info
+        distance_heading_info = self.get_target_info()
+        current_distance = distance_heading_info[0]
+        heading_diff = distance_heading_info[1]
 
-        distance_heading_angle = self.get_target_info()
-        current_distance = distance_heading_angle[0]
-        heading_diff = distance_heading_angle[1]
-        # Initialize previous_distance if not set
+        # Initialize previous distance if needed
         if self.previous_distance is None:
             self.previous_distance = current_distance
             return 0.0
         
-        # Success reward
+        # Check for goal achievement
         if current_distance < success_distance:
             self.update_target_pos()
             return self.goal_reward
 
-
-        # Collision detection with persistence check
+        # Check for collisions
         min_distance = np.min(self.lidar_data[np.isfinite(self.lidar_data)])
-        self.collision_history.append(min_distance < collision_threshold)
-
-        # Keep only the last N steps
-        if len(self.collision_history) > self.collision_window:
-            self.collision_history.pop(0)
-
-        # Check if we've been in collision state for the entire window
-        if len(self.collision_history) == self.collision_window and all(self.collision_history):
-            print(f'Persistent collision detected, min distance is {min_distance:3f}')
-            reward_components['collision'] = collision_reward
-            self.collision_count +=1
-        else:
-            self.collision_count = 0
+        if min_distance < collision_threshold:
+            print('Collision!')
+            return collision_penalty
         
-        # Movement rewards/penalties
-        if self.last_speed > 0.0:
-            motion_reward = self.last_speed / 40  # Reduced from /5
-            reward_components['motion'] = motion_reward
-        else:
-            reward_components['motion'] = reverse_penalty
-
-        # Progress rewards
+        # Calculate distance change (positive means got closer, negative means got further)
         distance_delta = self.previous_distance - current_distance
-        if heading_diff < math.pi/2:  # Facing generally towards target
-            reward_components['heading'] = heading_bonus
-            if distance_delta > 0:
-                progress_scale = min(current_distance / max_possible_distance, 1.0)
-                progress_reward = distance_delta * distance_scaling_factor * progress_scale
-                reward_components['progress'] = progress_reward
 
-        # Update previous distance
-        self.previous_distance = current_distance
-
-        """
-        # Then in task_reward(), add this before calculating total_reward:
-        # Convert current yaw from radians to degrees
-        current_heading_deg = math.degrees(self.current_yaw)
-        if self.heading_steps < self.down_facing_training_steps:  # Only apply for period
-            self.too_far_away_penilty = -50.0
-            reward_components['yaw_alignment'] = self.yaw_to_reward(self.current_yaw)
-            if abs(current_heading_deg) > 170:
-                reward_components['down_facing'] = -0.5
-        else:
-            self.too_far_away_penilty = -25.0
-        self.heading_steps += 1
-        """
+        # Calculate reward components
+        distance_reward = 0.0
+        heading_reward = 0.0
         
-        # Calculate total reward
-        total_reward = sum(reward_components.values())
 
-        # Debug logging (every 100 steps)
+        # Heading component - reward facing towards target even if not moving much
+        # This helps during acceleration phases
+        heading_alignment = 1.0 - (abs(heading_diff) / math.pi)  # 1.0 when perfect, 0.0 when opposite
+        heading_reward = 0.01 * heading_alignment  # 0.01 per step when perfect (30.0 over 3000 steps)
+        # Heading component with new alignment calculation
+        # Convert heading difference to range [-π, π]
+        heading_diff = math.atan2(math.sin(heading_diff), math.cos(heading_diff))
+        abs_heading_diff = abs(heading_diff)
+        # Calculate heading alignment:
+        # - When abs_heading_diff = 0 (perfect): heading_alignment = 1
+        # - When abs_heading_diff = π/2 (90 degrees): heading_alignment = 0
+        # - When abs_heading_diff = π (180 degrees): heading_alignment = -1
+        if abs_heading_diff <= math.pi/2:
+            # From 0 to 90 degrees: scale from 1 to 0
+            heading_alignment = 1.0 - (2 * abs_heading_diff / math.pi)
+        else:
+            # From 90 to 180 degrees: scale from 0 to -1
+            heading_alignment = -2 * (abs_heading_diff - math.pi/2) / math.pi
+        heading_reward = 0.01 * heading_alignment  # 0.01 per step when perfect (30.0 over 3000 steps)
+
+        # Distance component - reward any progress towards goal
+        if abs(distance_delta) > 0.001 and heading_reward > 0.0:  # Only reward meaningful movement with good heading
+            distance_reward = distance_delta * distance_delta_scale
+        else:
+            distance_reward = -0.001
+            
+        # Combine rewards
+        reward = ((distance_reward + heading_reward) * final_reward_multiplier) + (self.current_linear_velocity * 0.002)
+
+        # Debug logging
         if self.total_steps % 1000 == 0:
-            self.debug_logging(heading_diff, current_distance, reward_components, total_reward)
-            print(f"Current yaw (rad): {self.current_yaw:.2f}, (deg): {math.degrees(self.current_yaw):.2f}")
-                
-        return total_reward
+            print(f"Distance: {current_distance:.3f}, Previous Distance: {self.previous_distance:.3f}, "
+                  f"distance_delta: {distance_delta:.3f}, Heading diff: {math.degrees(heading_diff):.1f}°, "
+                  f"Speed: {self.last_speed:.3f}, Current vel: {self.current_linear_velocity:.3f}, "
+                  f"Distance reward: {distance_reward:.3f}, Heading reward: {heading_reward:.3f}, "
+                  f"Total reward: {reward:.3f}")
 
-
-    def yaw_to_reward(self, yaw_rad):
-        """
-        Maps absolute yaw to reward value:
-        |yaw| = 180° (π rad) -> 0.0
-        |yaw| = 0° (0 rad) -> 0.5
-        """
-        abs_yaw_deg = abs(math.degrees(yaw_rad))
-        # Linear interpolation: (180 - abs_yaw) * (0.5/180)
-        reward = (180 - abs_yaw_deg) * (0.5/180)
-        # Clamp between 0 and 0.5 to handle angles > 180
-        return max(0.0, min(0.5, reward))
-
+        self.previous_distance = current_distance
+        return reward
     
-    def get_yaw_delta(self):
-        """
-        Calculate absolute difference between current yaw and yaw from 200 steps ago.
-        Returns 0 if there isn't 200 steps of history yet.
-        """
-        # Add current yaw to history
-        self.yaw_history.append(self.current_yaw)
     
-        # If we don't have enough history yet, return 0
-        if len(self.yaw_history) < 200:
+    def task_rewardOrigin(self):
+        """
+        Potential-based reward that only rewards progress when heading difference to target is less than 90 degrees.
+        Combined with collision penalties and goal rewards.
+        """
+        # Constants
+        collision_threshold = 0.3
+        collision_penalty = -1.0
+        success_distance = 0.5
+        distance_delta_scale = 0.3
+    
+        # Get current state info
+        distance_heading_info = self.get_target_info()
+        current_distance = distance_heading_info[0]
+        heading_diff = distance_heading_info[1]
+    
+        # Initialize previous distance if needed
+        if self.previous_distance is None:
+            self.previous_distance = current_distance
             return 0.0
         
-        # Get yaw from 200 steps ago
-        old_yaw = self.yaw_history[0]
-    
-        # Calculate absolute difference
-        # Using atan2 to handle the circular nature of angles
-        yaw_diff = abs(math.atan2(math.sin(self.current_yaw - old_yaw), 
-                                  math.cos(self.current_yaw - old_yaw)))
-                             
-        return yaw_diff
+        # Check for goal achievement
+        if current_distance < success_distance:
+            self.update_target_pos()
+            return self.goal_reward
 
-    
-    def check_sample_rate_performance(self):
-        """
-        Monitors the sample rate and returns the duration (in seconds) that it has been below threshold.
-        Returns 0.0 if sample rate is currently above threshold.
-        """
-        current_time = time.time()
+        # Calculate minimum lidar distance for collision detection
+        min_distance = np.min(self.lidar_data[np.isfinite(self.lidar_data)])
+        if min_distance < collision_threshold:
+            print('Collision!')
+            return collision_penalty
         
-        # Initialize tracking attributes if they don't exist
-        if not hasattr(self, '_last_sample_time'):
-            self._last_sample_time = current_time
-            self._below_threshold_start = None
-            self._frame_times = []
-            return 0.0
-        
-        # Calculate current sample rate
-        sample_interval = current_time - self._last_sample_time
-        current_rate = 1.0 / sample_interval if sample_interval > 0 else float('inf')
-        
-        # Update frame times list (keep last 10 frames for smoothing)
-        self._frame_times.append(current_rate)
-        if len(self._frame_times) > 10:
-            self._frame_times.pop(0)
-        
-        # Calculate average frame rate over the last 10 frames
-        avg_rate = sum(self._frame_times) / len(self._frame_times)
-        
-        # Check if we're below threshold
-        if avg_rate < self.min_sample_rate:
-            if self._below_threshold_start is None:
-                self._below_threshold_start = current_time
-            duration_below_threshold = current_time - self._below_threshold_start
+        # Calculate potential-based reward
+        distance_delta = self.previous_distance - current_distance
+        if False: #self.total_steps % 20 == 0:
+            print(f"Debug - previous_distance: {self.previous_distance}, current_distance: {current_distance}")
+            print(f"Debug - distance_delta: {distance_delta}")
+
+        # Only reward progress when facing towards target (heading diff < 90 degrees)
+        if abs(heading_diff) < math.pi/4:
+            reward = distance_delta * distance_delta_scale  # Scale factor for the potential difference
+            if self.last_speed > 0.0:
+                if reward < 0.0:
+                    reward = 0.0
+                #print(f"Last speed good. Distance: {current_distance:.3f}, Previous Distance: {self.previous_distance:.3f}, distance_delta: {distance_delta:.3f}°, Heading diff: {math.degrees(heading_diff):.1f}°, Speed: {self.last_speed:.3f}, Reward: {reward:.3f}")
+            if False: #self.total_steps % 20 == 0:
+                print(f"Debug - Within heading threshold, heading_diff: {math.degrees(heading_diff)}°")
+                print(f"Debug - Calculated reward: {reward}")
+
         else:
-            self._below_threshold_start = None
-            duration_below_threshold = 0.0
-        
-        # Update last sample time
-        self._last_sample_time = current_time
-        
-        return duration_below_threshold    
+            reward = -0.002  # small neg every step no facing target goal
+            if False: #self.total_steps % 20 == 0:
+                print(f"Debug - Outside heading threshold, heading_diff: {math.degrees(heading_diff)}°")
+        # Update previous distance for next step
 
-    def debug_logging(self, heading_diff, current_distance, reward_components, total_reward):
-        self.node.get_logger().info(
-            f'\nTarget x,y: {self.target_positions_x:3f}, {self.target_positions_y:3f}'
-            f'\nCurrent x,y: {self.current_pose.position.x:3f}, {self.current_pose.position.y:3f}'
-            f'\nHeading difference: {math.degrees(heading_diff):.1f}° '
-            f'\nDistance to target: {current_distance:.2f}m'
-            f'\n- Collision: {reward_components["collision"]:.3f}'
-            f'\n- Heading: {reward_components["heading"]:.3f}'
-            f'\n- Progress: {reward_components["progress"]:.3f}'
-            f'\n- Step: {reward_components["step"]:.3f}'
-            f'\n- Motion: {reward_components["motion"]:.3f}'
-            f'\n- Goal: {reward_components["goal"]:.3f}'
-            f'\n- down facing: {reward_components["down_facing"]:.3f}'
-            f'\n- yaw_alignment: {reward_components["yaw_alignment"]:.3f}'
-            f'\nTotal Reward: {total_reward:.3f}'
-        )
+    
+        # Debug logging
+        if self.total_steps % 1000 == 0:
+            print(f"Distance: {current_distance:.3f}, Previous Distance: {self.previous_distance:.3f}, distance_delta: {distance_delta:.3f}, Heading diff: {math.degrees(heading_diff):.1f}°, Speed: {self.last_speed:.3f}, Reward: {reward:.3f}")
+        self.previous_distance = current_distance
+        return reward
+    
 
 
     def get_target_info(self):
@@ -634,11 +566,11 @@ class RoverEnv(gym.Env):
     
         # Calculate azimuth (relative angle to target)
         target_heading = math.atan2(target_y - current_y, target_x - current_x)
-        relative_angle = abs(math.atan2(math.sin(target_heading - self.current_yaw), 
+        relative_angle = math.atan2(math.sin(target_heading - self.current_yaw), 
                                math.cos(target_heading - self.current_yaw)
-                                        )
-                             )
-    
+                                    )
+
+
         return np.array([distance, relative_angle], dtype=np.float32)
 
 
@@ -720,6 +652,7 @@ class RoverEnv(gym.Env):
         # Reset PointNav-specific variables
         self.target_positions_x = np.random.uniform(*self.rand_goal_x_range)
         self.target_positions_y = np.random.uniform(*self.rand_goal_y_range)
+        print(f'\nNew target x,y: {self.target_positions_x:.2f}, {self.target_positions_y:.2f}')
         self.previous_distance = None
         
         # Add a small delay to ensure the robot has time to reset
@@ -750,13 +683,16 @@ class RoverEnv(gym.Env):
     def pose_array_callback(self, msg):
         """Callback for processing pose array messages"""
         if msg.poses:  # Check if we have any poses
+            self.last_pose = self.current_pose if hasattr(self, 'current_pose') else None
             self.current_pose = msg.poses[0]  # Take the first pose
+            
             # UPDATE - Store position as numpy array
             self.rover_position = np.array([
                 self.current_pose.position.x,
                 self.current_pose.position.y,
                 self.current_pose.position.z
             ], dtype=np.float32)
+
         
 
     def camera_callback(self, msg):

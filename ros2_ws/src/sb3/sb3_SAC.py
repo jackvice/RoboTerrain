@@ -5,6 +5,7 @@ import os
 from stable_baselines3 import SAC
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from stable_baselines3.common.utils import get_linear_fn
+#from environments.rover_motor import RoverEnv
 from environments.rover_env_heading_vel import RoverEnv
 from stable_baselines3.common.callbacks import CheckpointCallback
 #from custom_features_extractor import CustomCombinedExtractor
@@ -66,6 +67,7 @@ def main():
                     tensorboard_log=tensorboard_dir,
                     buffer_size = 1_000_000,  # 1e6
                     learning_starts = 50000,
+                    ent_coef = "auto_0.5",
                     verbose=1,
                     batch_size=512,
                     )       

@@ -165,6 +165,24 @@ This section provides a placeholder for integrating your SB3 PPO PointNav RL age
 
 **Note**: Ensure that all ROS 2 nodes and the simulation are running before starting the training script.
 
+
+## Repository Structure
+
+```
+project_root/
+├── metrics_analyzer
+├── ros2_ws/
+│   ├── src/
+│   │   ├── roverrobotics_ros2/       # Rover Robotics packages
+│   │   ├── ppo_agent/                # Your PPO agent code
+│   │   └── other_ros2_packages/      # Additional ROS 2 packages
+│   ├── install/
+│   ├── build/
+│   └── log/
+├── LICENSE
+└── README.md
+```
+
 # Robot Navigation Metrics Analysis
 
 This system provides tools for logging and visualizing robot navigation metrics in ROS2, particularly useful for analyzing robot performance over rough terrain.
@@ -187,7 +205,7 @@ This system provides tools for logging and visualizing robot navigation metrics 
 
 First, ensure ROS2 and your robot simulation/hardware are running. Then:
 
-# Launch the metrics logging node
+Launch the metrics logging node
 ros2 run rover_metrics metrics_node
 
 This will create a CSV file in `/metric_logs` with timestamp and metrics including:
@@ -201,21 +219,21 @@ This will create a CSV file in `/metric_logs` with timestamp and metrics includi
 
 After collecting data, use the metrics analyzer to visualize results:
 
-# Basic usage (plot all metrics)
+Basic usage (plot all metrics)
 python cli_main.py path/to/metrics_log.csv
 
-# Compare velocity and IMU data from multiple trials
+Compare velocity and IMU data from multiple trials
 python cli_main.py trial1.csv trial2.csv -m CV IM -p time_series
 
-# Available metrics flags:
-# TC: Total Collisions
-# CS: Current Collision Status
-# SM: Smoothness Metric
-# OC: Obstacle Clearance
-# DT: Distance Traveled
-# CV: Current Velocity
-# IM: IMU Acceleration Magnitude
-# RT: Is Rough Terrain
+Available metrics flags:
+TC: Total Collisions
+CS: Current Collision Status
+SM: Smoothness Metric
+OC: Obstacle Clearance
+DT: Distance Traveled
+CV: Current Velocity
+IM: IMU Acceleration Magnitude
+RT: Is Rough Terrain
 
 ### 3. Output
 
@@ -238,22 +256,6 @@ python cli_main.py \
     metrics_log_20250105_190759.csv \
     -m CV IM -p time_series
 
-## Repository Structure
-
-```
-project_root/
-├── metrics_analyzer
-├── ros2_ws/
-│   ├── src/
-│   │   ├── roverrobotics_ros2/       # Rover Robotics packages
-│   │   ├── ppo_agent/                # Your PPO agent code
-│   │   └── other_ros2_packages/      # Additional ROS 2 packages
-│   ├── install/
-│   ├── build/
-│   └── log/
-├── LICENSE
-└── README.md
-```
 
 - **ros2_ws/**: ROS 2 workspace containing all source code.
   - **src/**: Source directory for ROS 2 packages and PPO agent.
