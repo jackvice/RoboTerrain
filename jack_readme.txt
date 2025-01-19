@@ -2,7 +2,7 @@
 ros2 launch roverrobotics_gazebo 4wd_rover_gazebo.launch.py
 
 #pose converter:
-python3 ign_ros2_pose_topic.py default rover_zero4wd
+python3 ign_ros2_pose_topic.py inspect rover_zero4wd
 
 # agent
 conda activate sb3

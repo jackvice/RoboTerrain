@@ -1,0 +1,79 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-25ad8c6a15f161c183e2.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"name" : "",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "roverrobotics_driver",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "roverrobotics_driver::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-roverrobotics_driver-19a5fa527acbbac30040.json",
+					"name" : "roverrobotics_driver",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "roverrobotics_driver_uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-roverrobotics_driver_uninstall-1198b4ea2f85e0c36ce6.json",
+					"name" : "roverrobotics_driver_uninstall",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uninstall-00ae35f7b9822e403afc.json",
+					"name" : "uninstall",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/jack/src/RoboTerrain/build/roverrobotics_driver",
+		"source" : "/home/jack/src/RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_driver"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

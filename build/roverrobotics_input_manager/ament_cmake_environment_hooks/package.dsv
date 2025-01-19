@@ -1,0 +1,4 @@
+source;share/roverrobotics_input_manager/local_setup.bash
+source;share/roverrobotics_input_manager/local_setup.dsv
+source;share/roverrobotics_input_manager/local_setup.sh
+source;share/roverrobotics_input_manager/local_setup.zsh

@@ -1,0 +1,42 @@
+<?xml version="1.0" ?>
+<sdf version='1.5'>
+ <model name="upb12">
+
+    <pose>0 0 0.0 0 0 0</pose>
+
+    <self_collide>false</self_collide>
+
+    <static>true</static>
+    <link name="upb12_link">
+          <pose frame=''>0 0 0 0 -0 0</pose>
+          <collision name="upb12_collisions">
+            <geometry>
+              <mesh>
+                  <scale>1 1 1</scale>
+                    <uri>/home/jack/worlds/upb12_photogramm/meshes/collision.obj</uri>
+              </mesh>
+            </geometry>
+            <surface>
+              <contact>
+                <ode>
+                  <min_depth>0.001</min_depth>
+                  <max_vel>0</max_vel>
+                </ode>
+              </contact>
+              <friction>
+                <ode/>
+              </friction>
+            </surface>
+          </collision>
+          <visual name="upb12_visual">
+            <geometry>
+              <mesh>
+                  <scale>1 1 1</scale>
+                    <uri>/home/jack/worlds/upb12_photogramm/meshes/mesh.obj</uri>
+              </mesh>
+            </geometry>
+          </visual>
+          <gravity>1</gravity>
+        </link>
+</model>
+</sdf>

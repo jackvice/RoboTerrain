@@ -1,0 +1,75 @@
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found ament_cmake: 1.3.11 (/opt/ros/humble/share/ament_cmake/cmake)
+-- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/jack/src/RoboTerrain/build/roverrobotics_description
+-- Install configuration: ""
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/rviz
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/rviz/urdf.rviz
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/launch
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/launch/display_miti65.launch.py
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/launch/display_2wd_rover.launch.py
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/launch/display_4wd_rover.launch.py
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/launch/display_mini.launch.py
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/launch/display_flipper.launch.py
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/launch/display_max.launch.py
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/launch/display_miti.launch.py
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes/rover_payload.dae
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes/hub_6.5in.dae
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes/castor.dae
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes/mini_chassis.dae
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes/pro_tire.dae
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes/max_wheels.dae
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes/max_chassis.dae
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes/flipper.dae
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes/flipper_chassis.dae
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes/castor_housing.dae
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes/rplidar_s2.dae
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes/miti_chassis.dae
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes/flipper_track.dae
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes/hub_10in.dae
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/meshes/rover_2wd_core.dae
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf/max.urdf
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf/mini.urdf
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf/accessories
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf/accessories/rover_dev_payload.urdf
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf/accessories/rplidar_s2.urdf
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf/accessories/imu.urdf
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf/accessories/rplidar_s2_orgin.urdf
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf/accessories/rplidar_s2.urdf~
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf/flipper.urdf
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf/camera_rover_4wd.sdf
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf/camera_rover_4wd.sdf~
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf/miti65.urdf
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf/rover_2wd.urdf
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf/rover_4wd.urdf
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/urdf/miti.urdf
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/ament_index/resource_index/package_run_dependencies/roverrobotics_description
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/ament_index/resource_index/parent_prefix_path/roverrobotics_description
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/environment/ament_prefix_path.sh
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/environment/ament_prefix_path.dsv
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/environment/path.sh
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/environment/path.dsv
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/local_setup.bash
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/local_setup.sh
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/local_setup.zsh
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/local_setup.dsv
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/package.dsv
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/ament_index/resource_index/packages/roverrobotics_description
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/cmake/roverrobotics_descriptionConfig.cmake
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/cmake/roverrobotics_descriptionConfig-version.cmake
+-- Installing: /home/jack/src/RoboTerrain/install/roverrobotics_description/share/roverrobotics_description/package.xml

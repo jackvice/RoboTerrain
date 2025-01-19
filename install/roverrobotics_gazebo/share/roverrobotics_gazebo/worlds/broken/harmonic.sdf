@@ -1,0 +1,443 @@
+<?xml version="1.0" ?>
+
+<sdf version="1.11">
+  <world name="harmonic">
+
+    <physics name="1ms" type="ignored">
+      <dart>
+        <!-- Heightmaps behave better with the bullet collision detector -->
+        <collision_detector>bullet</collision_detector>
+      </dart>
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin
+      filename="gz-sim-physics-system"
+      name="gz::sim::systems::Physics">
+    </plugin>
+    <plugin
+      filename="gz-sim-sensors-system"
+      name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin
+      filename="gz-sim-user-commands-system"
+      name="gz::sim::systems::UserCommands">
+    </plugin>
+    <plugin
+      filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster">
+    </plugin>
+    <plugin
+      filename="gz-sim-dvl-system"
+      name="gz::sim::systems::DopplerVelocityLogSystem">
+    </plugin>
+
+    <gravity>0 0 -9.8</gravity>
+    <scene>
+      <ambient>1 1 1</ambient>
+      <grid>false</grid>
+      <sky></sky>
+    </scene>
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 20 -1.3 0 0.5</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.01 0.01 0.01 1</specular>
+      <intensity>2</intensity>
+      <visualize>false</visualize>
+    </light>
+    <light type="point" name="point_light">
+      <pose>0.73 0.09 8.77 0 0 0</pose>
+      <diffuse>1 1 1 1</diffuse>
+      <specular>.01 .01 .01 1</specular>
+      <attenuation>
+        <range>20</range>
+        <linear>0.2</linear>
+        <constant>0.8</constant>
+        <quadratic>0.01</quadratic>
+      </attenuation>
+      <cast_shadows>true</cast_shadows>
+      <visualize>false</visualize>
+    </light>
+    <light type="point" name="point_light_01">
+      <pose>3.482 -4.28 8.87 0 0 0</pose>
+      <diffuse>1 1 1 1</diffuse>
+      <specular>0.01 0.01 0.01 1</specular>
+      <attenuation>
+        <range>10</range>
+        <linear>0.5</linear>
+        <constant>0.8</constant>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <cast_shadows>false</cast_shadows>
+      <visualize>false</visualize>
+    </light>
+    <light type="point" name="point_light_02">
+      <pose>0.13 0.46 11.60 0 0 0</pose>
+      <diffuse>1 1 1 1</diffuse>
+      <specular>0.01 0.01 0.01 1</specular>
+      <attenuation>
+        <range>10</range>
+        <linear>0.2</linear>
+        <constant>0.5</constant>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <cast_shadows>false</cast_shadows>
+      <visualize>false</visualize>
+    </light>
+    <light type="point" name="point_light_03">
+      <pose>4.27 -1.27 11.21 0 0 0</pose>
+      <diffuse>1 1 1 1</diffuse>
+      <specular>0.01 0.01 0.01 1</specular>
+      <attenuation>
+        <range>10</range>
+        <linear>0.5</linear>
+        <constant>0.8</constant>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <cast_shadows>false</cast_shadows>
+      <visualize>false</visualize>
+    </light>
+    <light type="point" name="point_light_04">
+      <pose>-0.31 -3.78 8.61 0 0 0</pose>
+      <diffuse>1 1 1 1</diffuse>
+      <specular>.01 .01 .01 1</specular>
+      <attenuation>
+        <range>10</range>
+        <linear>0.5</linear>
+        <constant>0.8</constant>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <cast_shadows>false</cast_shadows>
+      <visualize>false</visualize>
+    </light>
+    <include>
+      <name>Lake House</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Lake House</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <name>Water</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Coast Waves 2</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <name>Terrain</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Harmonic Terrain</uri>
+    </include>
+    <include>
+      <name>Terrain Objects</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Harmonic Terrain Objects</uri>
+    </include>
+    <include>
+      <name>Armchair_01</name>
+      <pose>-0.24 -0.13 6.90 0 0 -0.77</pose>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Armchair</uri>
+    </include>
+    <include>
+      <name>Armchair_02</name>
+      <pose>-0.12 -1.44 6.90 0 0 -1.75</pose>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Armchair</uri>
+    </include>
+    <include>
+      <pose>5.46 -1.63 9.46 0 0 -1.57</pose>
+      <name>Bathtub</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Bathtub</uri>
+    </include>
+    <include>
+      <pose>0.14 -1.62 9.46 0 0 3.14</pose>
+      <name>Bed</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Bed</uri>
+    </include>
+    <include>
+      <pose>3.45 -3.88 6.90 0 0 -1.57</pose>
+      <name>Dining Table</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Dining Table</uri>
+    </include>
+    <include>
+      <pose>2.9 -3.34 6.90 0 0 -0.03</pose>
+      <name>Dining Chair 01</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Dining Chair</uri>
+    </include>
+    <include>
+      <pose>3.87 -3.19 6.90 0 0 -0.32</pose>
+      <name>Dining Chair 02</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Dining Chair</uri>
+    </include>
+    <include>
+      <pose>3.81 -4.43 6.90 0 0 -2.69</pose>
+      <name>Dining Chair 03</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Dining Chair</uri>
+    </include>
+    <include>
+      <pose>2.88 -4.60 6.90 0 0 2.87</pose>
+      <name>Dining Chair 04</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Dining Chair</uri>
+    </include>
+    <include>
+      <pose>1.75 -3.89 6.90 0 0 0</pose>
+      <name>Fridge</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Refrigerator</uri>
+    </include>
+    <include>
+      <pose>4.34 -6.36 6.83 0 0 1.57</pose>
+      <name>Oven</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Oven</uri>
+    </include>
+    <include>
+      <pose>2.75 -1.79 9.46 0 0 1.57</pose>
+      <name>Toilet</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Standard Toilet</uri>
+    </include>
+    <include>
+      <pose>3.03 0.49 9.46 0 0 1.57</pose>
+      <name>Vanity</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Vanity</uri>
+    </include>
+    <include>
+      <pose>-0.39 2.31 9.48 0 0 -1.57</pose>
+      <name>Desk</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Office Desk</uri>
+    </include>
+    <include>
+      <pose>-0.90 2.04 10.26 0 0 0</pose>
+      <name>Fidget rSspinner</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Fidget Spinner</uri>
+    </include>
+    <include>
+      <pose>-0.74 1.45 9.48 0 0 -0.81</pose>
+      <name>Office Chair</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Office Chair</uri>
+    </include>
+    <include>
+      <name>Pendulum_sculpture</name>
+      <pose>3.43 -3.82 7.64 0 0 1.57</pose>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Pendulum Sculpture</uri>
+    </include>
+    <include>
+      <pose>1.85 -5.05 7.82 0 0 0</pose>
+      <name>Pendulum</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Pendulum Demo</uri>
+    </include>
+    <include>
+      <pose>2.98 0.85 6.91 0 0 -2.37</pose>
+      <name>Piano</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Piano</uri>
+    </include>
+    <include>
+      <pose>0 0 0 0 0 2.6</pose>
+      <name>Sky</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Sky</uri>
+    </include>
+    <include>
+      <pose>1.1 -0.6 9.46 0 0 0.0</pose>
+      <name>Harmonic Mascot</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Harmonic Mascot</uri>
+    </include>
+    <!--<include>
+      <pose degrees="true">-1.75 -1.04 8.37   0 0 -90</pose>
+      <uri>CartPole</uri>
+    </include>-->
+
+    <model name="boundary">
+      <static>true</static>
+      <link name="link">
+        <collision name="x">
+          <pose>3000 0 0 0 0 0</pose>
+          <geometry>
+          <box>
+            <size>1 6000 6000</size>
+          </box>
+          </geometry>
+        </collision>
+        <collision name="y">
+          <pose>0 3000 0 0 0 0</pose>
+          <geometry>
+          <box>
+            <size>6000 1 6000</size>
+          </box>
+          </geometry>
+        </collision>
+        <collision name="x_neg">
+          <pose>-3000 0 0 0 0 0</pose>
+          <geometry>
+          <box>
+            <size>1 6000 6000</size>
+          </box>
+          </geometry>
+        </collision>
+        <collision name="y_neg">
+          <pose>0 -3000 0 0 0 0</pose>
+          <geometry>
+          <box>
+            <size>6000 1 6000</size>
+          </box>
+          </geometry>
+        </collision>
+        <collision name="bottom">
+          <pose>0 0 -3000 0 0 0</pose>
+          <geometry>
+          <box>
+            <size>6000 6000 1</size>
+          </box>
+          </geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="spheres">
+      <pose>-35 65 0 0 0 0</pose>
+      <link name="sphere_no_added_mass">
+        <inertial>
+          <inertia>
+            <ixx>0.1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.1</iyy>
+            <iyz>0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+          <mass>1.0</mass>
+        </inertial>
+        <collision name="sphere_no_added_mass_collision">
+          <geometry>
+            <sphere>
+              <radius>0.5</radius>
+            </sphere>
+          </geometry>
+        </collision>
+
+        <visual name="sphere_no_added_mass_visual">
+          <geometry>
+            <sphere>
+              <radius>0.5</radius>
+            </sphere>
+          </geometry>
+          <material>
+            <ambient>0 1 0 1</ambient>
+            <diffuse>0 1 0 1</diffuse>
+            <specular>0 1 0 1</specular>
+          </material>
+        </visual>
+      </link>
+
+      <link name="sphere_with_added_mass">
+      <pose relative_to="sphere_no_added_mass">0 -1 0 0 0 0</pose>
+        <inertial>
+          <inertia>
+            <ixx>0.1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.1</iyy>
+            <iyz>0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+          <mass>1.0</mass>
+          <fluid_added_mass>
+            <xx>261.666</xx>
+            <yy>261.666</yy>
+            <zz>261.666</zz>
+          </fluid_added_mass>
+        </inertial>
+        <collision name="sphere_with_added_mass_collision">
+          <geometry>
+            <sphere>
+              <radius>0.5</radius>
+            </sphere>
+          </geometry>
+        </collision>
+
+        <visual name="sphere_with_added_mass_visual">
+          <geometry>
+            <sphere>
+              <radius>0.5</radius>
+            </sphere>
+          </geometry>
+          <material>
+            <ambient>0 0 1 1</ambient>
+            <diffuse>0 0 1 1</diffuse>
+            <specular>0 0 1 1</specular>
+          </material>
+        </visual>
+      </link>
+  </model>
+
+    <model name="spheres_platform">
+      <static>true</static>
+      <pose>-35 64.5 -1.6 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>5 5 0.5</size>
+            </box>
+          </geometry>
+        </visual>
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>5 5 0.5</size>
+            </box>
+          </geometry>
+        </collision>
+      </link>
+    </model>
+
+
+    <!-- wide-angle camera model with lens flare plugin -->
+    <model name="wide_angle_camera_lensflare">
+      <static>true</static>
+      <pose>1.08 4.54 8.56 0.0 0.0 1.57</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.1 0.1 0.1</size>
+            </box>
+          </geometry>
+        </visual>
+        <visual name="center">
+          <pose>0.02 0 0 0.0 1.57 0</pose>
+          <geometry>
+            <sphere>
+              <radius>0.04</radius>
+            </sphere>
+          </geometry>
+          <material>
+            <diffuse>0.2 0.2 0.2</diffuse>
+          </material>
+        </visual>
+        <sensor name="wide_angle_camera" type="wideanglecamera">
+          <camera>
+            <horizontal_fov>3.14159</horizontal_fov>
+            <image>
+              <width>640</width>
+              <height>480</height>
+            </image>
+            <clip>
+              <near>0.1</near>
+              <far>100</far>
+            </clip>
+            <lens>
+              <type>equidistant</type>
+              <scale_to_hfov>true</scale_to_hfov>
+              <cutoff_angle>1.5707</cutoff_angle>
+              <env_texture_size>512</env_texture_size>
+            </lens>
+          </camera>
+          <always_on>1</always_on>
+          <update_rate>30</update_rate>
+          <visualize>true</visualize>
+          <topic>wide_angle_camera</topic>
+          <plugin
+              filename="gz-sim-lens-flare-system"
+              name="gz::sim::systems::LensFlare">
+            <light_name>sun</light_name>
+          </plugin>
+        </sensor>
+      </link>
+    </model>
+
+  </world>
+</sdf>

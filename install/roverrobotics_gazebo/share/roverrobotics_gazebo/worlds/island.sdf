@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+    <world name="moon">
+    
+    <scene>
+      <sky></sky>
+      <grid>false</grid>
+      <ambient>1.0 1.0 1.0</ambient>
+      <background>0.8 0.8 0.8</background>
+    </scene>
+    
+      <light type="directional" name="sun">
+        <cast_shadows>true</cast_shadows>
+        <pose>0 0 10 0 0.75 0</pose>
+        <diffuse>0.8 0.8 0.8 1</diffuse>
+        <specular>0.0 0.0 0.0 1</specular>
+        <intensity>5</intensity>
+        <attenuation>
+          <range>100</range>
+          <constant>0.9</constant>
+          <linear>0.01</linear>
+          <quadratic>0.001</quadratic>
+        </attenuation>
+        <direction>-0.5 0.1 -0.9</direction>
+      </light>
+
+      <include>
+        <uri>
+          https://fuel.gazebosim.org/1.0/OpenRobotics/models/Null Island
+        </uri>
+      </include>
+      
+      <include>
+        <uri>
+          https://fuel.gazebosim.org/1.0/OpenRobotics/models/Coast Water
+        </uri>
+      </include>
+
+      </world>
+  </sdf>
