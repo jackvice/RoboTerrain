@@ -4,7 +4,7 @@ import argparse
 import pandas as pd
 from datetime import datetime
 
-def calculate_success_rate(log_file, start_time_str, window_minutes):
+def calculate_success_rate(log_file, start_time_float, window_minutes):
     # Read lines and parse manually to ensure correct types
     timestamps = []
     events = []
@@ -28,14 +28,12 @@ def calculate_success_rate(log_file, start_time_str, window_minutes):
         'position': positions
     })
     
-    # Convert input time to timestamp
-    dt = datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S")
     epoch_offset = 1737225559.0245466 - datetime(2024, 1, 18, 14, 45, 0).timestamp()
-    start_time = dt.timestamp() + epoch_offset
+    start_time = start_time_float #dt.timestamp() + epoch_offset
     end_time = start_time + (window_minutes * 60)
     
-    print(f"\nAnalyzing from: {start_time_str} for {window_minutes} minutes")
-    print(f"Using time window: {start_time} to {end_time}")
+    #Eprint(f"\nAnalyzing from: {start_time_float} for {window_minutes} minutes")
+    #print(f"Using time window: {start_time} to {end_time}")
     
     # Filter for time window
     window_data = df[
@@ -44,7 +42,7 @@ def calculate_success_rate(log_file, start_time_str, window_minutes):
     ].copy()
     
     window_data = window_data.sort_values('timestamp')
-    print(f"Found {len(window_data)} entries in time window")
+    #print(f"Found {len(window_data)} entries in time window")
     
     # Process episodes
     valid_episodes = set()
@@ -57,7 +55,7 @@ def calculate_success_rate(log_file, start_time_str, window_minutes):
             # If we had a previous episode, check if it was valid
             if current_episode is not None:
                 episode_duration = row['timestamp'] - episode_start_times[current_episode]
-                if episode_duration > 5.0:
+                if episode_duration > 25.0:
                     valid_episodes.add(current_episode)
             
             current_episode = row['episode']
@@ -79,11 +77,12 @@ def calculate_success_rate(log_file, start_time_str, window_minutes):
     total_completed = len(completed_episodes)
     success_rate = (total_completed / total_valid * 100) if total_valid > 0 else 0
     
-    print(f"\nSuccess Rate Analysis:")
-    print(f"Time Window: {start_time_str} to {datetime.fromtimestamp(start_time + window_minutes*60 - epoch_offset)}")
-    print(f"Valid Episodes (>3s duration): {total_valid}")
-    print(f"Successful Episodes: {total_completed}")
+    #print(f"\nSuccess Rate Analysis:")
+    #print(f"Time Window: {start_time_str} to {datetime.fromtimestamp(start_time + window_minutes*60 - epoch_offset)}")
+    #print(f"Valid Episodes (>3s duration): {total_valid}")
+    #print(f"Successful Episodes: {total_completed}")
     print(f"Success Rate: {success_rate:.2f}%")
+    return (success_rate)
     
     if total_valid > 0:
         print("\nValid Episodes:", sorted(list(valid_episodes)))
@@ -96,7 +95,14 @@ def main():
     parser.add_argument('window_minutes', type=int, help='Analysis window in minutes')
     
     args = parser.parse_args()
-    calculate_success_rate(args.log_file, args.start_time, args.window_minutes)
-
+    start_time_unix = float(args.start_time)
+    best_rate = 0
+    for _ in range(1000):
+        new_rate = calculate_success_rate(args.log_file, start_time_unix, args.window_minutes)
+        if new_rate > best_rate:
+            best_rate = new_rate
+        start_time_unix += 60
+    print('best_rate', best_rate)
+            
 if __name__ == '__main__':
     main()

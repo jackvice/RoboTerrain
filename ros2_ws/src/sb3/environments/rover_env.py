@@ -123,7 +123,7 @@ class RoverEnv(gym.Env):
         self.previous_distance = None
 
         self.world_pose_path = '/world/' + self.world_name + '/set_pose'
-
+        print('world is', self.world_name)
         if self.world_name == 'inspect':
             # Navigation parameters previous
             self.rand_goal_x_range = (-28.5, -14) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
@@ -137,20 +137,20 @@ class RoverEnv(gym.Env):
             self.too_far_away_penilty = -50 # -25.0
         elif self.world_name == 'moon': # moon is island
             # Navigation parameters previous
-            self.rand_goal_x_range = (-28.5, -14) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-            self.rand_goal_y_range = (-28.5, -19.5) # -27,-19 for inspection
-            self.rand_x_range = (-28.5, -14) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-            self.rand_y_range = (-28.5, -19.5) # -27,-19 for inspection
-            self.too_far_away_low_x = -29 #for inspection
-            self.too_far_away_high_x = -13 #for inspection
-            self.too_far_away_low_y = -29 # for inspection
-            self.too_far_away_high_y = -17  # 29 for inspection
+            self.rand_goal_x_range = (-6.5, 6) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+            self.rand_goal_y_range = (-5, 10) # -27,-19 for inspection
+            self.rand_x_range = (-6.5, 6) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+            self.rand_y_range = (-5, 10) # -27,-19 for inspection
+            self.too_far_away_low_x = -20 #for inspection
+            self.too_far_away_high_x = 10 #for inspection
+            self.too_far_away_low_y = -20 # for inspection
+            self.too_far_away_high_y = 20  # 29 for inspection
             self.too_far_away_penilty = -50 # -25.0
         else: ###### world_name = 'maze' use as default
-            self.rand_goal_x_range = (-100, 100)
-            self.rand_goal_y_range = (-100, 100)
-            self.rand_x_range = (-100, 100) 
-            self.rand_y_range = (-100, 100)
+            self.rand_goal_x_range = (-8, 8)
+            self.rand_goal_y_range = (-8, 8)
+            self.rand_x_range = (-8, 8) 
+            self.rand_y_range = (-8, 8)
             self.too_far_away_low_x = -30 #for inspection
             self.too_far_away_high_x = 30 #for inspection
             self.too_far_away_low_y = -30 # for inspection
@@ -250,12 +250,12 @@ class RoverEnv(gym.Env):
             qos_profile
         )
 
-        self.bridge = CvBridge()
-        self.camera_subscriber = self.node.create_subscription(
-            Image,
-            camera_topic,
-            self.camera_callback,
-            10)
+        #self.bridge = CvBridge()
+        #self.camera_subscriber = self.node.create_subscription(
+        #    Image,
+        #    camera_topic,
+        #    self.camera_callback,
+        #    10)
 
         # Add this in __init__ with your other subscribers
         self.odom_subscriber = self.node.create_subscription(
@@ -693,21 +693,21 @@ class RoverEnv(gym.Env):
         self.target_positions_y = np.random.uniform(*self.rand_goal_y_range)
         print(f'\nNew target x,y: {self.target_positions_x:.2f}, {self.target_positions_y:.2f}')
         self.previous_distance = None
-        
         # Add a small delay to ensure the robot has time to reset
         for _ in range(100):  # Increased from 3 to 5 to allow more time for pose reset
             rclpy.spin_once(self.node, timeout_sec=0.1)
         time.sleep(1.0)        
         observation = self.get_observation()
-
         # Normal operation
         twist.linear.x = 0.0
         twist.angular.z = 0.0
         
         self.publisher.publish(twist)
         timestamp = time.time()
+        print(timestamp)
         with open(f'{self.episode_log_path}/episode_log.csv', 'a') as f:
             f.write(f"{timestamp},episode_start,{self.episode_number},x={x_insert:.2f},y={y_insert:.2f}\n")
+
         self.episode_number += 1
         return observation, {}
     

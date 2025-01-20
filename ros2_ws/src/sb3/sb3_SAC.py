@@ -26,15 +26,6 @@ def parse_args():
     return parser.parse_args()
 
 
-
-def parse_argsold():
-    parser = argparse.ArgumentParser(description='Train PPO agent for rover navigation')
-    parser.add_argument('--load', type=str, choices=['True', 'False'], required=True,
-                      help='Whether to load from checkpoint')
-    parser.add_argument('--checkpoint_name', type=str,
-                      help='Path to checkpoint file to load')
-    return parser.parse_args()
-
 def make_env(world_name):
     def _init():
         env = RoverEnv(world_n=world_name)
@@ -43,10 +34,11 @@ def make_env(world_name):
     return _init
 
 
-def main():
+def mainNew():
     args = parse_args()
     #world_name = 'inspect'
-    world_name = 'maze'
+    #world_name = 'maze'
+    world_name = 'moon'
     
     # Set up environment
     env = DummyVecEnv([make_env(world_name)])  # Pass a list with make_env function
@@ -71,10 +63,12 @@ def main():
     if args.mode == 'predict':
         obs = env.reset()
         done = False
-        while not done:
+        for _ in range(1_000_000):
             # Predict action from model
             action, _states = model.predict(obs, deterministic=True)
             obs, rewards, done, info = env.step(action)
+            if done:
+                obs = env.reset()
         env.close()
     else:  # Training Mode
         # Create timestamp for this training run
@@ -114,9 +108,10 @@ def main():
         )
 
 
-def mainOld():
+def main():
     args = parse_args()
-    world_name = 'inspect'
+    #world_name = 'inspect'
+    world_name = 'moon'
     # Create timestamp for this training run
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     
@@ -176,3 +171,5 @@ def mainOld():
 
 if __name__ == "__main__":
     main()
+
+
