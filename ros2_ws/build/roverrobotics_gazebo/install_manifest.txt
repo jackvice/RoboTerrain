@@ -10,6 +10,7 @@
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/launch/indoor_miti_gazebo.launch.py
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/random_pillars.py~
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/maze.sdf
+/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/maze_empty.sdf~
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/too_big/moon_garden.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/island.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/fortress.sdf
@@ -29,6 +30,7 @@
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/random_pillars.py
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/agriculture.world
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/yosemite.world
+/home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/maze_empty.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/inspection_simple.world
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/pillars.sdf
 /home/jack/src/RoboTerrain/ros2_ws/install/roverrobotics_gazebo/share/roverrobotics_gazebo/worlds/clearpath_LICENSE.txt

@@ -9,8 +9,15 @@ conda activate sb3
 python sb3_SAC.py --load False
 python sb3_SAC.py --load True --checkpoint_name checkpoints/ppo_rover_model_20241115_1152_900000_steps.zip
 
+
 # tensorboard
 ~/src/RoboTerrain/ros2_ws/src/sb3$ tensorboar --logdir tboard_logs/
+
+
+# metrics logger in ~/rover_workspace/rover_metrics/
+ros2 run rover_metrics metrics_node
+
+
 
 # Claude prompt
 How will you go about writing this program?
@@ -39,9 +46,6 @@ ros2 launch turtlebot4_ignition_bringup turtlebot4_ignition.launch.py
 
 
 ign fuel download -u https://fuel.ignitionrobotics.org/1.0/OpenRobotics/models/Jersey%20Barrier
-
-# metrics logger in ~/rover_workspace/rover_metrics/
-ros2 run rover_metrics metrics_node
 
 
 #rviz2:  'Fixed Frame' set to lidar_link

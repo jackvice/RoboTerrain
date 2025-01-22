@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import numpy as np
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 import sys
@@ -10,7 +9,7 @@ import pandas as pd
 from data_loader import MetricsDataLoader
 from metrics_statistics import MetricsStatistics
 from visualizations.time_series import TimeSeriesVisualizer
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
 
 """
 MetricsAnalyzerCLI Class
@@ -74,6 +73,7 @@ Dependencies:
 - visualizations/time_series.py
 """
 
+
 class MetricsAnalyzerCLI:
     """Command line interface for the metrics analyzer."""
     VALID_METRICS = {
@@ -82,13 +82,13 @@ class MetricsAnalyzerCLI:
         'SM': 'Smoothness Metric',
         'OC': 'Obstacle Clearance',
         'DT': 'Distance Traveled',
-        'CV': 'Velocity Over Rough Terrain (VORT)',  # Updated name
+        'CV': 'Current Velocity',
         'IM': 'IMU Acceleration Magnitude',
         'RT': 'Is Rough Terrain',
-        'VR': 'Vertical Roughness'
+        'VR': 'Vertical Roughness'  # Add new metric
     }
     
-    # Rest of the class implementation remains the same
+    
     VALID_PLOT_TYPES = [
         'time_series',
         'correlation',
@@ -227,124 +227,21 @@ class MetricsAnalyzerCLI:
         except Exception as e:
             sys.exit(f"Error creating output directory: {e}")
 
+            
     def process_data(self, args: Dict[str, Any]) -> None:
         """Process data and generate visualizations."""
         self.logger.info("Starting data processing...")
 
-        # Mapping between display names and actual column names
-        column_mapping = {
-            'Total Collisions': 'Total Collisions',
-            'Current Collision Status': 'Current Collision Status',
-            'Smoothness Metric': 'Smoothness Metric',
-            'Obstacle Clearance': 'Obstacle Clearance',
-            'Distance Traveled': 'Distance Traveled',
-            'Velocity Over Rough Terrain (VORT)': 'Current Velocity',  # Map display name to actual column
-            'IMU Acceleration Magnitude': 'IMU Acceleration Magnitude',
-            'Is Rough Terrain': 'Is Rough Terrain',
-            'Vertical Roughness': 'Vertical Roughness'
-        }
-
-        # Metric mapping for display purposes
         metric_mapping = {
             'TC': 'Total Collisions (TC)',
             'CS': 'Current Collision Status (CS)',
             'SM': 'Smoothness Metric (SM)',
             'OC': 'Obstacle Clearance (OC)',
             'DT': 'Distance Traveled (DT)',
-            'CV': 'Velocity Over Rough Terrain (VORT)',
+            'CV': 'Current Velocity (CV)',
             'IM': 'IMU Acceleration Magnitude (IM)',
             'RT': 'Is Rough Terrain (RT)',
-            'VR': 'Vertical Roughness (VR)'
-        }
-        
-        # Initialize components
-        data_loader = MetricsDataLoader(iqr_multiplier=args['iqr_multiplier'])
-        statistics = MetricsStatistics(confidence_level=args['confidence_level'])
-        time_series_viz = TimeSeriesVisualizer()
-        
-        # Store all trial data
-        trial_data = {}
-        
-        # Process each input file
-        for csv_file in args['csv_files']:
-            self.logger.info(f"Processing file: {csv_file}")
-            
-            # Load and process data
-            processed_data = data_loader.process_data(
-                csv_file,
-                args['metrics'],
-                'none',
-                args['fixed_interval'],
-                args['save_outliers'],
-                args['output_dir']
-            )
-            
-            # Store processed data with trial name
-            trial_name = f"Trial_{csv_file.stem}"
-            trial_data[trial_name] = processed_data['normalized']
-        
-        # Generate visualizations
-        if 'time_series' in args['plot_types']:
-            self.logger.info("Generating time series plots...")
-            figures = {}
-            
-            # Create standard plots for each metric
-            for metric in args['metrics']:
-                self.logger.info(f"Plotting metric: {metric}")
-                metric_name = self.VALID_METRICS[metric]
-                title = f"{metric_mapping.get(metric, metric)}"
-                
-                # Use the column mapping to get the actual column name for plotting
-                actual_column = column_mapping.get(metric_name, metric_name)
-                
-                fig = time_series_viz.plot_multi_trial_comparison(
-                    trial_data,
-                    actual_column,  # Use actual column name for data access
-                    title=title     # Use display name for title
-                )
-                figures[f"{metric}_comparison"] = fig
-                # Calculate and print mean for each trial
-                # Calculate and print mean for each trial
-                for trial_name, df in trial_data.items():
-                    # Original metric mean
-                    mean_value = np.mean(df[actual_column])
-                    print(f"Mean {title} for {trial_name}: {mean_value:.3f}")
-    
-                    # Calculate TSR (Total Smoothness of Route)
-                    mean_smoothness = np.mean(df['Current Smoothness'])
-                    print(f"Mean Total Smoothness of Route (TSR) for {trial_name}: {mean_smoothness:.3f}")
-                    print("-" * 50)  # Add a separator line for readability
-
-                
-            # Create special comparison plot for velocity vs. roughness
-            if 'CV' in args['metrics'] and 'VR' in args['metrics']:
-                self.logger.info("Generating velocity vs. roughness comparison...")
-                fig = time_series_viz.plot_velocity_roughness_comparison(
-                    trial_data,
-                    title="Velocity vs. Roughness Comparison"
-                )
-                figures["velocity_roughness_comparison"] = fig
-            
-            # Save plots to output directory
-            output_path = args['output_dir'] / "combined_metrics"
-            time_series_viz.save_plots(figures, output_path)
-            self.logger.info(f"Combined plots saved to: {output_path}")
-
-            
-    def process_data_old(self, args: Dict[str, Any]) -> None:
-        """Process data and generate visualizations."""
-        self.logger.info("Starting data processing...")
-
-        metric_mapping = {
-            'TC': 'Total Collisions (TC)',
-            'CS': 'Current Collision Status (CS)',
-            'SM': 'Smoothness Metric (SM)',
-            'OC': 'Obstacle Clearance (OC)',
-            'DT': 'Distance Traveled (DT)',
-            'CV': 'Velocity Over Rough Terrain (VORT)',  # Updated name
-            'IM': 'IMU Acceleration Magnitude (IM)',
-            'RT': 'Is Rough Terrain (RT)',
-            'VR': 'Vertical Roughness (VR)'
+            'VR': 'Vertical Roughness (VR)'  # Add new metric
         }
         
         # Initialize components
@@ -410,9 +307,8 @@ class MetricsAnalyzerCLI:
 def main():
     """Main entry point for the CLI."""
     cli = MetricsAnalyzerCLI()
-    args = cli.get_args()
+    args = cli.get_args()  # Changed from parse_args() to get_args()
     cli.process_data(args)
 
 if __name__ == '__main__':
     main()
-

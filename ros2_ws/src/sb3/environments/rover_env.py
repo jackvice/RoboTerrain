@@ -20,6 +20,7 @@ from gazebo_msgs.srv import SetEntityState
 from sensor_msgs.msg import Image
 import cv2
 from collections import deque
+from time import strftime
 
 
 class RoverEnv(gym.Env):
@@ -45,6 +46,8 @@ class RoverEnv(gym.Env):
         self.current_linear_velocity = 0.0
         self.current_angular_velocity = 0.0
 
+
+        self.log_name = "episode_log" + world_n + strftime("%H_%M") + '.csv'
         
         # Initialize environment parameters
         self.pose_node = None
@@ -126,10 +129,10 @@ class RoverEnv(gym.Env):
         print('world is', self.world_name)
         if self.world_name == 'inspect':
             # Navigation parameters previous
-            self.rand_goal_x_range = (-28.5, -14) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-            self.rand_goal_y_range = (-28.5, -19.5) # -27,-19 for inspection
-            self.rand_x_range = (-28.5, -14) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-            self.rand_y_range = (-28.5, -19.5) # -27,-19 for inspection
+            self.rand_goal_x_range = (-27, -19) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+            self.rand_goal_y_range = (-27, -19) # -27,-19 for inspection
+            self.rand_x_range = (-27, -19) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+            self.rand_y_range = (-27, -19) # -27,-19 for inspection
             self.too_far_away_low_x = -29 #for inspection
             self.too_far_away_high_x = -13 #for inspection
             self.too_far_away_low_y = -29 # for inspection
@@ -137,20 +140,20 @@ class RoverEnv(gym.Env):
             self.too_far_away_penilty = -50 # -25.0
         elif self.world_name == 'moon': # moon is island
             # Navigation parameters previous
-            self.rand_goal_x_range = (-6.5, 6) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-            self.rand_goal_y_range = (-5, 10) # -27,-19 for inspection
-            self.rand_x_range = (-6.5, 6) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-            self.rand_y_range = (-5, 10) # -27,-19 for inspection
+            self.rand_goal_x_range = (-4, 4) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+            self.rand_goal_y_range = (-4, 4) # -27,-19 for inspection
+            self.rand_x_range = (-4, 4) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+            self.rand_y_range = (-4, 4) # -27,-19 for inspection
             self.too_far_away_low_x = -20 #for inspection
             self.too_far_away_high_x = 10 #for inspection
             self.too_far_away_low_y = -20 # for inspection
             self.too_far_away_high_y = 20  # 29 for inspection
             self.too_far_away_penilty = -50 # -25.0
         else: ###### world_name = 'maze' use as default
-            self.rand_goal_x_range = (-8, 8)
-            self.rand_goal_y_range = (-8, 8)
-            self.rand_x_range = (-8, 8) 
-            self.rand_y_range = (-8, 8)
+            self.rand_goal_x_range = (-4, 4)
+            self.rand_goal_y_range = (-4, 4)
+            self.rand_x_range = (-4, 4) 
+            self.rand_y_range = (-4, 4)
             self.too_far_away_low_x = -30 #for inspection
             self.too_far_away_high_x = 30 #for inspection
             self.too_far_away_low_y = -30 # for inspection
@@ -429,7 +432,7 @@ class RoverEnv(gym.Env):
         print(f'\nNew target x,y: {self.target_positions_x:.2f}, {self.target_positions_y:.2f}')
         self.previous_distance = None
         timestamp = time.time()
-        with open(f'{self.episode_log_path}/episode_log.csv', 'a') as f:
+        with open(f'{self.episode_log_path}/{self.log_name}', 'a') as f:
             f.write(f"{timestamp},goal_reached,{self.episode_number-1},x={self.current_pose.position.x:.2f},y={self.current_pose.position.y:.2f}\n")
             f.write(f"{timestamp},episode_start,{self.episode_number},x={self.current_pose.position.x:.2f},y={self.current_pose.position.y:.2f}\n")
         self.episode_number += 1
@@ -445,7 +448,7 @@ class RoverEnv(gym.Env):
         final_reward_multiplier = 1.5
         collision_threshold = 0.3
         collision_penalty = -0.5
-        success_distance = 0.75
+        success_distance = 0.5
         distance_delta_scale = 0.3
         heading_tolerance = math.pi/4  # 45 degrees
 
@@ -468,7 +471,7 @@ class RoverEnv(gym.Env):
         min_distance = np.min(self.lidar_data[np.isfinite(self.lidar_data)])
         if min_distance < collision_threshold:
             timestamp = time.time()
-            with open(f'{self.episode_log_path}/episode_log.csv', 'a') as f:
+            with open(f'{self.episode_log_path}//{self.log_name}', 'a') as f:
                 f.write(f"{timestamp},Collision,{self.episode_number-1},x={self.current_pose.position.x:.2f},y={self.current_pose.position.y:.2f}\n")
             print('Collision!')
             return collision_penalty
@@ -489,10 +492,7 @@ class RoverEnv(gym.Env):
         # Convert heading difference to range [-π, π]
         heading_diff = math.atan2(math.sin(heading_diff), math.cos(heading_diff))
         abs_heading_diff = abs(heading_diff)
-        # Calculate heading alignment:
-        # - When abs_heading_diff = 0 (perfect): heading_alignment = 1
-        # - When abs_heading_diff = π/2 (90 degrees): heading_alignment = 0
-        # - When abs_heading_diff = π (180 degrees): heading_alignment = -1
+
         if abs_heading_diff <= math.pi/2:
             # From 0 to 90 degrees: scale from 1 to 0
             heading_alignment = 1.0 - (2 * abs_heading_diff / math.pi)
@@ -626,7 +626,7 @@ class RoverEnv(gym.Env):
         
 
     def reset(self, seed=None, options=None):
-        print('################ Environment Reset')
+        print('################'+ self.worl_name + ' Environment Reset')
         print('')
         twist = Twist()
         # Normal operation
@@ -644,7 +644,7 @@ class RoverEnv(gym.Env):
             if x_insert < -24.5 and y_insert < -24.5: #inspection
                 z_insert = 6.5 
         else:
-            z_insert = 1 # for maze and default
+            z_insert = 2 # for maze and default
 
         ##  Random Yaw
         final_yaw = np.random.uniform(-np.pi, np.pi)
@@ -705,7 +705,7 @@ class RoverEnv(gym.Env):
         self.publisher.publish(twist)
         timestamp = time.time()
         print(timestamp)
-        with open(f'{self.episode_log_path}/episode_log.csv', 'a') as f:
+        with open(f'{self.episode_log_path}//{self.log_name}', 'a') as f:
             f.write(f"{timestamp},episode_start,{self.episode_number},x={x_insert:.2f},y={y_insert:.2f}\n")
 
         self.episode_number += 1

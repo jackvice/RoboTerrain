@@ -37,8 +37,8 @@ def make_env(world_name):
 def mainNew():
     args = parse_args()
     #world_name = 'inspect'
-    #world_name = 'maze'
-    world_name = 'moon'
+    world_name = 'maze'
+    #world_name = 'moon'
     
     # Set up environment
     env = DummyVecEnv([make_env(world_name)])  # Pass a list with make_env function
