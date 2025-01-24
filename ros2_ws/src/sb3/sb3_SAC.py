@@ -34,6 +34,69 @@ def make_env(world_name):
     return _init
 
 
+def main():
+    args = parse_args()
+    world_name = 'inspect'
+    #world_name = 'moon'
+    #world_name = 'maze'
+    # Create timestamp for this training run
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    
+    # Set up environment
+    env = DummyVecEnv([make_env(world_name)])  # Note: Pass a list with make_env function
+    env = VecNormalize(
+        env,
+        norm_obs=True,  # Normalize observations
+        norm_reward=True,  # Normalize rewards
+        clip_obs=20.,
+        clip_reward=100.,
+        gamma=0.99,
+        epsilon=1e-8
+    )
+    
+    # Set up directories
+    checkpoint_dir = "./checkpoints"
+    tensorboard_dir = f"./tboard_logs/SAC_{world_name}_{timestamp}"
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    
+    if args.load == 'True':
+        if not args.checkpoint_name:
+            raise ValueError("Checkpoint name must be provided when load is True")
+        # Load existing model
+        model = SAC.load(args.checkpoint_name, 
+                        env=env, 
+                        tensorboard_log=tensorboard_dir)
+                        #policy_kwargs=policy_kwargs)
+    else:
+        # Create new model
+        model = SAC("MultiInputPolicy",
+                    env,
+                    learning_rate = get_linear_fn(3e-4, 5e-5, 1.0),  # Starts at 3e-4, decays to 5e-5
+                    tensorboard_log=tensorboard_dir,
+                    buffer_size = 1_000_000,  # 1e6
+                    learning_starts = 50000,
+                    ent_coef = "auto_0.5",
+                    verbose=1,
+                    batch_size=512,
+                    )       
+
+    # Set up checkpoint callback
+    checkpoint_callback = CheckpointCallback(
+        save_freq=200_000,
+        save_path=checkpoint_dir,
+        name_prefix=f"sac_{world_name}_{timestamp}",
+        save_replay_buffer=False,
+        save_vecnormalize=True
+    )
+    
+    # Train model
+    model.learn(
+        total_timesteps=10_000_000,
+        callback=checkpoint_callback,
+        reset_num_timesteps=False if args.load == 'True' else True
+    )
+
+
 def mainNew():
     args = parse_args()
     #world_name = 'inspect'
@@ -108,67 +171,8 @@ def mainNew():
         )
 
 
-def main():
-    args = parse_args()
-    #world_name = 'inspect'
-    world_name = 'moon'
-    # Create timestamp for this training run
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-    
-    # Set up environment
-    env = DummyVecEnv([make_env(world_name)])  # Note: Pass a list with make_env function
-    env = VecNormalize(
-        env,
-        norm_obs=True,  # Normalize observations
-        norm_reward=True,  # Normalize rewards
-        clip_obs=20.,
-        clip_reward=100.,
-        gamma=0.99,
-        epsilon=1e-8
-    )
-    
-    # Set up directories
-    checkpoint_dir = "./checkpoints"
-    tensorboard_dir = f"./tboard_logs/SAC_{world_name}_{timestamp}"
-    os.makedirs(checkpoint_dir, exist_ok=True)
-    
-    if args.load == 'True':
-        if not args.checkpoint_name:
-            raise ValueError("Checkpoint name must be provided when load is True")
-        # Load existing model
-        model = SAC.load(args.checkpoint_name, 
-                        env=env, 
-                        tensorboard_log=tensorboard_dir)
-                        #policy_kwargs=policy_kwargs)
-    else:
-        # Create new model
-        model = SAC("MultiInputPolicy",
-                    env,
-                    learning_rate = get_linear_fn(3e-4, 5e-5, 1.0),  # Starts at 3e-4, decays to 5e-5
-                    tensorboard_log=tensorboard_dir,
-                    buffer_size = 1_000_000,  # 1e6
-                    learning_starts = 50000,
-                    ent_coef = "auto_0.5",
-                    verbose=1,
-                    batch_size=512,
-                    )       
 
-    # Set up checkpoint callback
-    checkpoint_callback = CheckpointCallback(
-        save_freq=200_000,
-        save_path=checkpoint_dir,
-        name_prefix=f"sac_{world_name}_{timestamp}",
-        save_replay_buffer=False,
-        save_vecnormalize=True
-    )
     
-    # Train model
-    model.learn(
-        total_timesteps=10_000_000,
-        callback=checkpoint_callback,
-        reset_num_timesteps=False if args.load == 'True' else True
-    )
-
 if __name__ == "__main__":
     main()
 

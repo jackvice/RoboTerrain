@@ -1,0 +1,19 @@
+running egg_info
+writing ../../../build/rover_metrics/rover_metrics.egg-info/PKG-INFO
+writing dependency_links to ../../../build/rover_metrics/rover_metrics.egg-info/dependency_links.txt
+writing entry points to ../../../build/rover_metrics/rover_metrics.egg-info/entry_points.txt
+writing requirements to ../../../build/rover_metrics/rover_metrics.egg-info/requires.txt
+writing top-level names to ../../../build/rover_metrics/rover_metrics.egg-info/top_level.txt
+reading manifest file '../../../build/rover_metrics/rover_metrics.egg-info/SOURCES.txt'
+writing manifest file '../../../build/rover_metrics/rover_metrics.egg-info/SOURCES.txt'
+running build
+running build_py
+running install
+running install_lib
+running install_data
+running install_egg_info
+removing '/home/jack/src/RoboTerrain/install/rover_metrics/lib/python3.10/site-packages/rover_metrics-0.0.0-py3.10.egg-info' (and everything under it)
+Copying ../../../build/rover_metrics/rover_metrics.egg-info to /home/jack/src/RoboTerrain/install/rover_metrics/lib/python3.10/site-packages/rover_metrics-0.0.0-py3.10.egg-info
+running install_scripts
+Installing metrics_node script to /home/jack/src/RoboTerrain/install/rover_metrics/lib/rover_metrics
+writing list of installed files to '/home/jack/src/RoboTerrain/build/rover_metrics/install.log'

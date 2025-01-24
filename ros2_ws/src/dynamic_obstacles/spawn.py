@@ -154,7 +154,7 @@ class ActorSpawner:
             # Use ign-transport to spawn the actor in /world/default
             command = [
                 'ign', 'service',
-                '-s', '/world/default/create',
+                '-s', '/world/inspect/create',
                 '--reqtype', 'ignition.msgs.EntityFactory',
                 '--reptype', 'ignition.msgs.Boolean',
                 '--timeout', '1000',

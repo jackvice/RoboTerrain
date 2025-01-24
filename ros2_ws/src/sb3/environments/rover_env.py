@@ -47,7 +47,7 @@ class RoverEnv(gym.Env):
         self.current_angular_velocity = 0.0
 
 
-        self.log_name = "episode_log" + world_n + strftime("%H_%M") + '.csv'
+        self.log_name = "episode_log" + world_n + '_' + strftime("%H_%M") + '.csv'
         
         # Initialize environment parameters
         self.pose_node = None
@@ -204,12 +204,12 @@ class RoverEnv(gym.Env):
                 shape=(2,),
                 dtype=np.float32
             ),
-            #'image': spaces.Box(
-            #    low=0,
-            #    high=255,
-            #    shape=(64, 64),
-            #    dtype=np.float32
-            #),
+            'image': spaces.Box(
+                low=0,
+                high=255,
+                shape=(64, 64),
+                dtype=np.float32
+            ),
             'velocities': spaces.Box(
                 low=np.array([-10.0, -10.0]),
                 high=np.array([10.0, 10.0]),
@@ -253,12 +253,12 @@ class RoverEnv(gym.Env):
             qos_profile
         )
 
-        #self.bridge = CvBridge()
-        #self.camera_subscriber = self.node.create_subscription(
-        #    Image,
-        #    camera_topic,
-        #    self.camera_callback,
-        #    10)
+        self.bridge = CvBridge()
+        self.camera_subscriber = self.node.create_subscription(
+            Image,
+            camera_topic,
+            self.camera_callback,
+            10)
 
         # Add this in __init__ with your other subscribers
         self.odom_subscriber = self.node.create_subscription(
@@ -419,7 +419,7 @@ class RoverEnv(gym.Env):
             'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
                             dtype=np.float32),
             'target': self.get_target_info(),
-            #'image': self.current_image,
+            'image': self.current_image,
             'velocities': np.array([self.current_linear_velocity, self.current_angular_velocity],
                                    dtype=np.float32)
         }    
@@ -495,7 +495,7 @@ class RoverEnv(gym.Env):
 
         if abs_heading_diff <= math.pi/2:
             # From 0 to 90 degrees: scale from 1 to 0
-            heading_alignment = 1.0 - (2 * abs_heading_diff / math.pi)
+            heading_alignment = 1.0 - (1.7 * abs_heading_diff / math.pi) #(2 * abs_heading_diff / math.pi)
         else:
             # From 90 to 180 degrees: scale from 0 to -1
             heading_alignment = -2 * (abs_heading_diff - math.pi/2) / math.pi
@@ -626,7 +626,7 @@ class RoverEnv(gym.Env):
         
 
     def reset(self, seed=None, options=None):
-        print('################'+ self.worl_name + ' Environment Reset')
+        print('################'+ self.world_name + ' Environment Reset')
         print('')
         twist = Twist()
         # Normal operation
@@ -644,7 +644,7 @@ class RoverEnv(gym.Env):
             if x_insert < -24.5 and y_insert < -24.5: #inspection
                 z_insert = 6.5 
         else:
-            z_insert = 2 # for maze and default
+            z_insert = .75 # for maze and default
 
         ##  Random Yaw
         final_yaw = np.random.uniform(-np.pi, np.pi)

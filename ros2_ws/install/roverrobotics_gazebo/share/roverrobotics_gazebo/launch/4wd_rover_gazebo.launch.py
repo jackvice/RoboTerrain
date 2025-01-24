@@ -31,10 +31,10 @@ def generate_launch_description():
         #default_value='maze_pillars.sdf',
         #default_value='inspection.world',
         #default_value='simple_40m2.world',
-        #default_value='inspection_simple.world',
+        default_value='inspection_simple.world',
         #default_value='island.sdf',
         #default_value='maze_clean.sdf',
-        default_value='maze_empty.sdf',
+        #default_value='maze_empty.sdf',
         description='World file to use in Gazebo')
     
     # Construct the world path using substitutions

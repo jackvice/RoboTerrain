@@ -218,6 +218,7 @@ class TimeSeriesVisualizer:
                                ci: bool = True) -> plt.Figure:
         """Create a publication-ready time series plot for a single metric."""
         # Convert time to steps
+        exit()
         plot_df = df.copy()
         start_time = plot_df['Timestamp'].min()
         plot_df['Steps'] = (plot_df['Timestamp'] - start_time) * 19  # 19 steps per second
@@ -322,6 +323,7 @@ class TimeSeriesVisualizer:
         Returns:
             plt.Figure: Generated figure
         """
+        exit()
         fig, ax = plt.subplots()
         
         # Plot raw data
@@ -379,7 +381,7 @@ class TimeSeriesVisualizer:
                     dpi=300,
                     bbox_inches='tight'
                 )
-        plt.show()
+        #plt.show()
 
 if __name__ == '__main__':
     # Example usage
@@ -562,6 +564,7 @@ class TimeSeriesVisualizer_origin:
         Returns:
             plt.Figure: Generated figure
         """
+        exit()
         fig, ax = plt.subplots()
         
         # Plot each trial
@@ -588,6 +591,7 @@ class TimeSeriesVisualizer_origin:
         
         # Customize the plot
         ax.set_xlabel('Time (minutes)')
+        ax.set_xlim(1.4e6, ax.get_xlim()[1])  # Sets lower bound to 1.4 million
         if 'Obstacle Clearance' in metric:
             ax.set_ylabel('Obstacle Clearance (meters)')
         else:
@@ -600,9 +604,11 @@ class TimeSeriesVisualizer_origin:
         ax.grid(True, linestyle='--', alpha=0.7)
         
         # Adjust legend
-        ax.legend(title='Trials', bbox_to_anchor=(1.05, 1), loc='upper left')
+        #ax.legend(title='Trials', bbox_to_anchor=(1.05, 1), loc='upper left')
+        ax.legend(title='Trials', bbox_to_anchor=(0.5, -0.15), loc='upper center', ncol=3) 
         
         # Tight layout
+        plt.subplots_adjust(bottom=0.2)
         plt.tight_layout()
         
         return fig
@@ -666,7 +672,7 @@ class TimeSeriesVisualizer_origin:
                   formats: List[str] = ['png', 'pdf']) -> None:
         """
         Save generated figures in multiple formats.
-        
+
         Args:
             figs (Dict[str, plt.Figure]): Dictionary of figures to save
             output_path (Path): Output directory
