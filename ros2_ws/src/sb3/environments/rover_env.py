@@ -37,8 +37,6 @@ class RoverEnv(gym.Env):
         self.bridge = CvBridge()
         self.node = rclpy.create_node('turtlebot_controller')
 
-        #self.the_world = 'maze' #'default' #default for inspection
-        #self.the_world = 'inspection' #default for inspection
 
         self.current_image = np.zeros((64, 64), dtype=np.float32)  # grayscale image buffer
 
@@ -137,7 +135,7 @@ class RoverEnv(gym.Env):
             self.too_far_away_high_x = -13 #for inspection
             self.too_far_away_low_y = -29 # for inspection
             self.too_far_away_high_y = -17  # 29 for inspection
-            self.too_far_away_penilty = -50 # -25.0
+            self.too_far_away_penilty = -10 # -25.0
         elif self.world_name == 'moon': # moon is island
             # Navigation parameters previous
             self.rand_goal_x_range = (-4, 4) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
@@ -148,7 +146,7 @@ class RoverEnv(gym.Env):
             self.too_far_away_high_x = 10 #for inspection
             self.too_far_away_low_y = -20 # for inspection
             self.too_far_away_high_y = 20  # 29 for inspection
-            self.too_far_away_penilty = -50 # -25.0
+            self.too_far_away_penilty = -10 # -25.0
         else: ###### world_name = 'maze' use as default
             self.rand_goal_x_range = (-4, 4)
             self.rand_goal_y_range = (-4, 4)
@@ -158,7 +156,7 @@ class RoverEnv(gym.Env):
             self.too_far_away_high_x = 30 #for inspection
             self.too_far_away_low_y = -30 # for inspection
             self.too_far_away_high_y = 30  # 29 for inspection
-            self.too_far_away_penilty = -50 # -25.0
+            self.too_far_away_penilty = -10 # -25.0
             
         self.goal_reward = 100
         
@@ -449,7 +447,7 @@ class RoverEnv(gym.Env):
         collision_threshold = 0.3
         collision_penalty = -0.5
         success_distance = 0.5
-        distance_delta_scale = 0.3
+        distance_delta_scale = 0.5
         heading_tolerance = math.pi/4  # 45 degrees
 
         # Get current state info
@@ -495,20 +493,22 @@ class RoverEnv(gym.Env):
 
         if abs_heading_diff <= math.pi/2:
             # From 0 to 90 degrees: scale from 1 to 0
-            heading_alignment = 1.0 - (1.7 * abs_heading_diff / math.pi) #(2 * abs_heading_diff / math.pi)
+            heading_alignment = 1.0 - (2 * abs_heading_diff / math.pi)
         else:
             # From 90 to 180 degrees: scale from 0 to -1
             heading_alignment = -2 * (abs_heading_diff - math.pi/2) / math.pi
         heading_reward = 0.01 * heading_alignment  # 0.01 per step when perfect (30.0 over 3000 steps)
 
         # Distance component - reward any progress towards goal
-        if abs(distance_delta) > 0.001 and heading_reward > 0.0:  # Only reward meaningful movement with good heading
+        if abs(distance_delta) > 0.001 and heading_reward > 0.004:  # Only reward meaningful movement with good heading
             distance_reward = distance_delta * distance_delta_scale
+            distance_reward += heading_reward
         else:
-            distance_reward = -0.001
+            distance_reward = -0.03 #(-1.1 * distance_delta * distance_delta_scale)
             
         # Combine rewards
-        reward = ((distance_reward + heading_reward) * final_reward_multiplier) + (self.current_linear_velocity * 0.0025)
+        #reward = ((distance_reward + heading_reward) * final_reward_multiplier) + (self.current_linear_velocity * 0.0025)
+        reward = (distance_reward * final_reward_multiplier) + (self.current_linear_velocity * 0.0025)
 
         # Debug logging
         if self.total_steps % 1000 == 0:
@@ -522,70 +522,6 @@ class RoverEnv(gym.Env):
         return reward
     
     
-    def task_rewardOrigin(self):
-        """
-        Potential-based reward that only rewards progress when heading difference to target is less than 90 degrees.
-        Combined with collision penalties and goal rewards.
-        """
-        # Constants
-        collision_threshold = 0.3
-        collision_penalty = -1.0
-        success_distance = 0.5
-        distance_delta_scale = 0.3
-    
-        # Get current state info
-        distance_heading_info = self.get_target_info()
-        current_distance = distance_heading_info[0]
-        heading_diff = distance_heading_info[1]
-    
-        # Initialize previous distance if needed
-        if self.previous_distance is None:
-            self.previous_distance = current_distance
-            return 0.0
-        
-        # Check for goal achievement
-        if current_distance < success_distance:
-            self.update_target_pos()
-            return self.goal_reward
-
-        # Calculate minimum lidar distance for collision detection
-        min_distance = np.min(self.lidar_data[np.isfinite(self.lidar_data)])
-        if min_distance < collision_threshold:
-            print('Collision!')
-            return collision_penalty
-        
-        # Calculate potential-based reward
-        distance_delta = self.previous_distance - current_distance
-        if False: #self.total_steps % 20 == 0:
-            print(f"Debug - previous_distance: {self.previous_distance}, current_distance: {current_distance}")
-            print(f"Debug - distance_delta: {distance_delta}")
-
-        # Only reward progress when facing towards target (heading diff < 90 degrees)
-        if abs(heading_diff) < math.pi/4:
-            reward = distance_delta * distance_delta_scale  # Scale factor for the potential difference
-            if self.last_speed > 0.0:
-                if reward < 0.0:
-                    reward = 0.0
-                #print(f"Last speed good. Distance: {current_distance:.3f}, Previous Distance: {self.previous_distance:.3f}, distance_delta: {distance_delta:.3f}°, Heading diff: {math.degrees(heading_diff):.1f}°, Speed: {self.last_speed:.3f}, Reward: {reward:.3f}")
-            if False: #self.total_steps % 20 == 0:
-                print(f"Debug - Within heading threshold, heading_diff: {math.degrees(heading_diff)}°")
-                print(f"Debug - Calculated reward: {reward}")
-
-        else:
-            reward = -0.002  # small neg every step no facing target goal
-            if False: #self.total_steps % 20 == 0:
-                print(f"Debug - Outside heading threshold, heading_diff: {math.degrees(heading_diff)}°")
-        # Update previous distance for next step
-
-    
-        # Debug logging
-        if self.total_steps % 1000 == 0:
-            print(f"Distance: {current_distance:.3f}, Previous Distance: {self.previous_distance:.3f}, distance_delta: {distance_delta:.3f}, Heading diff: {math.degrees(heading_diff):.1f}°, Speed: {self.last_speed:.3f}, Reward: {reward:.3f}")
-        self.previous_distance = current_distance
-        return reward
-    
-
-
     def get_target_info(self):
         """Calculate distance and azimuth to current target"""
         if self.current_pose is None:
@@ -735,7 +671,6 @@ class RoverEnv(gym.Env):
                 self.current_pose.position.y,
                 self.current_pose.position.z
             ], dtype=np.float32)
-
         
 
     def camera_callback(self, msg):
@@ -746,72 +681,7 @@ class RoverEnv(gym.Env):
             self.current_image = cv2.resize(cv_image, (64, 64))
         except Exception as e:
             self.node.get_logger().warn(f"Failed to process image: {e}")
-
             
-    def lidar_callbackNoise(self, msg):# function needs to be double checked!!!!
-        """Process LIDAR data with error checking and downsampling."""
-        # Convert to numpy array
-        try:
-            lidar_data = np.array(msg.ranges, dtype=np.float32)
-        except Exception as e:
-            print(f"Error converting LIDAR data to numpy array: {e}")
-            return
-
-        # First handle all invalid values
-        # Replace inf values with max_lidar_range
-        inf_mask = np.isinf(lidar_data)
-        if np.any(inf_mask):
-            lidar_data[inf_mask] = self.max_lidar_range
-
-        # Replace any remaining invalid values (NaN, negative)
-        invalid_mask = np.logical_or(np.isnan(lidar_data), lidar_data < 0)
-        if np.any(invalid_mask):
-            print(f"INFO: Replaced {np.sum(invalid_mask)} invalid values with max_lidar_range")
-            lidar_data[invalid_mask] = self.max_lidar_range
-
-        # Clip values to valid range
-        lidar_data = np.clip(lidar_data, 0, self.max_lidar_range)
-
-        # Now add noise to valid data
-        #gaussian_noise = np.random.normal(0, 0.05, size=lidar_data.shape)
-        #lidar_data = lidar_data + gaussian_noise
-
-        # Clip again after adding noise to ensure no invalid values
-        lidar_data = np.clip(lidar_data, 0, self.max_lidar_range)
-
-        # Add random dropouts last (after noise)
-        #dropout_mask = np.random.random(lidar_data.shape) < 0.05  # 5% chance of dropout
-        #lidar_data[dropout_mask] = self.max_lidar_range
-
-        # Verify we have enough data points for downsampling
-        expected_points = self.lidar_points * (len(lidar_data) // self.lidar_points)
-        if expected_points == 0:
-            print(f"ERROR: Not enough LIDAR points for downsampling. Got {len(lidar_data)} points")
-            return
-
-        # Downsample by taking minimum value in each segment
-        try:
-            segment_size = len(lidar_data) // self.lidar_points
-            reshaped_data = lidar_data[:segment_size * self.lidar_points].reshape(self.lidar_points,
-                                                                                  segment_size)
-            self.lidar_data = np.min(reshaped_data, axis=1)
-            
-            # Verify downsampled data
-            if len(self.lidar_data) != self.lidar_points:
-                print(f"ERROR: Downsampled wrong size. Expected {self.lidar_points}, got {len(self.lidar_data)}")
-                return
-                
-            if np.any(np.isnan(self.lidar_data)) or np.any(np.isinf(self.lidar_data)):
-                print("ERROR: Downsampled data contains invalid values")
-                print("NaN count:", np.sum(np.isnan(self.lidar_data)))
-                print("Inf count:", np.sum(np.isinf(self.lidar_data)))
-                return
-                
-        except Exception as e:
-            print(f"Error during downsampling: {e}")
-            return
-
-        self._received_scan = True
             
     def lidar_callback(self, msg):
         """Process LIDAR data with error checking and downsampling."""

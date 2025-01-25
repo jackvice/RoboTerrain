@@ -280,7 +280,7 @@ class MetricsAnalyzerCLI:
             )
             
             # Store processed data with trial name
-            trial_name = f"Trial_{csv_file.stem}"
+            trial_name = f"{csv_file.stem}"
             trial_data[trial_name] = processed_data['normalized']
         
         # Generate visualizations
