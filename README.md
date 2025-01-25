@@ -6,7 +6,7 @@
 <div align="center">
   <p float="left">
     <img src="assets/d657b628-86e6-4ec8-bb6c-914f8d173218.png" width="250" />
-    <img src="assets/moon2.jpg" width="235" />
+    <img src="assets/moon2.jpg" width="225" />
     <img src="assets/solar-panels-1024x620.png" width="250" />
   </p>
 </div>
