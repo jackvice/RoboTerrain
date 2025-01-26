@@ -151,7 +151,7 @@ Gazebo should open on your host machine, displaying the Rover Zero robot in the 
 5. **Graph Navigation Metrics**: Pass log file names to the metrics grapher.
 
    ```bash
-   cd RoboTerrain/metrics_analyzer/
+   cd RoboTerrain/metrics_analyzer
    python cli_main.py data/metric_logs/log_filename1.csv data/metric_logs/log_filename3.csv data/metric_logs/log_filename3.csv 
    
    ```
@@ -244,14 +244,17 @@ output/combined_metrics/
 ## Examples
 
 ### Single Trial Analysis
+```
 python cli_main.py metrics_log_20250105_190453.csv -m CV IM -p time_series
+```
 
 ### Multiple Trial Comparison
+```
 python cli_main.py \
     metrics_log_20250105_190453.csv \
     metrics_log_20250105_190759.csv \
     -m CV IM -p time_series
-
+```
 
 - **ros2_ws/**: ROS 2 workspace containing all source code.
   - **src/**: Source directory for ROS 2 packages and PPO agent.

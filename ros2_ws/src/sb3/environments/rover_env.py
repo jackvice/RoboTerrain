@@ -1,3 +1,45 @@
+"""
+ROS2 Gymnasium Environment for Rover Navigation Training
+----------------------------------------------------
+A custom OpenAI Gym/Gymnasium environment for training a rover in navigation tasks using 
+ROS2 and reinforcement learning. Supports different world environments including 
+inspection zones, mazes, and island terrains.
+
+Features:
+- Continuous action space: [linear velocity, desired heading]
+- Multi-modal observation space including:
+ * LIDAR scans (32 points, 12m range)
+ * Robot pose (x, y, z)
+ * IMU data (roll, pitch, yaw)
+ * Target information (distance, relative angle)
+ * Current velocities
+- Configurable reward function balancing:
+ * Distance to goal progress
+ * Heading alignment
+ * Collision avoidance
+ * Anti-stuck mechanisms
+- Safety features:
+ * Flip detection
+ * Stuck detection
+ * Out-of-bounds detection
+ * Collision monitoring
+
+Dependencies:
+- ROS2 
+- Gymnasium
+- NumPy
+- transforms3d
+- cv_bridge (for vision extension)
+- rclpy
+
+Usage:
+   Instantiate with world name ('inspect', 'maze', 'island') and other optional params.
+   Used as a standard Gym environment with step(), reset(), close() methods.
+
+Author: Jack Vice
+Last Updated: 01/26/25
+"""
+
 import gymnasium as gym
 import numpy as np
 import rclpy
@@ -125,6 +167,8 @@ class RoverEnv(gym.Env):
 
         self.world_pose_path = '/world/' + self.world_name + '/set_pose'
         print('world is', self.world_name)
+
+        self.general_penility = -20 # flip, stuck
         if self.world_name == 'inspect':
             # Navigation parameters previous
             self.rand_goal_x_range = (-27, -19) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
@@ -202,12 +246,6 @@ class RoverEnv(gym.Env):
                 shape=(2,),
                 dtype=np.float32
             ),
-            'image': spaces.Box(
-                low=0,
-                high=255,
-                shape=(64, 64),
-                dtype=np.float32
-            ),
             'velocities': spaces.Box(
                 low=np.array([-10.0, -10.0]),
                 high=np.array([10.0, 10.0]),
@@ -252,11 +290,6 @@ class RoverEnv(gym.Env):
         )
 
         self.bridge = CvBridge()
-        self.camera_subscriber = self.node.create_subscription(
-            Image,
-            camera_topic,
-            self.camera_callback,
-            10)
 
         # Add this in __init__ with your other subscribers
         self.odom_subscriber = self.node.create_subscription(
@@ -317,14 +350,14 @@ class RoverEnv(gym.Env):
         if self.collision_count > self.stuck_window:
             self.collision_count = 0
             print('stuck in collision, ending episode')
-            return self.get_observation(), -1 * self.goal_reward, True, False, {}  
+            return self.get_observation(), self.general_penility, True, False, {}  
 
         flip_status = self.is_robot_flipped()
         if flip_status:
             print('Robot flipped', flip_status, ', episode done')
             if self._step > 500:
                 print('Robot flipped on its own')
-                return self.get_observation(), (-1 * self.goal_reward), True, False, {}
+                return self.get_observation(), self.general_penility, True, False, {}
             else:
                 return self.get_observation(), 0, True, False, {} 
             
@@ -417,7 +450,6 @@ class RoverEnv(gym.Env):
             'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
                             dtype=np.float32),
             'target': self.get_target_info(),
-            'image': self.current_image,
             'velocities': np.array([self.current_linear_velocity, self.current_angular_velocity],
                                    dtype=np.float32)
         }    
@@ -430,12 +462,11 @@ class RoverEnv(gym.Env):
         print(f'\nNew target x,y: {self.target_positions_x:.2f}, {self.target_positions_y:.2f}')
         self.previous_distance = None
         timestamp = time.time()
-        with open(f'{self.episode_log_path}/{self.log_name}', 'a') as f:
-            f.write(f"{timestamp},goal_reached,{self.episode_number-1},x={self.current_pose.position.x:.2f},y={self.current_pose.position.y:.2f}\n")
-            f.write(f"{timestamp},episode_start,{self.episode_number},x={self.current_pose.position.x:.2f},y={self.current_pose.position.y:.2f}\n")
+        #with open(f'{self.episode_log_path}/{self.log_name}', 'a') as f:
+        #    f.write(f"{timestamp},goal_reached,{self.episode_number-1},x={self.current_pose.position.x:.2f},y={self.current_pose.position.y:.2f}\n")
+        #    f.write(f"{timestamp},episode_start,{self.episode_number},x={self.current_pose.position.x:.2f},y={self.current_pose.position.y:.2f}\n")
         self.episode_number += 1
         return
-
 
 
     def task_reward(self):
@@ -447,7 +478,7 @@ class RoverEnv(gym.Env):
         collision_threshold = 0.3
         collision_penalty = -0.5
         success_distance = 0.5
-        distance_delta_scale = 0.5
+        distance_delta_scale = 0.3
         heading_tolerance = math.pi/4  # 45 degrees
 
         # Get current state info
@@ -469,8 +500,8 @@ class RoverEnv(gym.Env):
         min_distance = np.min(self.lidar_data[np.isfinite(self.lidar_data)])
         if min_distance < collision_threshold:
             timestamp = time.time()
-            with open(f'{self.episode_log_path}//{self.log_name}', 'a') as f:
-                f.write(f"{timestamp},Collision,{self.episode_number-1},x={self.current_pose.position.x:.2f},y={self.current_pose.position.y:.2f}\n")
+            #with open(f'{self.episode_log_path}//{self.log_name}', 'a') as f:
+            #    f.write(f"{timestamp},Collision,{self.episode_number-1},x={self.current_pose.position.x:.2f},y={self.current_pose.position.y:.2f}\n")
             print('Collision!')
             return collision_penalty
         
@@ -500,15 +531,13 @@ class RoverEnv(gym.Env):
         heading_reward = 0.01 * heading_alignment  # 0.01 per step when perfect (30.0 over 3000 steps)
 
         # Distance component - reward any progress towards goal
-        if abs(distance_delta) > 0.001 and heading_reward > 0.004:  # Only reward meaningful movement with good heading
+        if abs(distance_delta) > 0.001 and heading_reward > 0.0:  # Only reward meaningful movement with good heading
             distance_reward = distance_delta * distance_delta_scale
-            distance_reward += heading_reward
         else:
-            distance_reward = -0.03 #(-1.1 * distance_delta * distance_delta_scale)
+            distance_reward = -0.001
             
         # Combine rewards
-        #reward = ((distance_reward + heading_reward) * final_reward_multiplier) + (self.current_linear_velocity * 0.0025)
-        reward = (distance_reward * final_reward_multiplier) + (self.current_linear_velocity * 0.0025)
+        reward = ((distance_reward + heading_reward) * final_reward_multiplier) + (self.current_linear_velocity * 0.0025)
 
         # Debug logging
         if self.total_steps % 1000 == 0:
@@ -641,8 +670,8 @@ class RoverEnv(gym.Env):
         self.publisher.publish(twist)
         timestamp = time.time()
         print(timestamp)
-        with open(f'{self.episode_log_path}//{self.log_name}', 'a') as f:
-            f.write(f"{timestamp},episode_start,{self.episode_number},x={x_insert:.2f},y={y_insert:.2f}\n")
+        #with open(f'{self.episode_log_path}//{self.log_name}', 'a') as f:
+        #    f.write(f"{timestamp},episode_start,{self.episode_number},x={x_insert:.2f},y={y_insert:.2f}\n")
 
         self.episode_number += 1
         return observation, {}
@@ -673,16 +702,6 @@ class RoverEnv(gym.Env):
             ], dtype=np.float32)
         
 
-    def camera_callback(self, msg):
-        try:
-            # Convert ROS Image to CV2, then to grayscale
-            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='mono8')
-            # Resize to 64x64
-            self.current_image = cv2.resize(cv_image, (64, 64))
-        except Exception as e:
-            self.node.get_logger().warn(f"Failed to process image: {e}")
-            
-            
     def lidar_callback(self, msg):
         """Process LIDAR data with error checking and downsampling."""
 
