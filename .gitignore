@@ -1,5 +1,11 @@
+ros2_ws/build/
 ros2_ws/install/
 ros2_ws/log/
 ros2_ws/src/sb3/checkpoints/
 ros2_ws/src/sb3/tboard_logs/
 metrics_analyzer/data/
+build/
+install/
+log/
+__pycache__/
+*.pyc

@@ -6,7 +6,7 @@
 <div align="center">
   <p float="left">
     <img src="assets/d657b628-86e6-4ec8-bb6c-914f8d173218.png" width="250" />
-    <img src="assets/moon2.jpg" width="225" />
+    <img src="assets/moon2.jpg" width="220" />
     <img src="assets/solar-panels-1024x620.png" width="250" />
   </p>
 </div>
@@ -67,15 +67,18 @@ Main dependencies:
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/your_username/your_repository.git
-cd your_repository
+git clone git@github.com:jackvice/RoboTerrain.git
+
+cd RoboTerrain/ros2_ws/
+
+colon build
 ```
 
 ## Using the Framework
 
 ### Launching the Simulation
 
-Inside the Docker container, source the ROS 2 workspace and launch the Rover Zero simulation.
+
 
 ```bash
 # Source ROS 2 and workspace setup files
@@ -84,84 +87,75 @@ source /home/ros2_ws/install/setup.bash
 
 # Launch the Rover Zero simulation
 ros2 launch roverrobotics_gazebo 4wd_rover_gazebo.launch.py
+
 ```
 
 Gazebo should open on your host machine, displaying the Rover Zero robot in the simulation environment.
 
-### Running the PPO PointNav RL Agent
+### Running the SAC PointNav RL Agent
 
-**Placeholder Section**
 
-This section provides a placeholder for integrating your SB3 PPO PointNav RL agent. Follow these steps to set up and run your agent:
+1. **Running the baseline SAC agent:** The agent can be started in 'predict' mode or 'train' mode
 
-1. **Implement the PPO Agent**: Develop your RL agent using Stable Baselines3 and PyTorch. Place your code in the `ros2_ws/src/ppo_agent` directory.
-
-2. **Training Script**: Create a training script that interacts with the ROS 2 simulation environment.
-
-   Example structure:
-
-   ```python
-   # ppo_agent/train.py
-
-   import gym
-   from stable_baselines3 import PPO
-   # Additional imports
-
-   # Define the custom environment that interfaces with ROS 2
-   env = gym.make('YourCustomEnv-v0')
-
-   # Initialize the PPO model
-   model = PPO('MlpPolicy', env, verbose=1)
-
-   # Train the model
-   model.learn(total_timesteps=100000)
-
-   # Save the trained model
-   model.save('ppo_pointnav_model')
-   ```
-
-3. **Custom Environment**: Implement a custom Gym environment that interfaces with ROS 2 topics and services.
-
-   ```python
-   # ppo_agent/env.py
-
-   import gym
-   from gym import spaces
-   # ROS 2 imports
-
-   class YourCustomEnv(gym.Env):
-       def __init__(self):
-           # Define action and observation spaces
-           # Initialize ROS 2 publishers and subscribers
-           pass
-
-       def step(self, action):
-           # Apply action to the robot
-           # Get observations
-           # Calculate reward
-           # Check if done
-           return observation, reward, done, info
-
-       def reset(self):
-           # Reset the simulation
-           return observation
-
-       def render(self, mode='human'):
-           # Optional: Render the environment
-           pass
-
-       def close(self):
-           # Cleanup
-           pass
-   ```
-
-4. **Running the Training Script**: Inside the Docker container, run your training script.
 
    ```bash
-   python3 /home/ros2_ws/src/ppo_agent/train.py
+   cd ros2_ws/src/sb3/
+
+   # run the position bridge node for the Inspection world:
+   python ign_ros2_pose_topic.py inspect rover_zero4wd
+
+   # to run the policy
+   python sb3_SAC.py --mode predict --load True --checkpoint_name checkpoints/sac_pointnav.zip
+
+   # to training the agent
+   python sb3_SAC.py --mode train --load False
+
+   # TensorBoard
+   tensorboard --logdir tboard_logs/
    ```
 
-5. **Evaluation**: After training, you can evaluate your agent by running it in the simulation and observing its performance.
+2. **Changing World Model**: Select between Maze, Inspection, Rubicon or Island worlds.
+
+   ```bash
+   # open the gazebo launch file and uncommnet the desired world line in the 'DeclareLaunchArgument()' function (line 24):
+   nano RoboTerrain/ros2_ws/src/roverrobotics_ros2/roverrobotics_gazebo/launch/4wd_rover_gazebo.launch.py
+
+   # Rebuild the workspace:
+   cd RoboTerrain/ros2_ws/
+   colcon build
+
+   # Launch the simualtion:
+   ros2 launch roverrobotics_gazebo 4wd_rover_gazebo.launch.py 
+
+   ```
+
+4. **Running the metrics logger **: The metrics logger node writes metrics log files to ```RoboTerrain/metrics_analyzer/data/metric_logs```
+
+   ```bash
+   ros2 run rover_metrics metrics_node
+   
+   ```
+
+5. **Spawn Dynamic Actors**: The dynamic actor default trajectories are for Inspection world.
+   ```bash
+   cd RoboTerrain/ros2_ws/src/dynamic_obstacles
+
+   # First actor
+   python spawn.py
+
+   # Second actor
+   python spawn2.py
+   
+   ```
+
+5. **Graph Navigation Metrics**: Pass log file names to the metrics grapher.
+
+   ```bash
+   cd RoboTerrain/metrics_analyzer/
+   python cli_main.py data/metric_logs/log_filename1.csv data/metric_logs/log_filename3.csv data/metric_logs/log_filename3.csv 
+   
+   ```
+
 
 **Note**: Ensure that all ROS 2 nodes and the simulation are running before starting the training script.
 
