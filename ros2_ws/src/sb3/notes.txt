@@ -11,7 +11,7 @@ python sb3_SAC.py --load True --checkpoint_name checkpoints/ppo_rover_model_2024
 
 
 # tensorboard
-~/src/RoboTerrain/ros2_ws/src/sb3$ tensorboar --logdir tboard_logs/
+~/src/RoboTerrain/ros2_ws/src/sb3$ tensorboard --logdir tboard_logs/
 
 
 # metrics logger in ~/rover_workspace/rover_metrics/

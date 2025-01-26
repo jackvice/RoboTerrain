@@ -1,5 +1,0 @@
-
-
-
-ros2 launch roverrobotics_gazebo 4wd_rover_gazebo.launch.py
-docker build -t ros2-humble-gazebo-pytorch:latest .
