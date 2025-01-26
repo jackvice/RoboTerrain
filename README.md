@@ -168,12 +168,14 @@ project_root/
 ├── ros2_ws/
 │   ├── src/
 │   │   ├── roverrobotics_ros2/       # Rover Robotics packages
-│   │   ├── ppo_agent/                # Your PPO agent code
-│   │   └── other_ros2_packages/      # Additional ROS 2 packages
+│   │   ├── sb3/                # Your SAC and PPO agent code
+│   │   ├── dynamic_obstacles/                # Your SAC and PPO agent code
+│   │   └── rover_metrics/      # Additional ROS 2 packagse
 │   ├── install/
 │   ├── build/
 │   └── log/
 ├── LICENSE
+├── assets
 └── README.md
 ```
 
