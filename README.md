@@ -129,7 +129,7 @@ Gazebo should open on your host machine, displaying the Rover Zero robot in the 
 
    ```
 
-4. **Running the metrics logger **: The metrics logger node writes metrics log files to ```RoboTerrain/metrics_analyzer/data/metric_logs```
+4. **Running the metrics logger**: The metrics logger node writes metrics log files to: ```RoboTerrain/metrics_analyzer/data/metric_logs```
 
    ```bash
    ros2 run rover_metrics metrics_node
@@ -167,10 +167,10 @@ project_root/
 ├── metrics_analyzer
 ├── ros2_ws/
 │   ├── src/
-│   │   ├── roverrobotics_ros2/       # Rover Robotics packages
-│   │   ├── sb3/                # Your SAC and PPO agent code
-│   │   ├── dynamic_obstacles/                # Your SAC and PPO agent code
-│   │   └── rover_metrics/      # Additional ROS 2 packagse
+│   │   ├── roverrobotics_ros2/       # Gazebo models and launch files
+│   │   ├── sb3/                      # SAC and PPO agent code
+│   │   ├── dynamic_obstacles/        # Dynamic obstacle generator
+│   │   └── rover_metrics/            # Metrics logger
 │   ├── install/
 │   ├── build/
 │   └── log/
