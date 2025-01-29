@@ -105,7 +105,7 @@ def main():
         # Create new model
         model = SAC("MultiInputPolicy",
                     env,
-                    learning_rate = learning_rate,  # Starts at 3e-4, decays to 5e-5
+                    learning_rate = get_linear_fn(3e-4, 5e-5, 1.0),  # Starts at 3e-4, decays to 5e-5
                     tensorboard_log=tensorboard_dir,
                     buffer_size = 1_000_000,  # 1e6
                     learning_starts = 50000,

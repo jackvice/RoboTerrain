@@ -1,7 +1,7 @@
 """
 Rover Navigation Training and Inference Script
 -------------------------------------------
-This script implements training and inference for a Soft Actor-Critic (SAC) 
+This script implements training and inference for a Proximal Policy Optimization (PPO) 
 reinforcement learning agent designed for rover navigation tasks. The agent can be 
 trained in different environments (inspect, maze, island, rubicon) with optional 
 vision-based input.
@@ -9,7 +9,6 @@ vision-based input.
 Features:
 - Supports both standard state-based and vision-based inputs
 - Multiple world environments: inspect, maze, island, rubicon
-- Implements SAC (Soft Actor-Critic) with auto-tuned entropy
 - Includes checkpoint saving and loading
 - Uses vectorized environments with observation/reward normalization
 - Tensorboard logging support
@@ -35,7 +34,7 @@ import sys
 import argparse
 from datetime import datetime
 import os
-from stable_baselines3 import SAC
+from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from stable_baselines3.common.utils import get_linear_fn
 from environments.rover_env import RoverEnv
@@ -62,8 +61,10 @@ def parse_args():
 def make_env(do_vision, world_name):
     def _init():
         if do_vision:
+            print('Using Vision + lidar model')
             env = RoverEnvVis(world_n=world_name)
         else:
+            print('Using standard lidar model')
             env = RoverEnv(world_n=world_name)
         env = Monitor(env)
         return env
@@ -72,17 +73,17 @@ def make_env(do_vision, world_name):
 
 def main():
     args = parse_args()
+    do_vision = False
     world_name = args.world
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     checkpoint_dir = "./checkpoints"
-    tensorboard_dir = f"./tboard_logs/SAC_{world_name}_{timestamp}"
+    tensorboard_dir = f"./tboard_logs/PPO_{world_name}_{timestamp}"
     os.makedirs(checkpoint_dir, exist_ok=True)
 
-    learning_rate = 3e-4 if args.vision else get_linear_fn(3e-4, 2e-4, 1.0)
+    learning_rate = 3e-4 #if args.vision else get_linear_fn(3e-4, 2e-4, 1.0)
 
-    
     # Set up environment
-    env = DummyVecEnv([make_env(args.vision, world_name)])  # Note: Pass a list with make_env function
+    env = DummyVecEnv([make_env(do_vision, world_name)])  # Note: Pass a list with make_env function
     env = VecNormalize(
         env,
         norm_obs=True,  # Normalize observations
@@ -97,23 +98,23 @@ def main():
         if not args.checkpoint_name:
             raise ValueError("Checkpoint name must be provided when load is True")
         # Load existing model
-        model = SAC.load(args.checkpoint_name, 
+        model = PPO.load(args.checkpoint_name, 
                         env=env, 
                         tensorboard_log=tensorboard_dir)
                         #policy_kwargs=policy_kwargs)
     else:
         # Create new model
-        model = SAC("MultiInputPolicy",
+        model = PPO("MultiInputPolicy",
                     env,
-                    learning_rate = learning_rate,  # Starts at 3e-4, decays to 5e-5
+                    learning_rate = learning_rate,  
                     tensorboard_log=tensorboard_dir,
-                    buffer_size = 1_000_000,  # 1e6
-                    learning_starts = 50000,
-                    ent_coef = "auto_0.5",
                     verbose=1,
-                    batch_size=512,
-                    )       
-    print('3')
+                    clip_range=0.15,
+                    n_steps=8192,         # increase long episodes
+                    batch_size=256,
+                    ent_coef= 0.04
+                    )
+
     if args.mode == 'predict':
         obs = env.reset()
         done = False
@@ -130,7 +131,7 @@ def main():
         checkpoint_callback = CheckpointCallback(
             save_freq=200_000,
             save_path=checkpoint_dir,
-            name_prefix=f"sac_{world_name}_{timestamp}",
+            name_prefix=f"ppo_{world_name}_{timestamp}",
             save_replay_buffer=False,
             save_vecnormalize=True
         )

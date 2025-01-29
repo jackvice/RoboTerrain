@@ -531,14 +531,14 @@ class RoverEnv(gym.Env):
         heading_reward = 0.01 * heading_alignment  # 0.01 per step when perfect (30.0 over 3000 steps)
 
         # Distance component - reward any progress towards goal
-        if abs(distance_delta) > 0.001 and heading_reward > 0.0:  # Only reward meaningful movement with good heading
+        if abs(distance_delta) > 0.001 and heading_reward > 0.002:  # Only reward meaningful movement with good heading
             distance_reward = distance_delta * distance_delta_scale
         else:
-            distance_reward = -0.001
+            distance_reward = -0.03
             
         # Combine rewards
-        reward = ((distance_reward + heading_reward) * final_reward_multiplier) + (self.current_linear_velocity * 0.0025)
-
+        #reward = ((distance_reward + heading_reward) * final_reward_multiplier) + (self.current_linear_velocity * 0.0025)
+        reward = (distance_reward * final_reward_multiplier) + (self.current_linear_velocity * 0.0025)
         # Debug logging
         if self.total_steps % 1000 == 0:
             print(f"Distance: {current_distance:.3f}, Previous Distance: {self.previous_distance:.3f}, "
