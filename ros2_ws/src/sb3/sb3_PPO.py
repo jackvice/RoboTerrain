@@ -73,7 +73,8 @@ def make_env(do_vision, world_name):
 
 def main():
     args = parse_args()
-    do_vision = False
+    #do_vision = False
+    do_vision = args.vision == 'True' # make True if 'True' else False
     world_name = args.world
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     checkpoint_dir = "./checkpoints"

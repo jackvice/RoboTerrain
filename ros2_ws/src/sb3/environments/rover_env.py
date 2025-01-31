@@ -535,14 +535,20 @@ class RoverEnv(gym.Env):
             distance_reward = distance_delta * distance_delta_scale
         else:
             distance_reward = -0.03
-            
+
+        # Inside your reward function (near the end)
+        turning_penalty_coeff = 0.0004  # Tune this small
+        turn_penalty = -turning_penalty_coeff * abs(self.current_angular_velocity)
+
         # Combine rewards
         #reward = ((distance_reward + heading_reward) * final_reward_multiplier) + (self.current_linear_velocity * 0.0025)
-        reward = (distance_reward * final_reward_multiplier) + (self.current_linear_velocity * 0.0025)
+        reward = (distance_reward * final_reward_multiplier) + (self.current_linear_velocity * 0.0025) + turn_penalty
+        
         # Debug logging
         if self.total_steps % 1000 == 0:
             print(f"Distance: {current_distance:.3f}, Previous Distance: {self.previous_distance:.3f}, "
                   f"distance_delta: {distance_delta:.3f}, Heading diff: {math.degrees(heading_diff):.1f}°, "
+                  f"turn_penality: {turn_penalty:.3f} \n"
                   f"Speed: {self.last_speed:.3f}, Current vel: {self.current_linear_velocity:.3f}, "
                   f"Distance reward: {distance_reward:.3f}, Heading reward: {heading_reward:.3f}, "
                   f"Total reward: {reward:.3f}")

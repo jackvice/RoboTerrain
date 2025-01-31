@@ -24,8 +24,6 @@ def generate_launch_description():
     declare_world_cmd = DeclareLaunchArgument(
         'world',
         #default_value='simplecave3.sdf,'
-        #default_value='maze_and_person.sdf',
-        #default_value='upb12.sdf',
         #default_value='office_cpr_construction.world',
         #default_value='maze_simple.sdf',        
         #default_value='maze_pillars.sdf',

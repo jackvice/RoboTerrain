@@ -11,6 +11,3 @@ setup.py
 resource/rover_metrics
 rover_metrics/__init__.py
 rover_metrics/metrics_node.py
-test/test_copyright.py
-test/test_flake8.py
-test/test_pep257.py
