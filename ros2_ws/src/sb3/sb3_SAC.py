@@ -62,8 +62,10 @@ def parse_args():
 def make_env(do_vision, world_name):
     def _init():
         if do_vision:
+            print('Using Vision + lidar model')
             env = RoverEnvVis(world_n=world_name)
         else:
+            print('Using standard lidar model')
             env = RoverEnv(world_n=world_name)
         env = Monitor(env)
         return env
@@ -73,16 +75,17 @@ def make_env(do_vision, world_name):
 def main():
     args = parse_args()
     world_name = args.world
+    do_vision = args.vision == 'True' # make True if 'True' else False
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     checkpoint_dir = "./checkpoints"
     tensorboard_dir = f"./tboard_logs/SAC_{world_name}_{timestamp}"
     os.makedirs(checkpoint_dir, exist_ok=True)
 
-    learning_rate = 3e-4 if args.vision else get_linear_fn(3e-4, 2e-4, 1.0)
+    learning_rate = 3e-4 #if args.vision else get_linear_fn(3e-4, 2e-4, 1.0)
 
     
     # Set up environment
-    env = DummyVecEnv([make_env(args.vision, world_name)])  # Note: Pass a list with make_env function
+    env = DummyVecEnv([make_env(do_vision, world_name)])  # Note: Pass a list with make_env function
     env = VecNormalize(
         env,
         norm_obs=True,  # Normalize observations
@@ -112,8 +115,8 @@ def main():
                     ent_coef = "auto_0.5",
                     verbose=1,
                     batch_size=512,
-                    )       
-    print('3')
+                    )
+        
     if args.mode == 'predict':
         obs = env.reset()
         done = False

@@ -537,7 +537,7 @@ class RoverEnv(gym.Env):
             distance_reward = -0.03
 
         # Inside your reward function (near the end)
-        turning_penalty_coeff = 0.0004  # Tune this small
+        turning_penalty_coeff = 0.0015  # Tune this small
         turn_penalty = -turning_penalty_coeff * abs(self.current_angular_velocity)
 
         # Combine rewards
