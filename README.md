@@ -50,11 +50,6 @@ The framework is designed to simulate the Rover Zero robot, but it can be extend
 - **ROS 2 Workspace**: Includes necessary ROS 2 packages and custom code.
 - **Extensibility**: Modular design allows for integration of additional robots and sensors.
 
-## Prerequisites
-
-- **NVIDIA Container Toolkit**: Required if you plan to use GPU acceleration.
-  - Installation instructions: [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
-- **X11 Server**: For GUI applications like Gazebo (usually available on Linux systems).
 
 ## Getting Started
 ### Installation
@@ -105,7 +100,6 @@ Gazebo should open on your host machine, displaying the Rover Zero robot in the 
    python ign_ros2_pose_topic.py inspect rover_zero4wd
 
    # to run the policy
-   python sb3_SAC.py --mode predict --load True --checkpoint_name checkpoints/sac_pointnav.zip
    python sb3_SAC.py --mode predict --load True --checkpoint_name checkpoints/sac_baseline_pointnav.zip --normalize_stats checkpoints/vec_normalize.pkl
 
    # to training the agent
