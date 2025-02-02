@@ -8,7 +8,7 @@ python3 ign_ros2_pose_topic.py inspect rover_zero4wd
 conda activate sb3
 python sb3_SAC.py --load False
 python sb3_SAC.py --load True --checkpoint_name checkpoints/ppo_rover_model_20241115_1152_900000_steps.zip
-
+python sb3_SAC.py --mode predict --load True --checkpoint_name checkpoints/sac_baseline_pointnav.zip --normalize_stats checkpoints/vec_normalize_20250201_1453_final.pkl
 
 # tensorboard
 ~/src/RoboTerrain/ros2_ws/src/sb3$ tensorboard --logdir tboard_logs/

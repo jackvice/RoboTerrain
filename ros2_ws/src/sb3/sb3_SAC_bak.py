@@ -137,13 +137,17 @@ def main():
             save_replay_buffer=False,
             save_vecnormalize=True
         )
-    
+         # Save initial normalization statistics
+        env.save(f"{checkpoint_dir}/vec_normalize_{timestamp}.pkl")
+        
         # Train model
         model.learn(
-            total_timesteps=5_000_000,
+            total_timesteps=205_000,
             callback=checkpoint_callback,
             reset_num_timesteps=False if args.load == 'True' else True
         )
+        # Save final normalization statistics
+        env.save(f"{checkpoint_dir}/vec_normalize_{timestamp}_final.pkl")
 
 
 

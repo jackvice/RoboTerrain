@@ -106,6 +106,7 @@ Gazebo should open on your host machine, displaying the Rover Zero robot in the 
 
    # to run the policy
    python sb3_SAC.py --mode predict --load True --checkpoint_name checkpoints/sac_pointnav.zip
+   python sb3_SAC.py --mode predict --load True --checkpoint_name checkpoints/sac_baseline_pointnav.zip --normalize_stats checkpoints/vec_normalize.pkl
 
    # to training the agent
    python sb3_SAC.py --mode train --load False
