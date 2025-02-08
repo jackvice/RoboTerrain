@@ -10,5 +10,5 @@ install/
 log/
 __pycache__/
 *.pyc
-
 *.log
+*.py~
