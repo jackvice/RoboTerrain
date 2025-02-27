@@ -51,7 +51,7 @@ class ActorSpawner:
             # Start building our new <trajectory> element:
             new_trajectory = '<trajectory id="0" type="walk">\n'
             # Force no looping so the actor won't snap back:
-            new_trajectory += '  <loop>false</loop>\n'
+            new_trajectory += '  <loop>true</loop>\n'
 
             cumulative_time = 0.0
             prev_pose = None
@@ -138,7 +138,7 @@ class ActorSpawner:
       <filename>https://fuel.gazebosim.org/1.0/Mingfei/models/actor/tip/files/meshes/walk.dae</filename>
       <scale>1.0</scale>
       <interpolate_x>true</interpolate_x>
-      <loop>false</loop>
+      <loop>true</loop>
     </animation>
     {trajectory_sdf}
   </actor>
@@ -183,7 +183,9 @@ def main():
     spawner = ActorSpawner()
 
     # Path to your input trajectory (the large, dense one)
+    #trajectory_file = 'trajectory_1.sdf'
     trajectory_file = 'trajectory_short.sdf'
+    #trajectory_file = 'trajectory_shortest.sdf'
     raw_trajectory = spawner.load_trajectory_file(trajectory_file)
     if raw_trajectory is None:
         return
