@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+  <model name="marsyard2021_terrain">
+    <pose>0 0 0 0 0 0</pose>
+    <static>true</static>
+
+    <link name="marsyard_terrain">
+      
+      <collision name="terrain_collision">
+        <geometry>
+          <heightmap>
+            <uri>model://marsyard2021_terrain/dem/marsyard_terrain_hm.tif</uri>
+            <pos>0 0 0</pos>
+            <size>47 47 6.57519871597</size>
+          </heightmap>
+        </geometry>
+      </collision>
+
+      <visual name="terrain_visual">
+        <geometry>
+          <heightmap>
+            <use_terrain_paging>false</use_terrain_paging>
+            <uri>model://marsyard2021_terrain/dem/marsyard_terrain_hm.tif </uri>
+            <pos>0 0 0</pos>
+            <size>47 47 6.57519871597</size>
+              <texture>
+                <diffuse>model://marsyard2021_terrain/dem/marsyard_terrain_texture.png</diffuse>
+                <normal>model://marsyard2021_terrain/dem/flat_normal.png</normal>
+                <size>47</size>
+              </texture>
+          </heightmap>
+        </geometry>
+      </visual>
+
+    </link>
+
+    <link name="marsyard_features">
+      <pose>0 0 0 0 0 1.5707963268</pose>
+
+      <collision name="lava_collision">
+        <geometry>
+          <mesh>
+            <uri>model://marsyard2021_terrain/meshes/lava.obj</uri>
+          </mesh>
+        </geometry>
+      </collision>
+
+      <visual name="lava_visual">
+        <geometry>
+          <mesh>
+            <uri>model://marsyard2021_terrain/meshes/lava.obj</uri>
+          </mesh>
+        </geometry>
+        <!--<material>
+          <script>
+            <name>Marsyard/Lava</name>
+          </script>
+        </material>-->
+      </visual>
+
+      <collision name="rocks_big_collision">
+        <geometry>
+          <mesh>
+            <uri>model://marsyard2021_terrain/meshes/rocks_big.obj</uri>
+          </mesh>
+        </geometry>
+      </collision>
+
+      <visual name="rocks_big_visual">
+        <geometry>
+          <mesh>
+            <uri>model://marsyard2021_terrain/meshes/rocks_big.obj</uri>
+          </mesh>
+        </geometry>
+      </visual>
+
+      <collision name="rocks_medium_collision">
+        <pose>0 0 -0.03 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://marsyard2021_terrain/meshes/rocks_medium.obj</uri>
+          </mesh>
+        </geometry>
+      </collision>
+
+      <visual name="rocks_medium_visual">
+        <pose>0 0 -0.03 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://marsyard2021_terrain/meshes/rocks_medium.obj</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+  </model>
+</sdf>
