@@ -96,10 +96,10 @@ Gazebo should open on your host machine, displaying the Rover Zero robot in the 
    ```bash
    cd ros2_ws/src/sb3/
 
-   # run the position bridge node for the Inspection world:
+   # First run the position bridge node for the Inspection world:
    python ign_ros2_pose_topic.py inspect rover_zero4wd
 
-   # to run the policy
+   # to run the pretrained agent
    python sb3_SAC.py --mode predict \
                  --load True \
                  --world inspect \
