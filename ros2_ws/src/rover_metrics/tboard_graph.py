@@ -2,6 +2,13 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorboard.backend.event_processing import event_accumulator
+from matplotlib.ticker import ScalarFormatter
+
+from matplotlib.ticker import FuncFormatter
+
+def sci_notation(x, pos):
+    return f"${x/10**3:.0f} \\times 10^{{3}}$"
+
 
 def main():
     actor_clip = -0.7
@@ -87,7 +94,22 @@ def plot_metrics(data, actor_clip):
     ax1.set_title('Actor and Critic Losses (Clipped)')
     ax1.set_xlabel('Steps')
     ax1.grid(True, alpha=0.3)
-    ax1.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+    
+    #ax1.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
+    #ax1.xaxis.get_offset_text().set_fontsize(10)  # Adjust font size if needed
+    #ax1.xaxis.get_offset_text().set_style('italic')
+    #ax1.xaxis.get_offset_text().set_text(r"$\mathdefault{1 \times 10^5}$")
+
+
+
+    formatter = ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((0, 0))
+
+    ax1.xaxis.set_major_formatter(formatter)
+    ax1.xaxis.get_offset_text().set_fontsize(10)
+    ax1.xaxis.get_offset_text().set_text(ax1.xaxis.get_offset_text().get_text().replace('e', r' \times 10^{') + "}$")
+
     
     # Plot reward on second subplot
     ax2.plot(data['reward'][0], data['reward'][1], 'b-', label='Episode Reward Mean', alpha=0.8)
@@ -96,7 +118,15 @@ def plot_metrics(data, actor_clip):
     ax2.set_ylabel('Reward')
     ax2.grid(True, alpha=0.3)
     ax2.legend()
-    ax2.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+
+    #ax2.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
+    #ax2.xaxis.get_offset_text().set_fontsize(10)
+    #ax2.xaxis.get_offset_text().set_style('italic')
+    #ax2.xaxis.get_offset_text().set_text(r"$\mathdefault{1 \times 10^5}$")
+    ax2.xaxis.set_major_formatter(formatter)
+    ax2.xaxis.get_offset_text().set_fontsize(10)
+    ax2.xaxis.get_offset_text().set_text(ax2.xaxis.get_offset_text().get_text().replace('e', r' \times 10^{') + "}$")
+
     
     # Adjust layout to prevent overlap
     plt.tight_layout()

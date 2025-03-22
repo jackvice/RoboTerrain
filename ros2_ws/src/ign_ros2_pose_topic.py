@@ -57,7 +57,7 @@ class PoseConverterNode(Node):
         if self.process.poll() is not None:
             self.get_logger().error('Ignition topic process ended unexpectedly')
             return
-            
+
         # Read line by line from subprocess output
         while True:
             line = self.process.stdout.readline()
@@ -77,9 +77,9 @@ class PoseConverterNode(Node):
                             break
                         
                         if f'name: "{self.robot_name}"' in line:
-                        #if 'name: "rover_zero4wd"' in line:
                             is_rover = True
                         elif 'position {' in line and is_rover:
+
                             # Read position
                             while True:
                                 line = self.process.stdout.readline()
@@ -106,6 +106,7 @@ class PoseConverterNode(Node):
                                     current_pose.orientation.z = float(line.split(':')[1])
                                 elif 'w:' in line:
                                     current_pose.orientation.w = float(line.split(':')[1])
+
                     
                     # Only publish if we found rover_zero4wd
                     if is_rover:

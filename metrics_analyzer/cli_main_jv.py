@@ -1,0 +1,418 @@
+#!/usr/bin/env python3
+
+import argparse
+import numpy as np
+from pathlib import Path
+from typing import List, Dict, Any, Optional
+import sys
+import logging
+import pandas as pd 
+from data_loader import MetricsDataLoader
+from metrics_statistics import MetricsStatistics
+from visualizations.time_series import TimeSeriesVisualizer
+import matplotlib.pyplot as plt
+
+"""
+MetricsAnalyzerCLI Class
+========================
+
+A command-line interface for analyzing and visualizing robot navigation metrics data. 
+This class ties together the MetricsDataLoader, MetricsStatistics, and TimeSeriesVisualizer 
+components into a unified command-line tool.
+
+Key Features:
+------------
+- Process multiple CSV files containing metrics data
+- Generate various types of visualizations (time series, correlations, etc.)
+- Support for multiple metrics tracking (collisions, smoothness, velocity, etc.)
+- Configurable data processing options (outlier detection, confidence levels)
+- Flexible time normalization options
+- Publication-ready output generation
+
+Available Metrics:
+----------------
+- TC: Total Collisions
+- CS: Current Collision Status
+- SM: Smoothness Metric
+- OC: Obstacle Clearance
+- DT: Distance Traveled
+- VORT: Velocity Over Rough Terrain
+- IM: IMU Acceleration Magnitude
+- RT: Is Rough Terrain
+
+Usage Example:
+------------
+    # Basic usage with default settings
+    python cli.py path/to/metrics.csv
+    
+    # Advanced usage with multiple options
+    python cli.py data1.csv data2.csv \
+        --metrics TC OC CV \
+        --plot-types time_series correlation \
+        --normalize percentage \
+        --confidence-level 0.95 \
+        --output-dir ./results
+        
+CLI Arguments:
+-------------
+Required:
+- csv_files: One or more input CSV files
+
+Optional:
+- metrics (-m): Specific metrics to analyze
+- plot-types (-p): Types of plots to generate
+- output-dir (-o): Output directory for results
+- normalize (-n): Time normalization method
+- iqr-multiplier: Outlier detection sensitivity
+- confidence-level: Statistical confidence level
+- fixed-interval: Time interval for normalization
+
+Dependencies:
+-----------
+- data_loader.py
+- metrics_statistics.py
+- visualizations/time_series.py
+"""
+
+class MetricsAnalyzerCLI:
+    """Command line interface for the metrics analyzer."""
+    VALID_METRICS = {
+        'TC': 'Total Collisions',
+        'CS': 'Current Collision Status',
+        'SM': 'Smoothness Metric',
+        'OC': 'Obstacle Clearance',
+        'DT': 'Distance Traveled',
+        'CV': 'Velocity Over Rough Terrain (VORT)',  # Updated name
+        'IM': 'IMU Acceleration Magnitude',
+        'RT': 'Is Rough Terrain',
+        'VR': 'Vertical Roughness'
+    }
+    
+    # Rest of the class implementation remains the same
+    VALID_PLOT_TYPES = [
+        'time_series',
+        'correlation',
+        'aggregate',
+        'comparison'
+    ]
+    
+    VALID_TIME_NORMS = [
+        'percentage',
+        'fixed_interval',
+        'none'
+    ]
+
+    def __init__(self):
+        """Initialize the CLI parser and logging."""
+        self.parser = argparse.ArgumentParser(
+            description='Analyze and visualize navigation metrics from CSV files.',
+            formatter_class=argparse.RawDescriptionHelpFormatter
+        )
+        self._setup_arguments()
+        self._setup_logging()
+        
+    def _setup_logging(self):
+        """Set up logging configuration."""
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        self.logger = logging.getLogger(__name__)
+
+    def _setup_arguments(self):
+        """Set up command line arguments."""
+        # Required arguments
+        self.parser.add_argument(
+            'csv_files',
+            type=Path,
+            nargs='+',
+            help='One or more CSV files containing metrics data'
+        )
+        
+        # Optional arguments
+        self.parser.add_argument(
+            '-m', '--metrics',
+            choices=list(self.VALID_METRICS.keys()),
+            nargs='+',
+            default=list(self.VALID_METRICS.keys()),
+            help='Metrics to analyze (default: all)'
+        )
+        
+        self.parser.add_argument(
+            '-p', '--plot-types',
+            choices=self.VALID_PLOT_TYPES,
+            nargs='+',
+            default=['time_series'],
+            help='Types of plots to generate (default: time_series)'
+        )
+        
+        self.parser.add_argument(
+            '-o', '--output-dir',
+            type=Path,
+            default=Path('output'),
+            help='Output directory for plots and analysis (default: ./output)'
+        )
+        
+        self.parser.add_argument(
+            '-n', '--normalize',
+            choices=self.VALID_TIME_NORMS,
+            default='percentage',
+            help='Time normalization method (default: percentage)'
+        )
+        
+        self.parser.add_argument(
+            '--iqr-multiplier',
+            type=float,
+            default=1.5,
+            help='IQR multiplier for outlier detection (default: 1.5)'
+        )
+        
+        self.parser.add_argument(
+            '--save-outliers',
+            action='store_true',
+            help='Save removed outliers to a separate file'
+        )
+        
+        self.parser.add_argument(
+            '--confidence-level',
+            type=float,
+            default=0.95,
+            help='Confidence level for statistical analysis (default: 0.95)'
+        )
+        
+        self.parser.add_argument(
+            '--fixed-interval',
+            type=float,
+            default=1.0,
+            help='Interval (seconds) for fixed-interval normalization (default: 1.0)'
+        )
+
+    def get_args(self) -> Dict[str, Any]:
+        """Parse and validate command line arguments."""
+        args = self.parser.parse_args()
+        
+        # Validate input files
+        self.validate_files(args.csv_files)
+        
+        # Validate output directory
+        self.validate_output_dir(args.output_dir)
+        
+        # Validate confidence level
+        if not 0 < args.confidence_level < 1:
+            sys.exit("Error: Confidence level must be between 0 and 1")
+        
+        # Validate IQR multiplier
+        if args.iqr_multiplier <= 0:
+            sys.exit("Error: IQR multiplier must be positive")
+        
+        # Validate fixed interval
+        if args.fixed_interval <= 0:
+            sys.exit("Error: Fixed interval must be positive")
+        
+        return vars(args)
+
+    
+    def validate_files(self, files: List[Path]) -> None:
+        """Validate that all input files exist and are CSV files."""
+        for file in files:
+            if not file.exists():
+                sys.exit(f"Error: File {file} does not exist")
+            if file.suffix.lower() != '.csv':
+                sys.exit(f"Error: File {file} is not a CSV file")
+
+    def validate_output_dir(self, output_dir: Path) -> None:
+        """Validate and create output directory if it doesn't exist."""
+        try:
+            output_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            sys.exit(f"Error creating output directory: {e}")
+
+    def process_data(self, args: Dict[str, Any]) -> None:
+        """Process data and generate visualizations."""
+        self.logger.info("Starting data processing...")
+
+        # Mapping between display names and actual column names
+        column_mapping = {
+            'Total Collisions': 'Total Collisions',
+            'Current Collision Status': 'Current Collision Status',
+            'Smoothness Metric': 'Smoothness Metric',
+            'Obstacle Clearance': 'Obstacle Clearance',
+            'Distance Traveled': 'Distance Traveled',
+            'Velocity Over Rough Terrain (VORT)': 'Current Velocity',  # Map display name to actual column
+            'IMU Acceleration Magnitude': 'IMU Acceleration Magnitude',
+            'Is Rough Terrain': 'Is Rough Terrain',
+            'Vertical Roughness': 'Vertical Roughness'
+        }
+
+        # Metric mapping for display purposes
+        metric_mapping = {
+            'TC': 'Total Collisions (TC)',
+            'CS': 'Current Collision Status (CS)',
+            'SM': 'Smoothness Metric (SM)',
+            'OC': 'Obstacle Clearance (OC)',
+            'DT': 'Distance Traveled (DT)',
+            'CV': 'Velocity Over Rough Terrain (VORT)',
+            'IM': 'IMU Acceleration Magnitude (IM)',
+            'RT': 'Is Rough Terrain (RT)',
+            'VR': 'Vertical Roughness (VR)'
+        }
+        
+        # Initialize components
+        data_loader = MetricsDataLoader(iqr_multiplier=args['iqr_multiplier'])
+        statistics = MetricsStatistics(confidence_level=args['confidence_level'])
+        time_series_viz = TimeSeriesVisualizer()
+        
+        # Store all trial data
+        trial_data = {}
+        
+        # Process each input file
+        for csv_file in args['csv_files']:
+            self.logger.info(f"Processing file: {csv_file}")
+            
+            # Load and process data
+            processed_data = data_loader.process_data(
+                csv_file,
+                args['metrics'],
+                'none',
+                args['fixed_interval'],
+                args['save_outliers'],
+                args['output_dir']
+            )
+            
+            # Store processed data with trial name
+            trial_name = f"{csv_file.stem}"
+            trial_data[trial_name] = processed_data['normalized']
+        
+        # Generate visualizations
+        if 'time_series' in args['plot_types']:
+            self.logger.info("Generating time series plots...")
+            figures = {}
+            
+            # Create standard plots for each metric
+            for metric in args['metrics']:
+                self.logger.info(f"Plotting metric: {metric}")
+                metric_name = self.VALID_METRICS[metric]
+                title = f"{metric_mapping.get(metric, metric)}"
+                
+                # Use the column mapping to get the actual column name for plotting
+                actual_column = column_mapping.get(metric_name, metric_name)
+                
+                fig = time_series_viz.plot_multi_trial_comparison(
+                    trial_data,
+                    actual_column,  # Use actual column name for data access
+                    title=title     # Use display name for title
+                )
+                figures[f"{metric}_comparison"] = fig
+                # Calculate and print mean for each trial
+                # Calculate and print mean for each trial
+                for trial_name, df in trial_data.items():
+                    # Original metric mean
+                    mean_value = np.mean(df[actual_column])
+                    print(f"Mean {title} for {trial_name}: {mean_value:.3f}")
+    
+                    # Calculate TSR (Total Smoothness of Route)
+                    mean_smoothness = np.mean(df['Current Smoothness'])
+                    print(f"Mean Total Smoothness of Route (TSR) for {trial_name}: {mean_smoothness:.3f}")
+                    print("-" * 50)  # Add a separator line for readability
+
+                
+            # Create special comparison plot for velocity vs. roughness
+            if 'CV' in args['metrics'] and 'VR' in args['metrics']:
+                self.logger.info("Generating velocity vs. roughness comparison...")
+                fig = time_series_viz.plot_velocity_roughness_comparison(
+                    trial_data,
+                    title="Velocity vs. Roughness Comparison"
+                )
+                figures["velocity_roughness_comparison"] = fig
+            
+            # Save plots to output directory
+            output_path = args['output_dir'] / "combined_metrics"
+            time_series_viz.save_plots(figures, output_path)
+            self.logger.info(f"Combined plots saved to: {output_path}")
+
+            
+    def process_data_old(self, args: Dict[str, Any]) -> None:
+        """Process data and generate visualizations."""
+        self.logger.info("Starting data processing...")
+
+        metric_mapping = {
+            'TC': 'Total Collisions (TC)',
+            'CS': 'Current Collision Status (CS)',
+            'SM': 'Smoothness Metric (SM)',
+            'OC': 'Obstacle Clearance (OC)',
+            'DT': 'Distance Traveled (DT)',
+            'CV': 'Velocity Over Rough Terrain (VORT)',  # Updated name
+            'IM': 'IMU Acceleration Magnitude (IM)',
+            'RT': 'Is Rough Terrain (RT)',
+            'VR': 'Vertical Roughness (VR)'
+        }
+        
+        # Initialize components
+        data_loader = MetricsDataLoader(iqr_multiplier=args['iqr_multiplier'])
+        statistics = MetricsStatistics(confidence_level=args['confidence_level'])
+        time_series_viz = TimeSeriesVisualizer()
+        
+        # Store all trial data
+        trial_data = {}
+        
+        # Process each input file
+        for csv_file in args['csv_files']:
+            self.logger.info(f"Processing file: {csv_file}")
+            
+            # Load and process data
+            processed_data = data_loader.process_data(
+                csv_file,
+                args['metrics'],
+                'none',
+                args['fixed_interval'],
+                args['save_outliers'],
+                args['output_dir']
+            )
+            
+            # Store processed data with trial name
+            trial_name = f"Trial_{csv_file.stem}"
+            trial_data[trial_name] = processed_data['normalized']
+        
+        # Generate visualizations
+        if 'time_series' in args['plot_types']:
+            self.logger.info("Generating time series plots...")
+            figures = {}
+            
+            # Create standard plots for each metric
+            for metric in args['metrics']:
+                self.logger.info(f"Plotting metric: {metric}")
+                metric_name = self.VALID_METRICS[metric]
+                title = f"{metric_mapping.get(metric, metric)}"
+                
+                fig = time_series_viz.plot_multi_trial_comparison(
+                    trial_data,
+                    metric_name,
+                    title=title
+                )
+                figures[f"{metric}_comparison"] = fig
+                
+            # Create special comparison plot for velocity vs. roughness
+            if 'CV' in args['metrics'] and 'VR' in args['metrics']:
+                self.logger.info("Generating velocity vs. roughness comparison...")
+                fig = time_series_viz.plot_velocity_roughness_comparison(
+                    trial_data,
+                    title="Velocity vs. Roughness Comparison"
+                )
+                figures["velocity_roughness_comparison"] = fig
+                
+            
+            # Save plots to output directory
+            output_path = args['output_dir'] / "combined_metrics"
+            time_series_viz.save_plots(figures, output_path)
+            self.logger.info(f"Combined plots saved to: {output_path}")
+            
+
+def main():
+    """Main entry point for the CLI."""
+    cli = MetricsAnalyzerCLI()
+    args = cli.get_args()
+    cli.process_data(args)
+
+if __name__ == '__main__':
+    main()
+

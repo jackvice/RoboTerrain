@@ -147,8 +147,7 @@ class TimeSeriesVisualizer:
         ax1.legend()
         
         # Customize bottom subplot (IMU Magnitude)
-        ax2.set_xlabel('Evaluation Steps')
-        ax2.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x):,}"))
+        ax2.set_xlabel('Steps')
         ax2.set_ylabel('IMU Acceleration Magnitude (m/s²)')
         ax2.grid(True, linestyle='--', alpha=0.7)
         ax2.legend()
@@ -159,6 +158,59 @@ class TimeSeriesVisualizer:
         plt.tight_layout()
         return fig
         
+    def plot_velocity_roughness_comparison_old(self,
+                                         trial_data: Dict[str, pd.DataFrame],
+                                         title: Optional[str] = None) -> plt.Figure:
+        """Create a comparison plot of velocity vs roughness metrics for multiple trials.
+        
+        Args:
+            trial_data (Dict[str, pd.DataFrame]): Dictionary of trial DataFrames
+            title (Optional[str]): Plot title
+            
+        Returns:
+            plt.Figure: Generated figure with all trials' data
+        """
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+        
+        # Colors for different trials
+        colors = ['blue', 'green', 'red', 'purple']
+        
+        # Plot all trials
+        for i, (trial_name, df) in enumerate(trial_data.items()):
+            color = colors[i % len(colors)]
+            
+            # Convert timestamp to steps
+            df = df.copy()  # Create a copy to avoid modifying original
+            start_time = df['Timestamp'].iloc[0]
+            df['Steps'] = (df['Timestamp'] - start_time) * 19  # 19 steps per second
+            
+            # Plot velocity on top subplot
+            ax1.plot(df['Steps'], df['Current Velocity'], 
+                    label=f'{trial_name} Velocity', 
+                    color=color)
+            
+            # For now, use IMU Acceleration Magnitude instead of Vertical Roughness
+            ax2.plot(df['Steps'], df['IMU Acceleration Magnitude'], 
+                    label=f'{trial_name} IMU Magnitude',
+                    color=color)
+        
+        # Customize top subplot (Velocity)
+        ax1.set_ylabel('Velocity (m/s)')
+        ax1.grid(True, linestyle='--', alpha=0.7)
+        ax1.legend()
+        
+        # Customize bottom subplot (IMU Magnitude)
+        ax2.set_xlabel('Steps')
+        ax2.set_ylabel('IMU Acceleration Magnitude (m/s²)')
+        ax2.grid(True, linestyle='--', alpha=0.7)
+        ax2.legend()
+        
+        if title:
+            fig.suptitle(title)
+        
+        plt.tight_layout()
+        return fig
+
     def plot_metric_time_series(self,
                                df: pd.DataFrame,
                                metric: str,
@@ -184,7 +236,6 @@ class TimeSeriesVisualizer:
     
         # Customize the plot
         ax.set_xlabel('Steps')
-        ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x):,}"))
         ax.set_ylabel(metric)
     
         if title:
@@ -218,7 +269,7 @@ class TimeSeriesVisualizer:
             df = df.copy()
             start_time = df['Timestamp'].iloc[0]
             # Convert timestamps to steps
-            df['Steps'] = (df['Timestamp'] - start_time) * 19 #+ 2.4e6  # 19 steps per second
+            df['Steps'] = (df['Timestamp'] - start_time) * 19  # 19 steps per second
             
             sns.lineplot(
                 data=df,
@@ -233,12 +284,10 @@ class TimeSeriesVisualizer:
             ax.axhline(y=0.4, color='red', linestyle='--', alpha=0.7)
             ax.text(ax.get_xlim()[1], 0.4, 'Collision Threshold', 
                    color='red', va='bottom', ha='right')
-
-            
+        
         # Customize the plot
-        ax.set_xlabel('Evaluation Steps')
-        ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x):,}"))
-        #ax.set_xlim(2.4e6, ax.get_xlim()[1])  # Sets lower bound to 1.4 million
+        ax.set_xlabel('Steps')
+        ax.set_xlim(1.4e6, ax.get_xlim()[1])  # Sets lower bound to 1.4 million
         if 'Obstacle Clearance' in metric:
             ax.set_ylabel('Obstacle Clearance (meters)')
         else:
@@ -251,8 +300,8 @@ class TimeSeriesVisualizer:
         ax.grid(True, linestyle='--', alpha=0.7)
         
         # Adjust legend
-        #ax.legend(title='Trials', bbox_to_anchor=(1.05, 1), loc='upper left')
-        ax.legend(title='Trials', bbox_to_anchor=(0.5, -0.15), loc='upper center', ncol=3)
+        ax.legend(title='Trials', bbox_to_anchor=(1.05, 1), loc='upper left')
+        ax.legend(title='Trials', bbox_to_anchor=(0.5, -0.15), loc='upper center', ncol=3)         
         # Tight layout
         plt.tight_layout()
         
@@ -296,7 +345,6 @@ class TimeSeriesVisualizer:
         
         # Customize the plot
         ax.set_xlabel('Steps')
-        ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x):,}"))
         ax.set_ylabel(metric)
         
         if title:
@@ -340,3 +388,5 @@ if __name__ == '__main__':
     # Example usage
     visualizer = TimeSeriesVisualizer()
     # Add example usage code here
+
+
