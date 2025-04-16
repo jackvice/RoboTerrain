@@ -1,1 +1,3 @@
 transforms3d
+stable-baselines3[extra]
+jax
