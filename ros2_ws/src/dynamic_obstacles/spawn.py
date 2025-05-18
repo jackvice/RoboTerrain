@@ -50,6 +50,77 @@ class ActorSpawner:
 
             # Start building our new <trajectory> element:
             new_trajectory = '<trajectory id="0" type="walk">\n'
+            #new_trajectory += '  <loop>true</loop>\n'  # keep loop TRUE for continuous motion
+
+            cumulative_time = 0.0
+            prev_pose = None
+
+            for i, wp in enumerate(sampled_waypoints):
+                original_pose_str = wp.find('pose').text.strip()
+                current_pose = self.extract_pose_coordinates(original_pose_str)
+
+                yaw = 0.0
+                if i < len(sampled_waypoints) - 1:
+                    next_pose_str = sampled_waypoints[i + 1].find('pose').text
+                    next_pose = self.extract_pose_coordinates(next_pose_str)
+                    yaw = self.calculate_yaw(current_pose, next_pose)
+
+                if prev_pose is not None:
+                    distance = self.calculate_distance(prev_pose, current_pose)
+                    time_needed = distance / desired_velocity
+                    cumulative_time += time_needed
+
+                pose_with_yaw = f"{current_pose[0]} {current_pose[1]} {current_pose[2]} 0 0 {yaw}"
+                new_trajectory += f"  <waypoint>\n"
+                new_trajectory += f"    <time>{cumulative_time:.2f}</time>\n"
+                new_trajectory += f"    <pose>{pose_with_yaw}</pose>\n"
+                new_trajectory += f"  </waypoint>\n"
+
+                prev_pose = current_pose
+
+            # === INSERT THIS BLOCK TO CLOSE THE LOOP ===
+            first_pose = self.extract_pose_coordinates(
+                sampled_waypoints[0].find('pose').text.strip())
+            distance = self.calculate_distance(prev_pose, first_pose)
+            time_needed = distance / desired_velocity
+            cumulative_time += time_needed
+            yaw_back = self.calculate_yaw(prev_pose, first_pose)
+
+            pose_with_yaw = f"{first_pose[0]} {first_pose[1]} {first_pose[2]} 0 0 {yaw_back}"
+            new_trajectory += f"  <waypoint>\n"
+            new_trajectory += f"    <time>{cumulative_time:.2f}</time>\n"
+            new_trajectory += f"    <pose>{pose_with_yaw}</pose>\n"
+            new_trajectory += f"  </waypoint>\n"
+            # ============================================
+
+            new_trajectory += "</trajectory>"
+            print(f"Generated trajectory with {len(sampled_waypoints)} + loop-closing waypoint.")
+            return new_trajectory
+
+        except Exception as e:
+            print(f"Error creating trajectory: {e}")
+            return None
+
+    
+    def sample_waypoints_old(self, trajectory_content: str,
+                         desired_velocity: float = 1.0,
+                         sample_interval: int = 10):
+        """
+        Parse the original trajectory file, downsample waypoints,
+        and compute strictly increasing times based on distance & velocity.
+        """
+        try:
+            root = ET.fromstring(trajectory_content)
+            all_waypoints = root.findall('.//waypoint')
+
+            # Downsample (e.g. take every Nth waypoint)
+            sampled_waypoints = all_waypoints[::sample_interval]
+            if not sampled_waypoints:
+                print("No waypoints found after downsampling!")
+                return None
+
+            # Start building our new <trajectory> element:
+            new_trajectory = '<trajectory id="0" type="walk">\n'
             # Force no looping so the actor won't snap back:
             new_trajectory += '  <loop>true</loop>\n'
 
@@ -126,24 +197,51 @@ class ActorSpawner:
         print(f"Setting initial pose to: {initial_pose}")
 
         # Insert <loop>false</loop> under the <animation> block as well, just to be safe
-        actor_sdf = f'''<?xml version="1.0" ?>
-<sdf version="1.6">
-  <actor name="{name}">
-    <pose>{initial_pose}</pose>
-    <skin>
-      <filename>https://fuel.gazebosim.org/1.0/Mingfei/models/actor/tip/files/meshes/walk.dae</filename>
-      <scale>1.0</scale>
-    </skin>
-    <animation name="walking">
-      <filename>https://fuel.gazebosim.org/1.0/Mingfei/models/actor/tip/files/meshes/walk.dae</filename>
-      <scale>1.0</scale>
-      <interpolate_x>true</interpolate_x>
-      <loop>true</loop>
-    </animation>
-    {trajectory_sdf}
-  </actor>
-</sdf>'''
+        actor_sdf_old = f'''<?xml version="1.0" ?>
+        <sdf version="1.6">
+        <actor name="{name}">
+        <pose>{initial_pose}</pose>
+        <skin>
+        <filename>https://fuel.gazebosim.org/1.0/Mingfei/models/actor/tip/files/meshes/walk.dae</filename>
+        <scale>1.0</scale>
+        </skin>
+        <animation name="walking">
+        <filename>https://fuel.gazebosim.org/1.0/Mingfei/models/actor/tip/files/meshes/walk.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>true</interpolate_x>
+        <loop>false</loop>
+        </animation>
+        {trajectory_sdf}
+        </actor>
+        </sdf>'''
 
+        # final_trajectory_sdf already contains just <trajectory>…</trajectory>
+        actor_sdf = f'''<?xml version="1.0" ?>
+        <sdf version="1.9">
+        <actor name="{name}">
+        <pose>{initial_pose}</pose>
+        
+        <skin>
+        <filename>https://fuel.gazebosim.org/1.0/Mingfei/models/actor/tip/files/meshes/walk.dae</filename>
+        <scale>1.0</scale>
+        </skin>
+
+        <animation name="walk">
+        <filename>https://fuel.gazebosim.org/1.0/Mingfei/models/actor/tip/files/meshes/walk.dae</filename>
+        <interpolate_x>true</interpolate_x>
+        <loop>true</loop>          <!-- keep skeleton cycling -->
+        </animation>
+
+        <script>
+        <loop>true</loop>          <!-- makes the whole path repeat -->
+        <delay_start>0.0</delay_start>
+        <auto_start>true</auto_start>
+        {trajectory_sdf}     <!-- your way‑points go here -->
+        </script>
+        </actor>
+        </sdf>'''
+
+        
         temp_sdf_path = '/tmp/actor_with_trajectory.sdf'
         try:
             # Write the SDF to a temporary file
