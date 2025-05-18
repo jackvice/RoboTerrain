@@ -19,6 +19,7 @@ class ActorSpawner:
     def extract_pose_coordinates(self, pose_str):
         """Convert a <pose> string (x y z roll pitch yaw) to just [x, y, z]."""
         coords = [float(x) for x in pose_str.split()]
+        coords[2] += 1
         return coords[:3]
 
     def calculate_distance(self, pose1, pose2):

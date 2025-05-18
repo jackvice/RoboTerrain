@@ -19,6 +19,7 @@ class ActorSpawner:
     def extract_pose_coordinates(self, pose_str):
         """Convert a <pose> string (x y z roll pitch yaw) to just [x, y, z]."""
         coords = [float(x) for x in pose_str.split()]
+        coords[2] += 1
         return coords[:3]
 
     def calculate_distance(self, pose1, pose2):
@@ -102,67 +103,6 @@ class ActorSpawner:
             return None
 
     
-    def sample_waypoints_old(self, trajectory_content: str,
-                         desired_velocity: float = 1.0,
-                         sample_interval: int = 10):
-        """
-        Parse the original trajectory file, downsample waypoints,
-        and compute strictly increasing times based on distance & velocity.
-        """
-        try:
-            root = ET.fromstring(trajectory_content)
-            all_waypoints = root.findall('.//waypoint')
-
-            # Downsample (e.g. take every Nth waypoint)
-            sampled_waypoints = all_waypoints[::sample_interval]
-            if not sampled_waypoints:
-                print("No waypoints found after downsampling!")
-                return None
-
-            # Start building our new <trajectory> element:
-            new_trajectory = '<trajectory id="0" type="walk">\n'
-            # Force no looping so the actor won't snap back:
-            new_trajectory += '  <loop>true</loop>\n'
-
-            cumulative_time = 0.0
-            prev_pose = None
-
-            for i, wp in enumerate(sampled_waypoints):
-                # Get X, Y, Z from the <pose>
-                original_pose_str = wp.find('pose').text.strip()
-                current_pose = self.extract_pose_coordinates(original_pose_str)
-
-                # Calculate yaw to the next waypoint
-                yaw = 0.0
-                if i < len(sampled_waypoints) - 1:
-                    next_pose_str = sampled_waypoints[i + 1].find('pose').text
-                    next_pose = self.extract_pose_coordinates(next_pose_str)
-                    yaw = self.calculate_yaw(current_pose, next_pose)
-
-                # Accumulate time based on distance / velocity
-                if prev_pose is not None:
-                    distance = self.calculate_distance(prev_pose, current_pose)
-                    time_needed = distance / desired_velocity
-                    cumulative_time += time_needed
-
-                # Build <pose> with the computed yaw
-                pose_with_yaw = f"{current_pose[0]} {current_pose[1]} {current_pose[2]} 0 0 {yaw}"
-
-                # Add this waypoint to the new trajectory
-                new_trajectory += f"  <waypoint>\n"
-                new_trajectory += f"    <time>{cumulative_time:.2f}</time>\n"
-                new_trajectory += f"    <pose>{pose_with_yaw}</pose>\n"
-                new_trajectory += f"  </waypoint>\n"
-
-                prev_pose = current_pose
-
-            new_trajectory += "</trajectory>"
-            print(f"Generated trajectory with {len(sampled_waypoints)} waypoints.")
-            return new_trajectory
-
-        except Exception as e:
-            print(f"Error creating trajectory: {e}")
-            return None
 
     def load_trajectory_file(self, filepath: str):
         """Load original trajectory file from disk."""
@@ -193,27 +133,10 @@ class ActorSpawner:
         Create a complete SDF for the actor, write it to a temp file,
         and use ign service call to spawn it in the default world.
         """
-        initial_pose = self.get_first_waypoint(trajectory_sdf)
-        print(f"Setting initial pose to: {initial_pose}")
-
-        # Insert <loop>false</loop> under the <animation> block as well, just to be safe
-        actor_sdf_old = f'''<?xml version="1.0" ?>
-        <sdf version="1.6">
-        <actor name="{name}">
-        <pose>{initial_pose}</pose>
-        <skin>
-        <filename>https://fuel.gazebosim.org/1.0/Mingfei/models/actor/tip/files/meshes/walk.dae</filename>
-        <scale>1.0</scale>
-        </skin>
-        <animation name="walking">
-        <filename>https://fuel.gazebosim.org/1.0/Mingfei/models/actor/tip/files/meshes/walk.dae</filename>
-        <scale>1.0</scale>
-        <interpolate_x>true</interpolate_x>
-        <loop>false</loop>
-        </animation>
-        {trajectory_sdf}
-        </actor>
-        </sdf>'''
+        #initial_pose = self.get_first_waypoint(trajectory_sdf)
+        #print(f"Setting initial pose to: {initial_pose}")
+        initial_pose = "0 0 0 0 0 0"
+        print("Setting initial pose to neutral (0 0 0 0 0 0)")
 
         # final_trajectory_sdf already contains just <trajectory>…</trajectory>
         actor_sdf = f'''<?xml version="1.0" ?>
