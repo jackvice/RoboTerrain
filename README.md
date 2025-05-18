@@ -77,7 +77,7 @@ colon build
 ```bash
 # Source ROS 2 and workspace setup files
 source /opt/ros/humble/setup.bash
-source /home/ros2_ws/install/setup.bash
+source /home/RoboTerrain/ros2_ws/install/setup.bash
 
 # Launch the Rover Zero simulation
 ros2 launch roverrobotics_gazebo 4wd_rover_gazebo.launch.py
