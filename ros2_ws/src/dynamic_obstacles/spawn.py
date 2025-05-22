@@ -28,91 +28,45 @@ class ActorSpawner:
         """Euclidean distance between two [x, y, z] points."""
         return math.sqrt(sum((a - b) ** 2 for a, b in zip(pose1, pose2)))
 
-    def calculate_yaw(self, current_pos, next_pos):
-        """Compute heading (yaw) from current_pos to next_pos."""
-        dx = next_pos[0] - current_pos[0]
-        dy = next_pos[1] - current_pos[1]
-        return math.atan2(dy, dx)
 
-    
-    def normalize_angle(self, angle: float) -> float:
-        """Normalize angle to be within -π to π range."""
-        return ((angle + math.pi) % (2 * math.pi)) - math.pi
-
-    def optimize_trajectory_yaw(self, waypoints):
+    def optimize_trajectory_yaw(
+            self,
+            waypoints: list[tuple[list[float], float]] ) -> list[tuple[list[float], float, float]]:
         """
-        Computes yaw per segment as the direction of motion. No smoothing.
-        Args:
-        waypoints: List of (position, time) tuples
-        Returns:
-        List of (position, time, yaw) tuples
+        Return (pos, time, yaw) where yaw follows the direction of travel
+        and is unwrapped so adjacent values never differ by > π.
+        This prevents Gazebo from interpolating a 180° spin.
         """
-        positions = [pos for pos, _ in waypoints]
-        times = [t for _, t in waypoints]
-        yaws = []
+        positions = [p for p, _ in waypoints]
+        times     = [t for _, t in waypoints]
 
+        # --- 1. raw yaw for every segment i → i+1 --------------------------
+        raw_yaws = []
         for i in range(len(positions) - 1):
             dx = positions[i+1][0] - positions[i][0]
             dy = positions[i+1][1] - positions[i][1]
-            yaws.append(math.atan2(dy, dx))
+            raw_yaws.append(math.atan2(dy, dx))
+        raw_yaws.append(raw_yaws[0])          # closing edge
 
-        yaws.append(yaws[0])
-            
+        # --- 2. unwrap so successive values differ by ≤ π -----------------
+        unwrapped = [raw_yaws[0]]
+        for r in raw_yaws[1:]:
+            y = r
+            prev = unwrapped[-1]
+            # shift y by ±2π until it is within π of prev
+            while y - prev >  math.pi:
+                y -= 2 * math.pi
+            while y - prev < -math.pi:
+                y += 2 * math.pi
+            unwrapped.append(y)
+
+        # --- 3. (optional) normalise back into [-π, π] for prettiness -----
+        yaws = [((y + math.pi) % (2 * math.pi)) - math.pi for y in unwrapped]
+
         return [(positions[i], times[i], yaws[i]) for i in range(len(positions))]
 
+
     
-    def optimize_trajectory_yaw_old(self, waypoints):
-        """
-        Pre-processes all waypoints to determine optimal yaw angles.
-        This ensures smooth transitions throughout the entire trajectory.
-        
-        Args:
-            waypoints: List of (position, time) tuples without yaw
-            
-        Returns:
-            List of (position, time, yaw) tuples with optimized yaw values
-        """
-        # First pass: calculate basic yaw directions
-        positions = [pos for pos, _ in waypoints]
-        times = [time for _, time in waypoints]
-        
-        yaws = []
-        
-        # For each waypoint except the last, calculate direction to next point
-        for i in range(len(positions) - 1):
-            dx = positions[i+1][0] - positions[i][0]
-            dy = positions[i+1][1] - positions[i][1]
-            yaws.append(math.atan2(dy, dx))
-        
-        # For the last point, use the first point's direction to close the loop
-        dx = positions[0][0] - positions[-1][0]
-        dy = positions[0][1] - positions[-1][1]
-        yaws.append(math.atan2(dy, dx))
-        
-        # Second pass: ensure continuity by minimizing angle differences
-        for i in range(1, len(yaws)):
-            # second pass – replace the entire flip block
-            diff = yaws[i] - yaws[i-1]
-            if diff >  math.pi:  yaws[i] -= 2*math.pi
-            if diff < -math.pi:  yaws[i] += 2*math.pi
-
-            # Get the difference between current and previous yaw
-            #diff = self.normalize_angle(yaws[i] - yaws[i-1])
-            
-            # If the difference is too large, we flip the orientation for this segment
-            #if abs(diff) > math.pi/2:
-            # Flip the yaw by 180 degrees
-            #    yaws[i] = self.normalize_angle(yaws[i] + math.pi)
-        
-        # Third pass: ensure the actor never needs to make a sudden 180° turn
-        # by gradually transitioning yaw angles if needed
-        result = []
-        
-        for i in range(len(waypoints)):
-            result.append((positions[i], times[i], yaws[i]))
-        
-        return result
-
     def sample_waypoints(self, trajectory_content: str,
                          desired_velocity: float = 1.0,
                          sample_interval: int = 10):
@@ -190,87 +144,6 @@ class ActorSpawner:
             return None
 
         
-    def sample_waypoints_old(self, trajectory_content: str,
-                         desired_velocity: float = 1.0,
-                         sample_interval: int = 10):
-        """
-        Parse the original trajectory file, downsample waypoints,
-        and compute strictly increasing times based on distance & velocity.
-        """
-        try:
-            root = ET.fromstring(trajectory_content)
-            all_waypoints = root.findall('.//waypoint')
-
-            # Downsample (e.g. take every Nth waypoint)
-            sampled_waypoints = all_waypoints[::sample_interval]
-            if not sampled_waypoints:
-                print("No waypoints found after downsampling!")
-                return None
-
-            # Start building our new <trajectory> element:
-            new_trajectory = '<trajectory id="0" type="walk">\n'
-
-        
-            cumulative_time = 0.0
-            prev_pose = None
-            prev_yaw = None
-
-            for i, wp in enumerate(sampled_waypoints):
-                original_pose_str = wp.find('pose').text.strip()
-                current_pose = self.extract_pose_coordinates(original_pose_str)
-
-                if i < len(sampled_waypoints) - 1:
-                    next_pose_str = sampled_waypoints[i + 1].find('pose').text
-                    next_pose = self.extract_pose_coordinates(next_pose_str)
-                    yaw = calculate_yaw_with_continuity(current_pose, next_pose, prev_yaw)
-                else:
-                    # For the last waypoint, if we're going to loop, calculate yaw to first waypoint
-                    first_pose = self.extract_pose_coordinates(sampled_waypoints[0].find('pose').text.strip())
-                    yaw = calculate_yaw_with_continuity(current_pose, first_pose, prev_yaw)
-
-                if prev_pose is not None:
-                    distance = self.calculate_distance(prev_pose, current_pose)
-                    time_needed = distance / desired_velocity
-                    cumulative_time += time_needed
-
-                pose_with_yaw = f"{current_pose[0]} {current_pose[1]} {current_pose[2]} 0 0 {yaw}"
-                new_trajectory += f"  <waypoint>\n"
-                new_trajectory += f"    <time>{cumulative_time:.2f}</time>\n"
-                new_trajectory += f"    <pose>{pose_with_yaw}</pose>\n"
-                new_trajectory += f"  </waypoint>\n"
-
-                print(f"{i:03d}  yaw={yaw:+.3f}  Δ={yaw-prev_yaw if prev_pose else 0:+.3f}")
-                
-                prev_pose = current_pose
-                prev_yaw  = yaw 
-
-
-
-            # === INSERT THIS BLOCK TO CLOSE THE LOOP ===
-            first_pose = self.extract_pose_coordinates(
-                sampled_waypoints[0].find('pose').text.strip())
-            distance = self.calculate_distance(prev_pose, first_pose)
-            time_needed = distance / desired_velocity
-            cumulative_time += time_needed
-            yaw_back = self.calculate_yaw(prev_pose, first_pose)
-
-            pose_with_yaw = f"{first_pose[0]} {first_pose[1]} {first_pose[2]} 0 0 {yaw_back}"
-            new_trajectory += f"  <waypoint>\n"
-            new_trajectory += f"    <time>{cumulative_time:.2f}</time>\n"
-            new_trajectory += f"    <pose>{pose_with_yaw}</pose>\n"
-            new_trajectory += f"  </waypoint>\n"
-            # ============================================
-
-            new_trajectory += "</trajectory>"
-            print(f"Generated trajectory with {len(sampled_waypoints)} + loop-closing waypoint.")
-            return new_trajectory
-
-        except Exception as e:
-            print(f"Error creating trajectory: {e}")
-            return None
-
-    
-
     def load_trajectory_file(self, filepath: str):
         """Load original trajectory file from disk."""
         try:
@@ -283,17 +156,6 @@ class ActorSpawner:
             print(f"Error reading trajectory file: {e}")
             return None
 
-    def get_first_waypoint(self, trajectory_content: str):
-        """Extract the pose from the first <waypoint> in the final generated trajectory."""
-        try:
-            root = ET.fromstring(trajectory_content)
-            first_waypoint = root.find('.//waypoint')
-            if first_waypoint is not None:
-                pose = first_waypoint.find('pose').text
-                return pose.strip()
-        except Exception as e:
-            print(f"Error getting first waypoint: {e}")
-        return "0 0 1.0 0 0 0"
 
     def spawn_actor(self, trajectory_sdf: str, name: str = "walking_actor"):
         """
