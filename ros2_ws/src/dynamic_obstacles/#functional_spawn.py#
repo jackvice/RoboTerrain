@@ -75,7 +75,7 @@ def process_trajectory(trajectory_content: str, desired_velocity: float = 1.0, s
     Process trajectory XML:
     1. Extract waypoints
     2. Downsample if needed
-    3. Calculate timing based on desired velocity
+    3. Calculae timing based on desired velocity
     4. Calculate optimal yaw values
     5. Return formatted trajectory XML
     """
