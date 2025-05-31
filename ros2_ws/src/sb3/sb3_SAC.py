@@ -45,6 +45,7 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.monitor import Monitor
 from environments.rover_env import RoverEnv
 from environments.rover_env_vision import RoverEnvVis
+from environments.rover_env_fused import RoverEnvFused
 import rclpy
 
 
@@ -67,8 +68,9 @@ def parse_args():
 def make_env(do_vision, world_name):
     def _init():
         if do_vision:
-            print('Using Vision + lidar model')
-            env = RoverEnvVis(world_n=world_name)
+            print('Using fused image')
+            #env = RoverEnvVis(world_n=world_name)
+            env = RoverEnvFused(world_n=world_name)
         else:
             print('Using standard lidar model')
             env = RoverEnv(world_n=world_name)

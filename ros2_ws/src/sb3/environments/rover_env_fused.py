@@ -78,7 +78,7 @@ class RoverEnvFused(gym.Env):
         
         # Stuck detection parameters
         self.position_history = []
-        self.stuck_threshold = 0.001  # Minimum distance the robot should move
+        self.stuck_threshold = 0.01  # Minimum distance the robot should move
         self.stuck_window = 6000 #600    # Number of steps to check for being stuck
         self.stuck_penilty = -25.0
 
@@ -184,16 +184,38 @@ class RoverEnvFused(gym.Env):
         os.makedirs(self.episode_log_path, exist_ok=True)
         self.episode_number = 0
 
-        # Modified observation space - only fused image
         self.observation_space = spaces.Dict({
             'fused_image': spaces.Box(
                 low=0.0,
                 high=1.0,
                 shape=(self.rl_obs_height, self.rl_obs_width, 3),
                 dtype=np.float32
-            )
+            ),
+            'pose': spaces.Box(
+                low=np.array([-30.0, -30.0, -10.0]),
+                high=np.array([30.0, 30.0, 10.0]),
+                dtype=np.float32
+            ),
+            'imu': spaces.Box(
+                low=np.array([-np.pi, -np.pi, -np.pi]),
+                high=np.array([np.pi, np.pi, np.pi]),
+                dtype=np.float32
+            ),
+            'target': spaces.Box(
+                low=np.array([0, -np.pi]),
+                high=np.array([100, np.pi]),
+                shape=(2,),
+                dtype=np.float32
+            ),
+            'velocities': spaces.Box(
+                low=np.array([-10.0, -10.0]),
+                high=np.array([10.0, 10.0]),
+                shape=(2,),
+                dtype=np.float32
+            ),
         })
 
+        
         # Setup shared memory for fused observations
         try:
             self.rl_obs_shm = shared_memory.SharedMemory(name=self.rl_obs_name)
@@ -432,10 +454,16 @@ class RoverEnvFused(gym.Env):
         return observation, reward, done, False, info
 
     def get_observation(self):
-        """Get current observation - only fused image"""
         return {
-            'fused_image': self.current_fused_obs
-        }    
+            'fused_image': self.current_fused_obs,  
+            'pose': self.rover_position,
+            'imu': np.array([self.current_pitch, self.current_roll, self.current_yaw],
+                            dtype=np.float32),
+            'target': self.get_target_info(),
+            'velocities': np.array([self.current_linear_velocity, self.current_angular_velocity],
+                                   dtype=np.float32)
+        }
+
 
     def update_target_pos(self):
         print('###################################################### GOAL ACHIVED!')
