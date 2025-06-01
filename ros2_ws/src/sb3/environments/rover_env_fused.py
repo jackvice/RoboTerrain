@@ -30,11 +30,34 @@ import numpy.typing as npt
 ObservationArray = npt.NDArray[np.float32]  # [H, W, 3]
 
 
+def save_fused_image_channels(fused_image: np.ndarray, output_dir: str = './out_images') -> None:
+    """
+    Save each channel of fused image as separate PNG files for debugging.
+    
+    Args:
+        fused_image: Fused observation array [H, W, 3] with values in [0,1]
+        output_dir: Directory to save images (default: './out_images')
+    """
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Convert from [0,1] to [0,255] and ensure uint8
+    fused_image_uint8 = (fused_image * 255).astype(np.uint8)
+    
+    # Extract and save each channel
+    for i in range(3):
+        channel = fused_image_uint8[:, :, i]
+        filename = f"channel_{i+1}.png"
+        filepath = os.path.join(output_dir, filename)
+        cv2.imwrite(filepath, channel)
+    
+    print(f"Saved fused image channels to {output_dir}/channel_[1-3].png")
+
 class RoverEnvFused(gym.Env):
     """Custom Environment that follows gymnasium interface with fused vision observations"""
     metadata = {'render_modes': ['human']}
     
-    def __init__(self, size=(96, 96), length=2000, scan_topic='/scan', imu_topic='/imu/data',
+    def __init__(self, size=(96, 96), length=20000, scan_topic='/scan', imu_topic='/imu/data',
                  cmd_vel_topic='/cmd_vel', world_n='inspect',
                  connection_check_timeout=30, lidar_points=32, max_lidar_range=12.0,
                  rl_obs_name='rl_observation'):
@@ -79,7 +102,7 @@ class RoverEnvFused(gym.Env):
         # Stuck detection parameters
         self.position_history = []
         self.stuck_threshold = 0.01  # Minimum distance the robot should move
-        self.stuck_window = 6000 #600    # Number of steps to check for being stuck
+        self.stuck_window = 400 #600 for one minute Number of steps to check for being stuck
         self.stuck_penilty = -25.0
 
         # Collision detection parameters
@@ -103,7 +126,6 @@ class RoverEnvFused(gym.Env):
         
         # Flip detection parameters
         self.flip_threshold = math.pi / 3  # 60 degrees in radians
-        self.is_flipped = False
         self.initial_position = None
         self.initial_orientation = None
 
@@ -308,7 +330,7 @@ class RoverEnvFused(gym.Env):
         observation_bytes = bytes(buf[header_size:header_size + expected_data_size])
         observation = np.frombuffer(observation_bytes, dtype=np.float32)
         observation = observation.reshape((self.rl_obs_height, self.rl_obs_width, 3))
-        
+        struct.pack_into('<L', buf, 8, 0)  # Set valid flag to 0      
         return observation
 
     def heading_controller(self, desired_heading, current_heading):
@@ -361,14 +383,6 @@ class RoverEnvFused(gym.Env):
             print('stuck in collision, ending episode')
             return self.get_observation(), -1 * self.goal_reward, True, False, {}  
 
-        flip_status = self.is_robot_flipped()
-        if flip_status:
-            print('Robot flipped', flip_status, ', episode done')
-            if self._step > 500:
-                print('Robot flipped on its own')
-                return self.get_observation(), (-1 * self.goal_reward), True, False, {}
-            else:
-                return self.get_observation(), 0, True, False, {} 
 
         # Update position history
         self.position_history.append((self.current_pose.position.x, self.current_pose.position.y))
@@ -388,6 +402,7 @@ class RoverEnvFused(gym.Env):
                 return self.get_observation(), self.stuck_penilty, True, False, {}
 
         if self.too_far_away():
+            print('Too far away, resetting.')
             return self.get_observation(), self.too_far_away_penilty, True, False, {}
                 
         # Wait for new fused observation data - block indefinitely
@@ -424,12 +439,14 @@ class RoverEnvFused(gym.Env):
 
         # Check if episode is done
         self._step += 1
+        if self._step >= self._length:
+            print(f"Episode length limit reached: {self._step} >= {self._length}")
         done = (self._step >= self._length)
         
         # Get observation
         observation = self.get_observation()
 
-        if self.total_steps % 1000 == 0:
+        if self.total_steps % 10000 == 0:
             temp_obs_target = self.get_target_info()
             print(
                 f"current pose x,y: ({self.current_pose.position.x:.2f}, {self.current_pose.position.y:.2f}), "
@@ -441,10 +458,11 @@ class RoverEnvFused(gym.Env):
                 f"Final Reward: {reward:.3f}"
             )
         
-        if self.total_steps % 1000 == 0:
-            print('Observation: Fused image shape:', observation['fused_image'].shape,
-                  ', Fused image range: [', np.min(observation['fused_image']), 
-                  ', ', np.max(observation['fused_image']), ']')
+        if self.total_steps % 100 == 0:
+            save_fused_image_channels(observation['fused_image'])
+            #print('Observation: Fused image shape:', observation['fused_image'].shape,
+            #      ', Fused image range: [', np.min(observation['fused_image']), 
+            #      ', ', np.max(observation['fused_image']), ']')
         
         info = {
             'steps': self._step,
@@ -549,7 +567,7 @@ class RoverEnvFused(gym.Env):
         reward = (distance_reward * final_reward_multiplier) + (self.current_linear_velocity * 0.0025)
 
         # Debug logging
-        if self.total_steps % 1000 == 0:
+        if self.total_steps % 10000 == 0:
             print(f"Distance: {current_distance:.3f}, Previous Distance: {self.previous_distance:.3f}, "
                   f"distance_delta: {distance_delta:.3f}, Heading diff: {math.degrees(heading_diff):.1f}°, "
                   f"Speed: {self.last_speed:.3f}, Current vel: {self.current_linear_velocity:.3f}, "
@@ -583,19 +601,6 @@ class RoverEnvFused(gym.Env):
 
         return np.array([distance, relative_angle], dtype=np.float32)
 
-    def is_robot_flipped(self):
-        """Detect if robot has flipped in any direction past 85 degrees"""
-        FLIP_THRESHOLD = 1.48  # ~85 degrees in radians
-        
-        # Check both roll and pitch angles
-        if abs(self.current_roll) > FLIP_THRESHOLD:
-            print('flipped')
-            return 'roll_left' if self.current_roll > 0 else 'roll_right'
-        elif abs(self.current_pitch) > FLIP_THRESHOLD:
-            print('flipped')
-            return 'pitch_forward' if self.current_pitch < 0 else 'pitch_backward'
-        
-        return False
         
     def reset(self, seed=None, options=None):
         print('################'+ self.world_name + ' Environment Reset')
@@ -654,7 +659,7 @@ class RoverEnvFused(gym.Env):
         self._step = 0
         self.last_linear_velocity = 0.0
         self.steps_since_correction = self.cooldown_steps
-        self.is_flipped = False
+
         # Reset PointNav-specific variables
         self.target_positions_x = np.random.uniform(*self.rand_goal_x_range)
         self.target_positions_y = np.random.uniform(*self.rand_goal_y_range)
@@ -672,7 +677,7 @@ class RoverEnvFused(gym.Env):
         
         self.publisher.publish(twist)
         timestamp = time.time()
-        print(timestamp)
+        
         with open(f'{self.episode_log_path}//{self.log_name}', 'a') as f:
             f.write(f"{timestamp},episode_start,{self.episode_number},x={x_insert:.2f},y={y_insert:.2f}\n")
 
