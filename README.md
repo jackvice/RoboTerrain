@@ -269,6 +269,26 @@ Contributions are welcome! Please follow these guidelines:
 3. **Submit a pull request** with a detailed description of your changes.
 
 
+## Citation
+
+If you use this framework in your research, please cite our paper:
+
+**DUnE: A Versatile Dynamic Unstructured Environment for Off-Road Navigation**  
+Jack M. Vice and Gita Sukthankar  
+*Robotics*, vol. 14, no. 4, p. 35, 2025  
+[https://doi.org/10.3390/robotics14040035](https://www.mdpi.com/2218-6581/14/4/35)
+
+```bibtex
+@article{vice2025dune,
+  title={DUnE: A Versatile Dynamic Unstructured Environment for Off-Road Navigation},
+  author={Vice, Jack M and Sukthankar, Gita},
+  journal={Robotics},
+  volume={14},
+  number={4},
+  pages={35},
+  year={2025},
+  publisher={MDPI}
+}
 
 ## License
 

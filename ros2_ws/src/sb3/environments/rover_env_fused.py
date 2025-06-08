@@ -25,6 +25,7 @@ from collections import deque
 from time import strftime
 from typing import Optional
 import numpy.typing as npt
+from datetime import datetime
 
 # Type definitions
 ObservationArray = npt.NDArray[np.float32]  # [H, W, 3]
@@ -45,10 +46,16 @@ def save_fused_image_channels(fused_image: np.ndarray, output_dir: str = './out_
     fused_image_uint8 = (fused_image * 255).astype(np.uint8)
     
     # Extract and save each channel
-    for i in range(3):
+    now = datetime.now()
+    time_string = now.strftime("%M_%S")
+    check_black = fused_image_uint8[:, :, 1]
+    if np.sum(check_black) == 0: # if no person don't bother writing to file
+        return 
+    for i in range(2): #(3) for depth
         channel = fused_image_uint8[:, :, i]
-        filename = f"channel_{i+1}.png"
+        filename = f"channel_{time_string}_{i+1}.png"
         filepath = os.path.join(output_dir, filename)
+        
         cv2.imwrite(filepath, channel)
     
     print(f"Saved fused image channels to {output_dir}/channel_[1-3].png")
@@ -103,7 +110,7 @@ class RoverEnvFused(gym.Env):
         self.position_history = []
         self.stuck_threshold = 0.01  # Minimum distance the robot should move
         self.stuck_window = 400 #600 for one minute Number of steps to check for being stuck
-        self.stuck_penilty = -25.0
+        self.stuck_penalty = -25.0
 
         # Collision detection parameters
         self.collision_history = []
@@ -125,7 +132,8 @@ class RoverEnvFused(gym.Env):
         self.corrective_heading = 0.0
         
         # Flip detection parameters
-        self.flip_threshold = math.pi / 3  # 60 degrees in radians
+        self.flip_threshold = 1.48 #85 degrees in radians #math.pi / 3  # 60 degrees in radians
+        self.is_flipped = False
         self.initial_position = None
         self.initial_orientation = None
 
@@ -153,6 +161,7 @@ class RoverEnvFused(gym.Env):
 
         self.world_pose_path = '/world/' + self.world_name + '/set_pose'
         print('world is', self.world_name)
+
         if self.world_name == 'inspect':
             # Navigation parameters previous
             self.rand_goal_x_range = (-27, -19) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
@@ -378,6 +387,15 @@ class RoverEnvFused(gym.Env):
         """Execute one time step within the environment"""
         self.total_steps += 1
 
+        flip_status = self.is_robot_flipped()
+        if flip_status:
+            print('Robot flipped', flip_status, ', episode done')
+            if self._step > 500:
+                print('Robot flipped on its own')
+                return self.get_observation(), self.stuck_penalty, True, False, {}
+            else:
+                return self.get_observation(), 0, True, False, {} 
+        
         if self.collision_count > self.stuck_window:
             self.collision_count = 0
             print('stuck in collision, ending episode')
@@ -399,7 +417,7 @@ class RoverEnvFused(gym.Env):
             if distance_moved < self.stuck_threshold:
                 print('Robot is stuck, has moved only', distance_moved,
                       'meters in', self.stuck_window, 'steps, resetting')
-                return self.get_observation(), self.stuck_penilty, True, False, {}
+                return self.get_observation(), self.stuck_penalty, True, False, {}
 
         if self.too_far_away():
             print('Too far away, resetting.')
@@ -458,7 +476,7 @@ class RoverEnvFused(gym.Env):
                 f"Final Reward: {reward:.3f}"
             )
         
-        if self.total_steps % 100 == 0:
+        if self.total_steps % 1000 == 0:
             save_fused_image_channels(observation['fused_image'])
             #print('Observation: Fused image shape:', observation['fused_image'].shape,
             #      ', Fused image range: [', np.min(observation['fused_image']), 
@@ -601,6 +619,20 @@ class RoverEnvFused(gym.Env):
 
         return np.array([distance, relative_angle], dtype=np.float32)
 
+
+    def is_robot_flipped(self):
+        """Detect if robot has flipped in any direction past 85 degrees"""
+        
+        # Check both roll and pitch angles
+        if abs(self.current_roll) > self.flip_threshold:
+            print('flipped')
+            return 'roll_left' if self.current_roll > 0 else 'roll_right'
+        elif abs(self.current_pitch) > self.flip_threshold:
+            print('flipped')
+            return 'pitch_forward' if self.current_pitch < 0 else 'pitch_backward'
+        
+        return False
+    
         
     def reset(self, seed=None, options=None):
         print('################'+ self.world_name + ' Environment Reset')
