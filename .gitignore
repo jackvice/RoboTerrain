@@ -4,6 +4,7 @@ ros2_ws/install/
 ros2_ws/log/
 ros2_ws/src/sb3/checkpoints/
 ros2_ws/src/sb3/tboard_logs/
+ros2_ws/src/sb3/out_images/
 metrics_analyzer/data/
 ros2_ws/src/sb3/notes.txt
 build/
