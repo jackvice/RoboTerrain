@@ -289,7 +289,7 @@ Jack M. Vice and Gita Sukthankar
   year={2025},
   publisher={MDPI}
 }
-
+```
 ## License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
