@@ -1,0 +1,14 @@
+<trajectory id="0" type="walk">
+  <waypoint>
+    <time>5.57</time>
+    <pose>-2.00 2.00 1.00 0 0 -2.059130</pose>
+  </waypoint>
+  <waypoint>
+    <time>9.06</time>
+    <pose>-5.40 -4.40 1.00 0 0 2.293776</pose>
+  </waypoint>
+  <waypoint>
+    <time>14.50</time>
+    <pose>-8.40 -1.00 1.00 0 0 0.438337</pose>
+  </waypoint>
+</trajectory>

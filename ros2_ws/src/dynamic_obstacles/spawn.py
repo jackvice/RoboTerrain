@@ -47,7 +47,8 @@ def calculate_distance(pose1: List[float], pose2: List[float]) -> float:
     return math.sqrt(sum((a - b) ** 2 for a, b in zip(pose1, pose2)))
 
 
-def process_trajectory(trajectory_content: str, desired_velocity: float = 1.0, sample_interval: int = 1) -> Optional[str]:
+def process_trajectory(trajectory_content: str, desired_velocity: float = 1.0,
+                       sample_interval: int = 1) -> Optional[str]:
     """
     Process trajectory XML:
     1. Extract and downsample waypoints
@@ -278,7 +279,9 @@ def main() -> None:
         return
     
     # Load trajectory file
-    trajectory_file = 'trajectory_short.sdf'
+    #trajectory_file = 'trajectory_short.sdf'
+    trajectory_file = 'triangle_trajectory.sdf'
+    
     raw_trajectory = load_trajectory_file(trajectory_file)
     if raw_trajectory is None:
         return
@@ -296,7 +299,8 @@ def main() -> None:
     success = spawn_actor(
         final_trajectory_sdf, 
         name="walking_actor",
-        world="inspect"
+        #world="inspect"
+        world="default"
     )
     
     if success:
