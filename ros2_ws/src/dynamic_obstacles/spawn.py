@@ -96,106 +96,51 @@ def process_trajectory(trajectory_content: str, desired_velocity: float = 1.0,
         
         # Build trajectory XML
         new_trajectory = '<trajectory id="0" type="walk">\n'
-        
-        for i in range(len(positions)):
-            # Calculate yaw pointing to next waypoint
-            if i < len(positions) - 1:
-                # For all waypoints except the last, point to next waypoint
-                yaw = calculate_yaw(positions[i], positions[i + 1])
-            else:
-                # For the last waypoint (back at start), maintain the yaw from the return journey
-                # This prevents mid-journey rotation
-                yaw = calculate_yaw(positions[i - 1], positions[i])
-            
-            # Format pose with calculated yaw
-            pos = positions[i]
-            pose_with_yaw = f"{pos[0]} {pos[1]} {pos[2]} 0 0 {yaw}"
-            
-            new_trajectory += f"  <waypoint>\n"
-            new_trajectory += f"    <time>{times[i]:.2f}</time>\n"
-            new_trajectory += f"    <pose>{pose_with_yaw}</pose>\n"
-            new_trajectory += f"  </waypoint>\n"
-            
-            print(f"Waypoint {i:03d}: yaw={yaw:+.3f} rad ({math.degrees(yaw):+.1f}°)")
-        
-        new_trajectory += "</trajectory>"
-        print(f"Generated trajectory with {len(positions)} waypoints (including return to start).")
-        return new_trajectory
-        
-    except Exception as e:
-        print(f"Error creating trajectory: {e}")
-        return None
 
-def old_process_trajectory(trajectory_content: str, desired_velocity: float = 1.0, sample_interval: int = 1) -> Optional[str]:
-    """
-    Process trajectory XML:
-    1. Extract and downsample waypoints
-    2. Calculate timing based on desired velocity
-    3. Calculate yaw for each waypoint pointing to next waypoint
-    4. Return formatted trajectory XML
-    """
-    try:
-        # Parse XML and extract waypoints
-        root = ET.fromstring(trajectory_content)
-        all_waypoints = root.findall('.//waypoint')
-        
-        # Downsample waypoints
-        sampled_waypoints = all_waypoints[::sample_interval]
-        if not sampled_waypoints:
-            print("No waypoints found after downsampling!")
-            return None
-        
-        # Extract positions
-        positions: List[List[float]] = []
-        for wp in sampled_waypoints:
-            pose_str = wp.find('pose').text.strip()
-            position = extract_pose_coordinates(pose_str)
-            positions.append(position)
-        
-        # Calculate cumulative times based on distances
-        times: List[float] = [0.0]
-        cumulative_time = 0.0
-        
-        for i in range(1, len(positions)):
-            distance = calculate_distance(positions[i-1], positions[i])
-            time_needed = distance / desired_velocity
-            cumulative_time += time_needed
-            times.append(cumulative_time)
-        
-        # Add straight-line return to start (like original code)
-        first_pos = positions[0]
-        last_pos = positions[-1]
-        return_distance = calculate_distance(last_pos, first_pos)
-        return_time = return_distance / desired_velocity
-        cumulative_time += return_time
-        
-        positions.append(first_pos)
-        times.append(cumulative_time)
-        
-        # Build trajectory XML
-        new_trajectory = '<trajectory id="0" type="walk">\n'
-        
+        TURN_DURATION = 0.1     # seconds for the snap-turn
+
         for i in range(len(positions)):
-            # Calculate yaw pointing to next waypoint
-            if i == len(positions) - 1:
-                # Last waypoint (back at start) should point to first trajectory waypoint (index 1)
-                next_index = 1
-            else:
-                # All other waypoints point to the next waypoint in sequence
-                next_index = i + 1
-            
-            yaw = calculate_yaw(positions[i], positions[next_index])
-            
-            # Format pose with calculated yaw
             pos = positions[i]
-            pose_with_yaw = f"{pos[0]} {pos[1]} {pos[2]} 0 0 {yaw}"
-            
-            new_trajectory += f"  <waypoint>\n"
-            new_trajectory += f"    <time>{times[i]:.2f}</time>\n"
-            new_trajectory += f"    <pose>{pose_with_yaw}</pose>\n"
-            new_trajectory += f"  </waypoint>\n"
-            
-            print(f"Waypoint {i:03d}: yaw={yaw:+.3f} rad ({math.degrees(yaw):+.1f}°)")
+            t   = times[i]
+
+            # -------- 1) heading to KEEP while walking the current leg --------
+            if i == 0:
+                # first point: only a next segment exists
+                yaw_hold = calculate_yaw(positions[0], positions[1])
+            else:
+                # use heading of the segment we just walked (prev → current)
+                yaw_hold = calculate_yaw(positions[i - 1], positions[i])
+
+            # keep this heading until we arrive at the corner
+            pose_hold = f"{pos[0]} {pos[1]} {pos[2]} 0 0 {yaw_hold}"
+            new_trajectory += (
+                f"  <waypoint>\n"
+                f"    <time>{t:.2f}</time>\n"
+                f"    <pose>{pose_hold}</pose>\n"
+                f"  </waypoint>\n"
+            )
+            print(
+                f"Corner {i:02d} arrive  t={t:.2f}s  hold_yaw={math.degrees(yaw_hold):+.1f}°"
+            )
+
+            # -------- 2) tiny turn waypoint (skip for final point that loops) ------
+            if i < len(positions) - 1:
+                yaw_next = calculate_yaw(positions[i], positions[i + 1])
+
+                pose_turn = f"{pos[0]} {pos[1]} {pos[2]} 0 0 {yaw_next}"
+                t_turn    = t + TURN_DURATION
+                new_trajectory += (
+                    f"  <waypoint>\n"
+                    f"    <time>{t_turn:.2f}</time>\n"
+                    f"    <pose>{pose_turn}</pose>\n"
+                    f"  </waypoint>\n"
+                )
+                print(
+                    f"           turn → yaw_next={math.degrees(yaw_next):+.1f}° "
+                    f"(Δt={TURN_DURATION}s)"
+                )
+
+
         
         new_trajectory += "</trajectory>"
         print(f"Generated trajectory with {len(positions)} waypoints (including return to start).")
@@ -279,8 +224,9 @@ def main() -> None:
         return
     
     # Load trajectory file
-    #trajectory_file = 'trajectory_short.sdf'
-    trajectory_file = 'triangle_trajectory.sdf'
+    trajectory_file = 'trajectory_short.sdf'
+    #trajectory_file = 'triangle_trajectory.sdf'
+    #trajectory_file = 'triangle_trajectory_2.sdf'
     
     raw_trajectory = load_trajectory_file(trajectory_file)
     if raw_trajectory is None:
@@ -299,8 +245,8 @@ def main() -> None:
     success = spawn_actor(
         final_trajectory_sdf, 
         name="walking_actor",
-        #world="inspect"
-        world="default"
+        world="inspect"
+        #world="default"
     )
     
     if success:
