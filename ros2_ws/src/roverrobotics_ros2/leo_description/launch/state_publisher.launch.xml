@@ -1,0 +1,15 @@
+<launch version="0.1.1">
+  <arg
+    name="model"
+    default="$(find-pkg-share leo_description)/urdf/leo.urdf.xacro"
+    description="Absolute path to robot urdf.xacro file" />
+  
+  <arg 
+    name="mecanum_wheels"
+    default="false"
+    description="Flag specifying wheel types of the robot for visualization purposes"/>
+
+  <node pkg="robot_state_publisher" exec="robot_state_publisher">
+    <param name="robot_description" value="$(command 'xacro $(var model) mecanum_wheels:=$(var mecanum_wheels)')" />
+  </node>
+</launch>

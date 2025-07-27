@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro"
+       name="leo_sim">
+
+  <xacro:arg name="fixed" default="false"/>
+  <xacro:arg name="robot_ns" default=""/>
+  <xacro:arg name="mecanum_wheels" default="false"/>
+
+  <xacro:include filename="$(find leo_description)/urdf/macros.xacro"/>
+
+  <xacro:leo_sim robot_ns="$(arg robot_ns)"
+                 fixed="$(arg fixed)"
+                 mecanum_wheels="$(arg mecanum_wheels)"/>
+
+</robot>

@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>leo_teleop</name>
+  <version>3.1.0</version>
+  <description>
+    Scripts and launch files for Leo Rover teleoperation
+  </description>
+
+  <maintainer email="support@fictionlab.pl">Fictionlab</maintainer>
+  <author email="blazej@fictionlab.pl">Błażej Sowa</author>
+  <author email="aleks@fictionlab.pl">Aleksander Szymański</author>
+
+  <license>MIT</license>
+
+  <url type="website">http://wiki.ros.org/leo_teleop</url>
+  <url type="bugtracker">https://github.com/LeoRover/leo_common/issues</url>
+  <url type="repository">https://github.com/LeoRover/leo_common</url>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>joy_linux</exec_depend>
+  <exec_depend>teleop_twist_joy</exec_depend>
+  <exec_depend>teleop_twist_keyboard</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_cmake_lint_cmake</test_depend>
+  <test_depend>ament_cmake_xmllint</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+
+</package>

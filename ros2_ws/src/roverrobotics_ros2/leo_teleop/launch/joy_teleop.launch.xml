@@ -1,0 +1,21 @@
+<launch version="0.1.1">
+  <arg name="joy_dev" default="/dev/input/js0"
+    description="Joystick device path" />
+  <arg name="cmd_vel_out" default="cmd_vel"
+    description="Topic to send velocity commands on" />
+  <arg name="joy_config_file"
+    default="$(find-pkg-share leo_teleop)/config/joy_config.yaml"
+    description="Path to the yaml file with parameters for joy_teleop_node" />
+
+  <node pkg="joy_linux" exec="joy_linux_node">
+    <param name="dev" value="$(var joy_dev)" />
+    <param name="deadzone" value="0.1" />
+    <param name="coalesce_interval" value="0.05" />
+    <param name="autorepeat_rate" value="10.0" />
+  </node>
+
+  <node name="joy_teleop_node" pkg="teleop_twist_joy" exec="teleop_node">
+    <param from="$(var joy_config_file)" />
+    <remap from="cmd_vel" to="$(var cmd_vel_out)" />
+  </node>
+</launch>

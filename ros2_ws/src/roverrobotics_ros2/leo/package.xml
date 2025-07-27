@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>leo</name>
+  <version>3.1.0</version>
+  <description>
+    Metapackage of software for Leo Rover common to the robot and ROS desktop
+  </description>
+
+  <maintainer email="support@fictionlab.pl">Fictionlab</maintainer>
+  <author email="blazej@fictionlab.pl">Błażej Sowa</author>
+
+  <license>MIT</license>
+
+  <url type="website">http://wiki.ros.org/leo</url>
+  <url type="bugtracker">https://github.com/LeoRover/leo_common/issues</url>
+  <url type="repository">https://github.com/LeoRover/leo_common</url>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>leo_description</exec_depend>
+  <exec_depend>leo_msgs</exec_depend>
+  <exec_depend>leo_teleop</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <architecture_independent/>
+  </export>
+</package>

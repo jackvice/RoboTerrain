@@ -1,0 +1,17 @@
+<launch version="0.1.1">
+  <arg name="cmd_vel_out" default="cmd_vel"
+    description="Topic to send velocity commands on" />
+
+  <node
+    name="key_teleop_node"
+    pkg="teleop_twist_keyboard"
+    exec="teleop_twist_keyboard"
+    output="screen"
+    launch-prefix="xterm -e">
+    <param name="speed" value="0.4" />
+    <param name="turn" value="1.0" />
+    <param name="repeat_rate" value="10.0" />
+    <param name="key_timeout" value="0.3" />
+    <remap from="cmd_vel" to="$(var cmd_vel_out)" />
+  </node>
+</launch>

@@ -1,0 +1,9 @@
+joy_teleop_node:
+  ros__parameters:
+    axis_linear.x: 1
+    axis_linear.y: 0
+    scale_linear.x: 0.4
+    scale_linear.y: 0.4
+    axis_angular.yaw: 3
+    scale_angular.yaw: 1.0
+    enable_button: 5

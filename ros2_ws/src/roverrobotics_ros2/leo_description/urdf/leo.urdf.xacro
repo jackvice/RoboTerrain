@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro"
+       name="leo">
+
+  <xacro:arg name="mecanum_wheels" default="false"/>
+  
+  <xacro:include filename="$(find leo_description)/urdf/macros.xacro"/>
+
+  <xacro:leo mecanum_wheels="$(arg mecanum_wheels)"/>
+
+</robot>
