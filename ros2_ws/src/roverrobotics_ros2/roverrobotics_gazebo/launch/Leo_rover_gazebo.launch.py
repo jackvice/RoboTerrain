@@ -93,7 +93,7 @@ def generate_launch_description():
             '-file', os.path.join(
                 get_package_share_directory('leo_description'),
                 'sdf', 'leo_sim.sdf'),
-            '-name', 'rover_zero4wd',
+            '-name', 'leo_rover',
             '-allow_renaming', 'true',
             '-x', '0',
             '-y', '0',

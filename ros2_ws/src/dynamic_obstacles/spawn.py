@@ -224,9 +224,10 @@ def main() -> None:
         return
     
     # Load trajectory file
-    trajectory_file = 'trajectory_short.sdf'
+    #trajectory_file = 'trajectory_short.sdf'
     #trajectory_file = 'triangle_trajectory.sdf'
     #trajectory_file = 'triangle_trajectory_2.sdf'
+    trajectory_file = 'flat_triangle_traject.sdf'
     
     raw_trajectory = load_trajectory_file(trajectory_file)
     if raw_trajectory is None:
@@ -245,7 +246,8 @@ def main() -> None:
     success = spawn_actor(
         final_trajectory_sdf, 
         name="walking_actor",
-        world="inspect"
+        #world="inspect"
+        world="moon"
         #world="default"
     )
     
