@@ -3,7 +3,7 @@ from typing import List, Optional
 import math
 import subprocess
 import xml.etree.ElementTree as ET
-
+import argparse
 
 def check_ign_available() -> bool:
     """Verify that the `ign` command is available."""
@@ -151,12 +151,13 @@ def process_trajectory(trajectory_content: str, desired_velocity: float = 1.0,
         return None
 
 
-def spawn_actor(trajectory_sdf: str, name: str = "walking_actor", world: str = "inspect") -> bool:
+def spawn_actor(trajectory_sdf: str, name: str = "first", animate_name: str = 'one',
+                world: str = "moon") -> bool:
     """Create actor SDF and spawn it in Gazebo."""
     # Create the complete actor SDF
     actor_sdf = f'''<?xml version="1.0" ?>
     <sdf version="1.9">
-    <actor name="{name}">
+    <actor name="{name}_actor">
     <pose>0 0 0 0 0 0</pose>
     
     <skin>
@@ -164,7 +165,7 @@ def spawn_actor(trajectory_sdf: str, name: str = "walking_actor", world: str = "
     <scale>1.0</scale>
     </skin>
 
-    <animation name="walk">
+    <animation name="{animate_name}_walk">
     <filename>https://fuel.gazebosim.org/1.0/Mingfei/models/actor/tip/files/meshes/walk.dae</filename>
     <interpolate_x>true</interpolate_x>
     <loop>true</loop>
@@ -217,7 +218,13 @@ def spawn_actor(trajectory_sdf: str, name: str = "walking_actor", world: str = "
         return False
 
 
-def main() -> None:
+
+def main(trajectory_file: str = "flat_triangle_traject_rev_2nd.sdf",
+         actor_name: str = "walking_actor",
+         animate_name: str = 'walk',
+         world_name: str = 'moon'):
+
+    
     """Main function to process trajectory and spawn actor."""
     # Check if ign command is available
     if not check_ign_available():
@@ -227,7 +234,7 @@ def main() -> None:
     #trajectory_file = 'trajectory_short.sdf'
     #trajectory_file = 'triangle_trajectory.sdf'
     #trajectory_file = 'triangle_trajectory_2.sdf'
-    trajectory_file = 'flat_triangle_traject.sdf'
+    #trajectory_file = 'flat_triangle_traject.sdf'
     
     raw_trajectory = load_trajectory_file(trajectory_file)
     if raw_trajectory is None:
@@ -245,9 +252,10 @@ def main() -> None:
     # Spawn actor
     success = spawn_actor(
         final_trajectory_sdf, 
-        name="walking_actor",
+        name=actor_name,
+        animate_name=animate_name,
         #world="inspect"
-        world="moon"
+        world=world_name,
         #world="default"
     )
     
@@ -258,4 +266,18 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Spawn a walking actor with custom trajectory.")
+    parser.add_argument('--trajectory_file', type=str, default='flat_triangle_traject_rev.sdf',
+                        help='Path to trajectory .sdf file (default: flat_triangle_traject_rev_2nd.sdf)')
+    parser.add_argument('--actor_name', type=str, default='fist',
+                        help='Unique name for the Gazebo actor (default: first)')
+    parser.add_argument('--animate_name', type=str, default='actor1',
+                        help='Unique animation name to avoid conflicts (default: actor1)')
+    parser.add_argument('--world_name', type=str, default='moon',
+                        help='Unique world name (default: moon)')
+
+    args = parser.parse_args()
+    main(args.trajectory_file, args.actor_name, args.animate_name, args.world_name)
+
+
+        

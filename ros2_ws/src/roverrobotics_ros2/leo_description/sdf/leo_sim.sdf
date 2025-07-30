@@ -221,8 +221,8 @@
         <surface>
           <friction>
             <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
+              <mu>3</mu>
+              <mu2>3</mu2>
               <slip1>0.035000000000000003</slip1>
               <slip2>0</slip2>
               <fdir1>0 0 1</fdir1>
@@ -249,8 +249,8 @@
         <surface>
           <friction>
             <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
+              <mu>3</mu>
+              <mu2>3</mu2>
               <slip1>0.035000000000000003</slip1>
               <slip2>0</slip2>
               <fdir1>0 0 1</fdir1>
@@ -277,8 +277,8 @@
         <surface>
           <friction>
             <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
+              <mu>2</mu>
+              <mu2>2</mu2>
               <slip1>0.035000000000000003</slip1>
               <slip2>0</slip2>
               <fdir1>0 0 1</fdir1>
@@ -349,8 +349,8 @@
         <surface>
           <friction>
             <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
+              <mu>3</mu>
+              <mu2>3</mu2>
               <slip1>0.035000000000000003</slip1>
               <slip2>0</slip2>
               <fdir1>0 0 1</fdir1>
@@ -377,8 +377,8 @@
         <surface>
           <friction>
             <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
+              <mu>3</mu>
+              <mu2>3</mu2>
               <slip1>0.035000000000000003</slip1>
               <slip2>0</slip2>
               <fdir1>0 0 1</fdir1>
@@ -405,8 +405,8 @@
         <surface>
           <friction>
             <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
+              <mu>3</mu>
+              <mu2>3</mu2>
               <slip1>0.035000000000000003</slip1>
               <slip2>0</slip2>
               <fdir1>0 0 1</fdir1>
@@ -546,8 +546,8 @@
         <surface>
           <friction>
             <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
+              <mu>3</mu>
+              <mu2>3</mu2>
               <slip1>0.035000000000000003</slip1>
               <slip2>0</slip2>
               <fdir1>0 0 1</fdir1>
@@ -574,8 +574,8 @@
         <surface>
           <friction>
             <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
+              <mu>3</mu>
+              <mu2>3</mu2>
               <slip1>0.035000000000000003</slip1>
               <slip2>0</slip2>
               <fdir1>0 0 1</fdir1>
@@ -602,8 +602,8 @@
         <surface>
           <friction>
             <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
+              <mu>3</mu>
+              <mu2>3</mu2>
               <slip1>0.035000000000000003</slip1>
               <slip2>0</slip2>
               <fdir1>0 0 1</fdir1>
@@ -674,8 +674,8 @@
         <surface>
           <friction>
             <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
+              <mu>3</mu>
+              <mu2>3</mu2>
               <slip1>0.035000000000000003</slip1>
               <slip2>0</slip2>
               <fdir1>0 0 1</fdir1>
@@ -702,8 +702,8 @@
         <surface>
           <friction>
             <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
+              <mu>3</mu>
+              <mu2>3</mu2>
               <slip1>0.035000000000000003</slip1>
               <slip2>0</slip2>
               <fdir1>0 0 1</fdir1>
@@ -730,8 +730,8 @@
         <surface>
           <friction>
             <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
+              <mu>3</mu>
+              <mu2>3</mu2>
               <slip1>0.035000000000000003</slip1>
               <slip2>0</slip2>
               <fdir1>0 0 1</fdir1>

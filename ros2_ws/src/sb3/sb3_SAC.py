@@ -45,7 +45,7 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.monitor import Monitor
 from environments.rover_env import RoverEnv
 from environments.rover_env_vision import RoverEnvVis
-from environments.rover_env_fused import RoverEnvFused
+from environments.leo_rover_env_fused import RoverEnvFused
 import rclpy
 
 

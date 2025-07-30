@@ -270,12 +270,6 @@ class RoverEnvFused(gym.Env):
             cmd_vel_topic,
             10)
         
-        # Keep lidar subscriber for reward calculation
-        self.lidar_subscriber = self.node.create_subscription(
-            LaserScan,
-            scan_topic,
-            self.lidar_callback,
-            10)
         
         # Keep IMU subscriber for reward calculation  
         self.imu_subscriber = self.node.create_subscription(
@@ -541,14 +535,6 @@ class RoverEnvFused(gym.Env):
             self.update_target_pos()
             return self.goal_reward
 
-        # Check for collisions
-        min_distance = np.min(self.lidar_data[np.isfinite(self.lidar_data)])
-        if False:# no lidar on leo  min_distance < collision_threshold:
-            timestamp = time.time()
-            with open(f'{self.episode_log_path}//{self.log_name}', 'a') as f:
-                f.write(f"{timestamp},Collision,{self.episode_number-1},x={self.current_pose.position.x:.2f},y={self.current_pose.position.y:.2f}\n")
-            print('Collision!')
-            return collision_penalty
         
         # Calculate distance change (positive means got closer, negative means got further)
         distance_delta = self.previous_distance - current_distance
@@ -665,7 +651,7 @@ class RoverEnvFused(gym.Env):
         quat_z = np.sin(final_yaw / 2)
 
         # Print the full reset command
-        reset_cmd_str = ('name: "rover_zero4wd", ' +
+        reset_cmd_str = ('name: "leo_rover", ' +
                         f'position: {{x: {x_insert}, y: {y_insert}, z: {z_insert}}}, ' +
                         f'orientation: {{x: 0, y: 0, z: {quat_z}, w: {quat_w}}}')
         
@@ -676,7 +662,7 @@ class RoverEnvFused(gym.Env):
                 '--reqtype', 'ignition.msgs.Pose',
                 '--reptype', 'ignition.msgs.Boolean',
                 '--timeout', '2000',
-                '--req', 'name: "rover_zero4wd", position: {x: ' + str(x_insert) +
+                '--req', 'name: "leo_rover", position: {x: ' + str(x_insert) +
                 ',y: '+ str(y_insert) +
                 ', z: '+ str(z_insert) + '}, orientation: {x: 0, y: 0, z: ' +
                 str(quat_z) + ', w: ' + str(quat_w) + '}'
@@ -744,61 +730,6 @@ class RoverEnvFused(gym.Env):
                 self.current_pose.position.z
             ], dtype=np.float32)
             
-    def lidar_callback(self, msg):
-        """Process LIDAR data with error checking and downsampling."""
-
-        # Convert to numpy array
-        try:
-            lidar_data = np.array(msg.ranges, dtype=np.float32)
-        except Exception as e:
-            print(f"Error converting LIDAR data to numpy array: {e}")
-            return
-
-        # Check for invalid values before processing
-        if np.any(np.isnan(lidar_data)):
-            print(f"WARNING: Found {np.sum(np.isnan(lidar_data))} NaN values")
-
-        # Replace inf values with max_lidar_range
-        inf_mask = np.isinf(lidar_data)
-        if np.any(inf_mask):
-            lidar_data[inf_mask] = self.max_lidar_range
-
-        # Replace any remaining invalid values (NaN, negative) with max_range
-        invalid_mask = np.logical_or(np.isnan(lidar_data), lidar_data < 0)
-        if np.any(invalid_mask):
-            print(f"INFO: Replaced {np.sum(invalid_mask)} invalid values with max_lidar_range")
-            lidar_data[invalid_mask] = self.max_lidar_range
-
-        # Clip values to valid range
-        lidar_data = np.clip(lidar_data, 0, self.max_lidar_range)
-
-        # Verify we have enough data points for downsampling
-        expected_points = self.lidar_points * (len(lidar_data) // self.lidar_points)
-        if expected_points == 0:
-            print(f"ERROR: Not enough LIDAR points for downsampling. Got {len(lidar_data)} points")
-            return
-
-        # Downsample by taking minimum value in each segment
-        try:
-            segment_size = len(lidar_data) // self.lidar_points
-            reshaped_data = lidar_data[:segment_size * self.lidar_points].reshape(self.lidar_points,
-                                                                                  segment_size)
-            self.lidar_data = np.min(reshaped_data, axis=1)
-            
-            # Verify downsampled data
-            if len(self.lidar_data) != self.lidar_points:
-                print(f"ERROR: Downsampled has wrong size. Expected {self.lidar_points}, got {len(self.lidar_data)}")
-                return
-                
-            if np.any(np.isnan(self.lidar_data)) or np.any(np.isinf(self.lidar_data)):
-                print("ERROR: Downsampled data contains invalid values")
-                print("NaN count:", np.sum(np.isnan(self.lidar_data)))
-                print("Inf count:", np.sum(np.isinf(self.lidar_data)))
-                return
-                
-        except Exception as e:
-            print(f"Error during downsampling: {e}")
-            return
 
     def imu_callback(self, msg):
         try:
