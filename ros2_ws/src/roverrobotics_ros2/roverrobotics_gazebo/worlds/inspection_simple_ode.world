@@ -14,16 +14,11 @@
       </attenuation>
       <direction>-0.5 -0.5 -1</direction>
     </light>
-    <physics name="dart_with_fcl" type="dart">
+    <physics name='dart_with_bullet' default='1' type="dart">
+      <collision_detector>bullet</collision_detector>
       <max_step_size>0.005</max_step_size>
       <real_time_factor>1</real_time_factor>
       <real_time_update_rate>250</real_time_update_rate>
-      <dart>
-        <collision_detector>fcl</collision_detector>  <!-- or bullet -->
-        <solver>
-          <solver_type>dantzig</solver_type>          <!-- leave default -->
-        </solver>
-      </dart>
     </physics>
     <scene>
       <ambient>1 1 1 1</ambient>

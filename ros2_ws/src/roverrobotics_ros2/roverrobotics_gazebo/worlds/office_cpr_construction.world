@@ -14,7 +14,7 @@
       </attenuation>
       <direction>-0.5 0.5 -1</direction>
     </light>
-    <physics name='default_physics' default='0' type='ode'>
+    <physics name='default_physics' default='0' type='bullet'>
       <max_step_size>0.001</max_step_size>
       <!--max_step_size>0.001</max_step_size-->
       <max_step_size>0.004</max_step_size>

@@ -51,7 +51,7 @@ def save_fused_image_channels(fused_image: np.ndarray, output_dir: str = './out_
     check_black = fused_image_uint8[:, :, 1]
     if np.sum(check_black) == 0: # if no person don't bother writing to file
         return 
-    for i in range(2): #(3) for depth
+    for i in range(3): #(3) for depth
         channel = fused_image_uint8[:, :, i]
         filename = f"channel_{time_string}_{i+1}.png"
         filepath = os.path.join(output_dir, filename)
@@ -635,9 +635,9 @@ class RoverEnvFused(gym.Env):
         y_insert = np.random.uniform(*self.rand_y_range)
         
         if self.world_name == 'inspect':
-            z_insert = 5.5 # for inspection
+            z_insert = 6.5 # for inspection
             if x_insert < -24.5 and y_insert < -24.5: #inspection
-                z_insert = 6.5 
+                z_insert = 7.5 
         else:
             z_insert = .75 # for maze and default
 

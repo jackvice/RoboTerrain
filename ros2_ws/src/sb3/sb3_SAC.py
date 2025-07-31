@@ -147,14 +147,15 @@ def main():
             else:
                 print("Creating new model")
                 model = SAC("MultiInputPolicy",
-                          env,
-                          learning_rate=3e-4,
-                          tensorboard_log=tensorboard_dir,
-                          buffer_size=1_000_000,
-                          learning_starts=50000,
-                          ent_coef="auto_0.5",
-                          verbose=1,
-                          batch_size=512)
+                            env,
+                            device="cpu", 
+                            learning_rate=3e-4,
+                            tensorboard_log=tensorboard_dir,
+                            buffer_size=1_000_000,
+                            learning_starts=50000,
+                            ent_coef="auto_0.5",
+                            verbose=1,
+                            batch_size=512)
         except Exception as e:
             print(f"Error creating/loading model: {e}")
             raise
@@ -185,7 +186,7 @@ def main():
             print("Starting training mode")
             # Setup checkpoint callback
             checkpoint_callback = SaveVecNormalizeCallback(
-                save_freq=200_000,
+                save_freq=50_000,
                 save_path=checkpoint_dir,
                 name_prefix=f"sac_{args.world}_{timestamp}",
                 env=env
