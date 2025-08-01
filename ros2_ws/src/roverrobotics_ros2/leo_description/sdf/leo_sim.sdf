@@ -220,6 +220,13 @@
         </geometry>
         <surface>
           <friction>
+            <dart>
+              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
+              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
+              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 0 1</primary_axis>  <!-- wheel roll dir in link frame -->
+            </dart>
             <ode>
               <mu>3</mu>
               <mu2>3</mu2>
@@ -248,6 +255,13 @@
         </geometry>
         <surface>
           <friction>
+            <dart>
+              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
+              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
+              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 0 1</primary_axis>  <!-- wheel roll dir in link frame -->
+            </dart>
             <ode>
               <mu>3</mu>
               <mu2>3</mu2>
@@ -276,6 +290,13 @@
         </geometry>
         <surface>
           <friction>
+            <dart>
+              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
+              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
+              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 0 1</primary_axis>  <!-- wheel roll dir in link frame -->
+            </dart>
             <ode>
               <mu>2</mu>
               <mu2>2</mu2>
@@ -348,6 +369,13 @@
         </geometry>
         <surface>
           <friction>
+            <dart>
+              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
+              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
+              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 0 1</primary_axis>  <!-- wheel roll dir in link frame -->
+            </dart>
             <ode>
               <mu>3</mu>
               <mu2>3</mu2>
@@ -376,6 +404,13 @@
         </geometry>
         <surface>
           <friction>
+            <dart>
+              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
+              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
+              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 0 1</primary_axis>  <!-- wheel roll dir in link frame -->
+            </dart>
             <ode>
               <mu>3</mu>
               <mu2>3</mu2>
@@ -404,6 +439,13 @@
         </geometry>
         <surface>
           <friction>
+            <dart>
+              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
+              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
+              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 0 1</primary_axis>  <!-- wheel roll dir in link frame -->
+            </dart>
             <ode>
               <mu>3</mu>
               <mu2>3</mu2>
@@ -545,6 +587,13 @@
         </geometry>
         <surface>
           <friction>
+            <dart>
+              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
+              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
+              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 0 1</primary_axis>  <!-- wheel roll dir in link frame -->
+            </dart>
             <ode>
               <mu>3</mu>
               <mu2>3</mu2>
@@ -573,6 +622,13 @@
         </geometry>
         <surface>
           <friction>
+            <dart>
+              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
+              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
+              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 0 1</primary_axis>  <!-- wheel roll dir in link frame -->
+            </dart>
             <ode>
               <mu>3</mu>
               <mu2>3</mu2>
@@ -601,6 +657,13 @@
         </geometry>
         <surface>
           <friction>
+            <dart>
+              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
+              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
+              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 0 1</primary_axis>  <!-- wheel roll dir in link frame -->
+            </dart>
             <ode>
               <mu>3</mu>
               <mu2>3</mu2>
@@ -673,6 +736,13 @@
         </geometry>
         <surface>
           <friction>
+            <dart>
+              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
+              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
+              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 0 1</primary_axis>  <!-- wheel roll dir in link frame -->
+            </dart>
             <ode>
               <mu>3</mu>
               <mu2>3</mu2>
@@ -701,6 +771,13 @@
         </geometry>
         <surface>
           <friction>
+            <dart>
+              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
+              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
+              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 0 1</primary_axis>  <!-- wheel roll dir in link frame -->
+            </dart>
             <ode>
               <mu>3</mu>
               <mu2>3</mu2>
@@ -729,6 +806,13 @@
         </geometry>
         <surface>
           <friction>
+            <dart>
+              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
+              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
+              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 0 1</primary_axis>  <!-- wheel roll dir in link frame -->
+            </dart>
             <ode>
               <mu>3</mu>
               <mu2>3</mu2>

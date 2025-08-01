@@ -25,6 +25,9 @@
         </solver>
       </dart>
     </physics>
+    <!-- plugin
+        name="gz::sim::systems::Contact"
+        filename="libignition-gazebo6-contact-system.so"/ -->
     <scene>
       <ambient>1 1 1 1</ambient>
       <background>1 1 1 1</background>
@@ -96,6 +99,11 @@
             </contact>
             <bounce/>
             <friction>
+              <dart>
+                <mu_primary>3.0</mu_primary>
+                <mu_secondary>3.0</mu_secondary>
+              </dart>
+              <ode/>
               <torsional>
                 <ode/>
               </torsional>
