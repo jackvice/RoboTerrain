@@ -148,7 +148,7 @@ def main():
                 print("Creating new model")
                 model = SAC("MultiInputPolicy",
                             env,
-                            device="cpu", 
+                            device="cuda", 
                             learning_rate=3e-4,
                             tensorboard_log=tensorboard_dir,
                             buffer_size=1_000_000,

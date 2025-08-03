@@ -453,8 +453,9 @@ class RoverEnvFused(gym.Env):
         self._step += 1
         if self._step >= self._length:
             print(f"Episode length limit reached: {self._step} >= {self._length}")
+            #done = True #(self._step >= self._length)
+        #else:
         done = (self._step >= self._length)
-        
         # Get observation
         observation = self.get_observation()
 
@@ -635,9 +636,9 @@ class RoverEnvFused(gym.Env):
         y_insert = np.random.uniform(*self.rand_y_range)
         
         if self.world_name == 'inspect':
-            z_insert = 6.5 # for inspection
+            z_insert = 7.5 # for inspection
             if x_insert < -24.5 and y_insert < -24.5: #inspection
-                z_insert = 7.5 
+                z_insert = 8.5 
         else:
             z_insert = .75 # for maze and default
 

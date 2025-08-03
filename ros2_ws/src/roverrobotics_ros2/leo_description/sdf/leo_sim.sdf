@@ -196,6 +196,7 @@
         </dynamics>
       </axis>
     </joint>
+
     <link name='wheel_FL_link'>
       <pose relative_to='wheel_FL_joint'>0 0 0 0 0 0</pose>
       <inertial>
@@ -210,111 +211,35 @@
           <izz>0.00039100000000000002</izz>
         </inertia>
       </inertial>
+      
+      <!-- SINGLE SIMPLIFIED COLLISION -->
       <collision name='wheel_FL_link_collision'>
         <pose>0 0.04485 0 1.570796326794896 0 0</pose>
         <geometry>
           <cylinder>
-            <length>0.070000000000000007</length>
-            <radius>0.057000000000000002</radius>
+            <length>0.070</length>
+            <radius>0.0625</radius>  <!-- Use the larger radius for better contact -->
           </cylinder>
         </geometry>
         <surface>
           <friction>
             <dart>
-              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
-              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
-              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <mu_primary>5.0</mu_primary>
+              <mu_secondary>4.0</mu_secondary>
+              <slip_primary>0.001</slip_primary>  <!-- Reduced slip -->
               <slip_secondary>0.0</slip_secondary>
-              <primary_axis>0 1 0</primary_axis>  <!-- wheel roll dir in link frame -->
+              <primary_axis>0 1 0</primary_axis>
             </dart>
-            <ode>
-              <mu>3</mu>
-              <mu2>3</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
             <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
+              <friction>5.0</friction>
+              <friction2>4.0</friction2>
+              <rolling_friction>0.05</rolling_friction>
             </bullet>
           </friction>
-          <contact>
-            <ode/>
-          </contact>
         </surface>
       </collision>
-      <collision name='wheel_FL_link_collision_1'>
-        <pose>0 0.04485 0 1.570796326794896 0 0</pose>
-        <geometry>
-          <cylinder>
-            <length>0.040000000000000001</length>
-            <radius>0.0625</radius>
-          </cylinder>
-        </geometry>
-        <surface>
-          <friction>
-            <dart>
-              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
-              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
-              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
-              <slip_secondary>0.0</slip_secondary>
-              <primary_axis>0 1 0</primary_axis>  <!-- wheel roll dir in link frame -->
-            </dart>
-            <ode>
-              <mu>3</mu>
-              <mu2>3</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
-      <collision name='wheel_FL_link_collision_2'>
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://leo_description/models/Wheel_outline.stl</uri>
-          </mesh>
-        </geometry>
-        <surface>
-          <friction>
-            <dart>
-              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
-              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
-              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
-              <slip_secondary>0.0</slip_secondary>
-              <primary_axis>0 1 0</primary_axis>  <!-- wheel roll dir in link frame -->
-            </dart>
-            <ode>
-              <mu>2</mu>
-              <mu2>2</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
+      
+      <!-- KEEP VISUAL FOR APPEARANCE -->
       <visual name='wheel_FL_link_visual'>
         <pose>0 0 0 0 0 0</pose>
         <geometry>
@@ -325,6 +250,7 @@
         </geometry>
       </visual>
     </link>
+
     <joint name='wheel_RL_joint' type='revolute'>
       <pose relative_to='rocker_L_link'>0.15256 -0.08214 -0.08802 0 0 0</pose>
       <parent>rocker_L_link</parent>
@@ -359,69 +285,29 @@
           <izz>0.00039100000000000002</izz>
         </inertia>
       </inertial>
+      
+      <!-- SINGLE SIMPLIFIED COLLISION -->
       <collision name='wheel_RL_link_collision'>
         <pose>0 0.04485 0 1.570796326794896 0 0</pose>
         <geometry>
           <cylinder>
             <length>0.070000000000000007</length>
-            <radius>0.057000000000000002</radius>
-          </cylinder>
-        </geometry>
-        <surface>
-          <friction>
-            <dart>
-              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
-              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
-              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
-              <slip_secondary>0.0</slip_secondary>
-              <primary_axis>0 1 0</primary_axis>  <!-- wheel roll dir in link frame -->
-            </dart>
-            <ode>
-              <mu>3</mu>
-              <mu2>3</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
-      <collision name='wheel_RL_link_collision_1'>
-        <pose>0 0.04485 0 1.570796326794896 0 0</pose>
-        <geometry>
-          <cylinder>
-            <length>0.040000000000000001</length>
             <radius>0.0625</radius>
           </cylinder>
         </geometry>
         <surface>
           <friction>
             <dart>
-              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
-              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
-              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <mu_primary>5.0</mu_primary>
+              <mu_secondary>4.0</mu_secondary>
+              <slip_primary>0.001</slip_primary>
               <slip_secondary>0.0</slip_secondary>
-              <primary_axis>0 1 0</primary_axis>  <!-- wheel roll dir in link frame -->
+              <primary_axis>0 1 0</primary_axis>
             </dart>
-            <ode>
-              <mu>3</mu>
-              <mu2>3</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
             <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
+              <friction>5.0</friction>
+              <friction2>4.0</friction2>
+              <rolling_friction>0.05</rolling_friction>
             </bullet>
           </friction>
           <contact>
@@ -429,41 +315,8 @@
           </contact>
         </surface>
       </collision>
-      <collision name='wheel_RL_link_collision_2'>
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://leo_description/models/Wheel_outline.stl</uri>
-          </mesh>
-        </geometry>
-        <surface>
-          <friction>
-            <dart>
-              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
-              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
-              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
-              <slip_secondary>0.0</slip_secondary>
-              <primary_axis>0 1 0</primary_axis>  <!-- wheel roll dir in link frame -->
-            </dart>
-            <ode>
-              <mu>3</mu>
-              <mu2>3</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
+      
+      <!-- KEEP VISUAL FOR APPEARANCE -->
       <visual name='wheel_RL_link_visual'>
         <pose>0 0 0 0 0 0</pose>
         <geometry>
@@ -577,69 +430,29 @@
           <izz>0.00039100000000000002</izz>
         </inertia>
       </inertial>
+      
+      <!-- SINGLE SIMPLIFIED COLLISION -->
       <collision name='wheel_FR_link_collision'>
         <pose>0 0.04485 0 1.570796326794896 0 0</pose>
         <geometry>
           <cylinder>
             <length>0.070000000000000007</length>
-            <radius>0.057000000000000002</radius>
-          </cylinder>
-        </geometry>
-        <surface>
-          <friction>
-            <dart>
-              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
-              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
-              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
-              <slip_secondary>0.0</slip_secondary>
-              <primary_axis>0 1 0</primary_axis>  <!-- wheel roll dir in link frame -->
-            </dart>
-            <ode>
-              <mu>3</mu>
-              <mu2>3</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
-      <collision name='wheel_FR_link_collision_1'>
-        <pose>0 0.04485 0 1.570796326794896 0 0</pose>
-        <geometry>
-          <cylinder>
-            <length>0.040000000000000001</length>
             <radius>0.0625</radius>
           </cylinder>
         </geometry>
         <surface>
           <friction>
             <dart>
-              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
-              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
-              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <mu_primary>5.0</mu_primary>
+              <mu_secondary>4.0</mu_secondary>
+              <slip_primary>0.001</slip_primary>
               <slip_secondary>0.0</slip_secondary>
-              <primary_axis>0 1 0</primary_axis>  <!-- wheel roll dir in link frame -->
+              <primary_axis>0 1 0</primary_axis>
             </dart>
-            <ode>
-              <mu>3</mu>
-              <mu2>3</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
             <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
+              <friction>5.0</friction>
+              <friction2>4.0</friction2>
+              <rolling_friction>0.05</rolling_friction>
             </bullet>
           </friction>
           <contact>
@@ -647,41 +460,8 @@
           </contact>
         </surface>
       </collision>
-      <collision name='wheel_FR_link_collision_2'>
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://leo_description/models/Wheel_outline.stl</uri>
-          </mesh>
-        </geometry>
-        <surface>
-          <friction>
-            <dart>
-              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
-              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
-              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
-              <slip_secondary>0.0</slip_secondary>
-              <primary_axis>0 1 0</primary_axis>  <!-- wheel roll dir in link frame -->
-            </dart>
-            <ode>
-              <mu>3</mu>
-              <mu2>3</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
+      
+      <!-- KEEP VISUAL FOR APPEARANCE -->
       <visual name='wheel_FR_link_visual'>
         <pose>0 0 0 0 0 0</pose>
         <geometry>
@@ -726,69 +506,29 @@
           <izz>0.00039100000000000002</izz>
         </inertia>
       </inertial>
+      
+      <!-- SINGLE SIMPLIFIED COLLISION -->
       <collision name='wheel_RR_link_collision'>
         <pose>0 0.04485 0 1.570796326794896 0 0</pose>
         <geometry>
           <cylinder>
             <length>0.070000000000000007</length>
-            <radius>0.057000000000000002</radius>
-          </cylinder>
-        </geometry>
-        <surface>
-          <friction>
-            <dart>
-              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
-              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
-              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
-              <slip_secondary>0.0</slip_secondary>
-              <primary_axis>0 1 0</primary_axis>  <!-- wheel roll dir in link frame -->
-            </dart>
-            <ode>
-              <mu>3</mu>
-              <mu2>3</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
-      <collision name='wheel_RR_link_collision_1'>
-        <pose>0 0.04485 0 1.570796326794896 0 0</pose>
-        <geometry>
-          <cylinder>
-            <length>0.040000000000000001</length>
             <radius>0.0625</radius>
           </cylinder>
         </geometry>
         <surface>
           <friction>
             <dart>
-              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
-              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
-              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
+              <mu_primary>5.0</mu_primary>
+              <mu_secondary>4.0</mu_secondary>
+              <slip_primary>0.001</slip_primary>
               <slip_secondary>0.0</slip_secondary>
-              <primary_axis>0 1 0</primary_axis>  <!-- wheel roll dir in link frame -->
+              <primary_axis>0 1 0</primary_axis>
             </dart>
-            <ode>
-              <mu>3</mu>
-              <mu2>3</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
             <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
+              <friction>5.0</friction>
+              <friction2>4.0</friction2>
+              <rolling_friction>0.05</rolling_friction>
             </bullet>
           </friction>
           <contact>
@@ -796,41 +536,8 @@
           </contact>
         </surface>
       </collision>
-      <collision name='wheel_RR_link_collision_2'>
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://leo_description/models/Wheel_outline.stl</uri>
-          </mesh>
-        </geometry>
-        <surface>
-          <friction>
-            <dart>
-              <mu_primary>3.0</mu_primary>        <!-- along wheel perimeter -->
-              <mu_secondary>2.0</mu_secondary>    <!-- lateral -->
-              <slip_primary>0.03</slip_primary>  <!-- ↓ helps numeric stability -->
-              <slip_secondary>0.0</slip_secondary>
-              <primary_axis>0 1 0</primary_axis>  <!-- wheel roll dir in link frame -->
-            </dart>
-            <ode>
-              <mu>3</mu>
-              <mu2>3</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
+      
+      <!-- KEEP VISUAL FOR APPEARANCE -->
       <visual name='wheel_RR_link_visual'>
         <pose>0 0 0 0 0 0</pose>
         <geometry>
@@ -868,7 +575,7 @@
       <min_angular_acceleration>-3</min_angular_acceleration>
     </plugin>
     <plugin name="gz::sim::systems::Sensors" filename="libgz-sim-sensors-system.so">
-      <render_engine>ogre2</render_engine>
+      <render_engine>ogre</render_engine>
     </plugin>
     <frame name='antenna_joint' attached_to='base_link'>
       <pose>-0.0052 0.056 -0.0065 0 -0 0</pose>
