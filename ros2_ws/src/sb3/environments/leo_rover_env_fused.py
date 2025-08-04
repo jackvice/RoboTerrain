@@ -26,6 +26,7 @@ from time import strftime
 from typing import Optional
 import numpy.typing as npt
 from datetime import datetime
+from time import perf_counter
 
 # Type definitions
 ObservationArray = npt.NDArray[np.float32]  # [H, W, 3]
@@ -49,8 +50,8 @@ def save_fused_image_channels(fused_image: np.ndarray, output_dir: str = './out_
     now = datetime.now()
     time_string = now.strftime("%M_%S")
     check_black = fused_image_uint8[:, :, 1]
-    if np.sum(check_black) == 0: # if no person don't bother writing to file
-        return 
+    #if np.sum(check_black) == 0: # if no person don't bother writing to file
+    #    return 
     for i in range(3): #(3) for depth
         channel = fused_image_uint8[:, :, i]
         filename = f"channel_{time_string}_{i+1}.png"
@@ -93,7 +94,10 @@ class RoverEnvFused(gym.Env):
         self.max_lidar_range = max_lidar_range
         self.lidar_data = np.zeros(self.lidar_points, dtype=np.float32)
         self._length = length
-        self.world_name = world_n
+        if world_n == 'island':
+            self.world_name = 'moon'
+        else:
+            self.world_name = world_n
         self._step = 0
         self._received_fused_obs = False
         self.first = False
@@ -108,8 +112,8 @@ class RoverEnvFused(gym.Env):
         
         # Stuck detection parameters
         self.position_history = []
-        self.stuck_threshold = 0.01  # Minimum distance the robot should move
-        self.stuck_window = 400 #600 for one minute Number of steps to check for being stuck
+        self.stuck_threshold = 0.0001  # Minimum distance the robot should move
+        self.stuck_window = 5000 #600 for one minute Number of steps to check for being stuck
         self.stuck_penalty = -25.0
 
         # Collision detection parameters
@@ -249,7 +253,12 @@ class RoverEnvFused(gym.Env):
         
         # Setup shared memory for fused observations
         try:
+
             self.rl_obs_shm = shared_memory.SharedMemory(name=self.rl_obs_name)
+            # Remove from resource_tracker to avoid shutdown warning
+            import multiprocessing.resource_tracker
+            multiprocessing.resource_tracker.unregister(self.rl_obs_shm._name, "shared_memory")
+
             print(f"Successfully attached to RL observation shared memory: {self.rl_obs_name}")
         except FileNotFoundError:
             print(f"Error: Could not find RL observation shared memory '{self.rl_obs_name}'. "
@@ -260,9 +269,9 @@ class RoverEnvFused(gym.Env):
             exit(1)
 
         # Check robot connection - but using lidar since we still need it for rewards
-        self._robot_connected = self._check_robot_connection(timeout=connection_check_timeout)
-        if not self._robot_connected:
-            self.node.get_logger().warn("No actual robot detected. Running in simulation mode.")
+        #self._robot_connected = self._check_robot_connection(timeout=connection_check_timeout)
+        #if not self._robot_connected:
+        #    self.node.get_logger().warn("No actual robot detected. Running in simulation mode.")
             
         # Initialize publishers and subscribers
         self.publisher = self.node.create_publisher(
@@ -299,7 +308,46 @@ class RoverEnvFused(gym.Env):
             self.odom_callback,
             10)
 
-    def get_fused_observation(self) -> Optional[ObservationArray]:
+    def get_fused_observation(self) -> np.ndarray:
+        """Block until a new frame arrives, then return the fused observation from shared memory."""
+        buf = self.rl_obs_shm.buf
+        shape = (self.rl_obs_height, self.rl_obs_width, 3)
+    
+        # Calculate memory layout constants  
+        header_size = 8 + 4  # timestamp (8 bytes) + valid flag (4 bytes)
+        expected_data_size = self.rl_obs_height * self.rl_obs_width * 3 * 4  # float32 = 4 bytes per element
+    
+        while True:
+            # Read timestamp
+            ts = struct.unpack_from('<d', buf, 0)[0]  # float64 at offset 0
+            
+            # Read valid flag
+            valid_flag = struct.unpack_from('<L', buf, 8)[0]  # uint32 at offset 8
+            
+            # Initialize internal timestamp once
+            if not hasattr(self, "_last_obs_ts"):
+                self._last_obs_ts = ts
+
+            # Wait until new timestamp AND data is valid
+            if ts != self._last_obs_ts and valid_flag == 1:
+                self._last_obs_ts = ts
+            
+                # Read observation data as float32 starting after header
+                observation_bytes = bytes(buf[header_size:header_size + expected_data_size])
+                observation = np.frombuffer(observation_bytes, dtype=np.float32)
+                observation = observation.reshape(shape)
+            
+                # Convert from [0,1] float32 to [0,255] uint8 if needed by your RL agent
+                # If your RL agent expects float32 in [0,1], just return observation.copy()
+                # If your RL agent expects uint8 in [0,255], uncomment the next line:
+                # observation = (observation * 255).astype(np.uint8)
+            
+                return observation.copy()
+
+            time.sleep(0.001)
+
+        
+    def get_fused_observation_old(self) -> Optional[ObservationArray]:
         """
         Read fused observation from shared memory.
         
@@ -380,7 +428,7 @@ class RoverEnvFused(gym.Env):
     def step(self, action):
         """Execute one time step within the environment"""
         self.total_steps += 1
-
+        t0 = perf_counter()
         flip_status = self.is_robot_flipped()
         if flip_status:
             print('Robot flipped', flip_status, ', episode done')
@@ -408,7 +456,7 @@ class RoverEnvFused(gym.Env):
             distance_moved = math.sqrt((end_pos[0] - start_pos[0])**2 +
                                        (end_pos[1] - start_pos[1])**2)
 
-            if distance_moved < self.stuck_threshold:
+            if distance_moved < 0.0: #self.stuck_threshold:
                 print('Robot is stuck, has moved only', distance_moved,
                       'meters in', self.stuck_window, 'steps, resetting')
                 return self.get_observation(), self.stuck_penalty, True, False, {}
@@ -418,16 +466,11 @@ class RoverEnvFused(gym.Env):
             return self.get_observation(), self.too_far_away_penilty, True, False, {}
                 
         # Wait for new fused observation data - block indefinitely
-        while not self._received_fused_obs:
-            # Try to get new fused observation
-            fused_obs = self.get_fused_observation()
-            if fused_obs is not None:
-                self.current_fused_obs = fused_obs
-                self._received_fused_obs = True
-            else:
-                # Spin ROS node briefly to keep other callbacks active
-                rclpy.spin_once(self.node, timeout_sec=0.01)
-        
+        t1 = perf_counter()
+
+        fused_obs = self.get_fused_observation()
+
+        t_fused = perf_counter()
         self._received_fused_obs = False
 
         # action = [speed, desired_relative_heading]
@@ -459,6 +502,8 @@ class RoverEnvFused(gym.Env):
         # Get observation
         observation = self.get_observation()
 
+        t_obs = perf_counter()
+
         if self.total_steps % 10000 == 0:
             temp_obs_target = self.get_target_info()
             print(
@@ -471,17 +516,23 @@ class RoverEnvFused(gym.Env):
                 f"Final Reward: {reward:.3f}"
             )
         
-        if self.total_steps % 1000 == 0:
-            save_fused_image_channels(observation['fused_image'])
-            #print('Observation: Fused image shape:', observation['fused_image'].shape,
-            #      ', Fused image range: [', np.min(observation['fused_image']), 
-            #      ', ', np.max(observation['fused_image']), ']')
-        
+
         info = {
             'steps': self._step,
             'total_steps': self.total_steps,
             'reward': reward
         }
+
+        t_end_step = perf_counter()
+        
+        if self.total_steps % 5000 == 0:
+            print(f"time_ms t1-t0:{(t1-t0)*1000}, t_fused:{(t_fused-t1)*1000}, t_obs:{(t_obs-t_fused)*1000}, t_total:{(t_end_step-t0)*1000}")
+        if self.total_steps % 5000 == 0:
+            save_fused_image_channels(observation['fused_image'])
+            #print('Observation: Fused image shape:', observation['fused_image'].shape,
+            #      ', Fused image range: [', np.min(observation['fused_image']), 
+            #      ', ', np.max(observation['fused_image']), ']')
+            
         return observation, reward, done, False, info
 
     def get_observation(self):
@@ -636,9 +687,9 @@ class RoverEnvFused(gym.Env):
         y_insert = np.random.uniform(*self.rand_y_range)
         
         if self.world_name == 'inspect':
-            z_insert = 7.5 # for inspection
+            z_insert = 5 # for inspection
             if x_insert < -24.5 and y_insert < -24.5: #inspection
-                z_insert = 8.5 
+                z_insert = 6.5 
         else:
             z_insert = .75 # for maze and default
 

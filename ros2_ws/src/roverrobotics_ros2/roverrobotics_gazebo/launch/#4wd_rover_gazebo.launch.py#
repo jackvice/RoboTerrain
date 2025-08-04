@@ -23,9 +23,9 @@ def generate_launch_description():
     
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        #default_value='inspection_simple.world',
+        default_value='inspection_simple.world',
         #default_value='office_cpr_construction.world',
-        default_value='island.sdf',
+        #default_value='island.sdf',
         
         #default_value='simplecave3.sdf,'
         #default_value='maze_simple.sdf',        
@@ -91,9 +91,9 @@ def generate_launch_description():
         executable='create',
         arguments=[
             '-file', os.path.join(
-                get_package_share_directory('leo_description'),
-                'sdf', 'leo_sim.sdf'),
-            '-name', 'leo_rover',
+                get_package_share_directory('roverrobotics_description'),
+                'urdf', 'camera_rover_4wd.sdf'),
+            '-name', 'rover_zero4wd',
             '-allow_renaming', 'true',
             '-x', '0',
             '-y', '0',

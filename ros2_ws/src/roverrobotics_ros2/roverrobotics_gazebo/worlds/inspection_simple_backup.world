@@ -14,11 +14,16 @@
       </attenuation>
       <direction>-0.5 -0.5 -1</direction>
     </light>
-    <physics name='default_physics' default='0' type='ode'>
+    <plugin
+      filename="ignition-gazebo-physics-system"
+      name="ignition::gazebo::systems::Physics">
+      <engine>
+        <filename>ignition-physics-bullet-plugin</filename>
+      </engine>
       <max_step_size>0.005</max_step_size>
       <real_time_factor>1</real_time_factor>
-      <real_time_update_rate>250</real_time_update_rate>
-    </physics>
+      <real_time_update_rate>200</real_time_update_rate>
+    </plugin>
     <scene>
       <ambient>1 1 1 1</ambient>
       <background>1 1 1 1</background>
@@ -90,6 +95,16 @@
             </contact>
             <bounce/>
             <friction>
+              <dart>
+                <mu_primary>3.0</mu_primary>
+                <mu_secondary>3.0</mu_secondary>
+              </dart>
+               <bullet>
+                 <friction>3.0</friction>
+                 <friction2>3.0</friction2>
+                 <rolling_friction>0.1</rolling_friction>
+               </bullet>
+              <ode/>
               <torsional>
                 <ode/>
               </torsional>

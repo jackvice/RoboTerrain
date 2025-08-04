@@ -150,12 +150,27 @@ def main():
                             env,
                             device="cuda", 
                             learning_rate=3e-4,
+                            buffer_size=300_000,
+                            learning_starts=10_000,
+                            batch_size=512,
+                            train_freq=(2048),  # wait until we have 2 048 new transitions
+                            gradient_steps=16,         # run ~one full pass through the buffer
+                            tensorboard_log=tensorboard_dir,
+                            ent_coef="auto_0.5",
+                            verbose=1,
+                            )
+                """
+                model = SAC("MultiInputPolicy",
+                            env,
+                            device="cuda", 
+                            learning_rate=3e-4,
                             tensorboard_log=tensorboard_dir,
                             buffer_size=1_000_000,
                             learning_starts=50000,
                             ent_coef="auto_0.5",
                             verbose=1,
                             batch_size=512)
+                """
         except Exception as e:
             print(f"Error creating/loading model: {e}")
             raise
