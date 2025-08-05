@@ -43,8 +43,8 @@ from stable_baselines3 import SAC
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.monitor import Monitor
-from environments.rover_env import RoverEnv
-from environments.rover_env_vision import RoverEnvVis
+#from environments.rover_env import RoverEnv
+#from environments.rover_env_vision import RoverEnvVis
 from environments.leo_rover_env_fused import RoverEnvFused
 import rclpy
 
@@ -151,10 +151,10 @@ def main():
                             device="cuda", 
                             learning_rate=3e-4,
                             buffer_size=300_000,
-                            learning_starts=10_000,
+                            learning_starts=50_000,
                             batch_size=512,
-                            train_freq=(2048),  # wait until we have 2 048 new transitions
-                            gradient_steps=16,         # run ~one full pass through the buffer
+                            train_freq=(768),  # wait until we have 2 048 new transitions
+                            gradient_steps=6,         # run ~one full pass through the buffer
                             tensorboard_log=tensorboard_dir,
                             ent_coef="auto_0.5",
                             verbose=1,

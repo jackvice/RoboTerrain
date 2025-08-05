@@ -279,14 +279,14 @@ class RoverEnvFused(gym.Env):
             cmd_vel_topic,
             10)
         
-        
+        """
         # Keep IMU subscriber for reward calculation  
         self.imu_subscriber = self.node.create_subscription(
             Imu,
             imu_topic,
             self.imu_callback,
             10)
-        
+        """
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             history=HistoryPolicy.KEEP_LAST,
@@ -426,6 +426,120 @@ class RoverEnvFused(gym.Env):
             return False
 
     def step(self, action):
+        """Execute one time step within the environment"""
+        self.total_steps += 1
+        t0 = perf_counter()
+        flip_status = self.is_robot_flipped()
+        if flip_status:
+            print('Robot flipped', flip_status, ', episode done')
+            if self._step > 500:
+                print('Robot flipped on its own')
+                return self.get_observation(), self.stuck_penalty, True, False, {}
+            else:
+                return self.get_observation(), 0, True, False, {} 
+        
+        if self.collision_count > self.stuck_window:
+            self.collision_count = 0
+            print('stuck in collision, ending episode')
+            return self.get_observation(), -1 * self.goal_reward, True, False, {}  
+
+        # Update position history
+        self.position_history.append((self.current_pose.position.x, self.current_pose.position.y))
+        if len(self.position_history) > self.stuck_window:
+            self.position_history.pop(0)
+
+        # Check if robot is stuck - do this every step once we have enough history
+        if len(self.position_history) >= self.stuck_window:
+            start_pos = self.position_history[0]
+            end_pos = self.position_history[-1]
+            distance_moved = math.sqrt((end_pos[0] - start_pos[0])**2 +
+                                       (end_pos[1] - start_pos[1])**2)
+
+            if distance_moved < 0.0: #self.stuck_threshold:
+                print('Robot is stuck, has moved only', distance_moved,
+                      'meters in', self.stuck_window, 'steps, resetting')
+                return self.get_observation(), self.stuck_penalty, True, False, {}
+
+        if self.too_far_away():
+            print('Too far away, resetting.')
+            return self.get_observation(), self.too_far_away_penilty, True, False, {}
+                
+        # Wait for new fused observation data - block indefinitely
+        t1 = perf_counter()
+
+        fused_obs = self.get_fused_observation()
+        
+        # FIX: Store the new observation in the instance variable
+        self.current_fused_obs = fused_obs
+
+        t_fused = perf_counter()
+        self._received_fused_obs = False
+
+        # action = [speed, desired_relative_heading]
+        speed = float(action[0])
+        relative_heading_command = float(action[1])
+
+        # Instead of passing (desired_relative_heading, current_yaw) directly,
+        # we compute the *new desired absolute heading*:
+        desired_heading = self.current_yaw + relative_heading_command
+        
+        angular_velocity = self.heading_controller(desired_heading, self.current_yaw)
+        
+        twist = Twist()
+        twist.linear.x = speed
+        twist.angular.z = angular_velocity
+        self.publisher.publish(twist)
+        self.last_speed = speed
+        
+        # Calculate reward and components
+        reward = self.task_reward()
+
+        # Check if episode is done
+        self._step += 1
+        if self._step >= self._length:
+            print(f"Episode length limit reached: {self._step} >= {self._length}")
+            #done = True #(self._step >= self._length)
+        #else:
+        done = (self._step >= self._length)
+        # Get observation
+        observation = self.get_observation()
+
+        rclpy.spin_once(self.node, timeout_sec=0.001)  # 1ms
+        
+        t_obs = perf_counter()
+
+        if self.total_steps % 10000 == 0:
+            temp_obs_target = self.get_target_info()
+            print(
+                f"current pose x,y: ({self.current_pose.position.x:.2f}, {self.current_pose.position.y:.2f}), "
+                f"Speed: {speed:.2f}, Heading: {math.degrees(self.current_yaw):.1f}°, "
+            )
+            print(
+                f"current target x,y: ({self.target_positions_x:.2f}, {self.target_positions_y:.2f}), "
+                f"distance and angle to target: ({temp_obs_target[0]:.3f}, {temp_obs_target[1]:.3f}), "
+                f"Final Reward: {reward:.3f}"
+            )
+        
+
+        info = {
+            'steps': self._step,
+            'total_steps': self.total_steps,
+            'reward': reward
+        }
+
+        t_end_step = perf_counter()
+        
+        if self.total_steps % 5000 == 0:
+            print(f"time_ms t1-t0:{(t1-t0)*1000}, t_fused:{(t_fused-t1)*1000}, t_obs:{(t_obs-t_fused)*1000}, t_total:{(t_end_step-t0)*1000}")
+        if self.total_steps % 50000 == 0:
+            save_fused_image_channels(observation['fused_image'])
+            #print('Observation: Fused image shape:', observation['fused_image'].shape,
+            #      ', Fused image range: [', np.min(observation['fused_image']), 
+            #      ', ', np.max(observation['fused_image']), ']')
+            
+        return observation, reward, done, False, info
+        
+    def step_old(self, action):
         """Execute one time step within the environment"""
         self.total_steps += 1
         t0 = perf_counter()
@@ -768,8 +882,41 @@ class RoverEnvFused(gym.Env):
         
         self.node.destroy_node()
         rclpy.shutdown()
-        
+
+
     def pose_array_callback(self, msg):
+        """Callback for processing pose array messages and extracting orientation"""
+        if msg.poses:  # Check if we have any poses
+            self.last_pose = self.current_pose if hasattr(self, 'current_pose') else None
+            self.current_pose = msg.poses[0]  # Take the first pose
+            
+            # UPDATE - Store position as numpy array
+            self.rover_position = np.array([
+                self.current_pose.position.x,
+                self.current_pose.position.y,
+                self.current_pose.position.z
+            ], dtype=np.float32)
+            
+            # Extract orientation (yaw, pitch, roll) from quaternion
+            try:
+                quat = np.array([
+                    self.current_pose.orientation.w, 
+                    self.current_pose.orientation.x, 
+                    self.current_pose.orientation.y,
+                    self.current_pose.orientation.z
+                ])
+                norm = np.linalg.norm(quat)
+                if norm == 0:
+                    raise ValueError("Received a zero-length quaternion")
+                quat_normalized = quat / norm
+                roll, pitch, yaw = quat2euler(quat_normalized, axes='sxyz')
+                self.current_pitch = pitch
+                self.current_roll = roll
+                self.current_yaw = yaw
+            except Exception as e:
+                self.node.get_logger().error(f"Error processing pose orientation data: {e}")
+        
+    def pose_array_callback_old(self, msg):
         """Callback for processing pose array messages"""
         if msg.poses:  # Check if we have any poses
             self.last_pose = self.current_pose if hasattr(self, 'current_pose') else None
@@ -782,7 +929,7 @@ class RoverEnvFused(gym.Env):
                 self.current_pose.position.z
             ], dtype=np.float32)
             
-
+    """
     def imu_callback(self, msg):
         try:
             quat = np.array([msg.orientation.w, msg.orientation.x, msg.orientation.y,
@@ -797,7 +944,8 @@ class RoverEnvFused(gym.Env):
             self.current_yaw = yaw
         except Exception as e:
             self.node.get_logger().error(f"Error processing IMU data: {e}")
-
+    """
+    
     # Add this callback
     def odom_callback(self, msg):
         """Process odometry data for velocities"""
