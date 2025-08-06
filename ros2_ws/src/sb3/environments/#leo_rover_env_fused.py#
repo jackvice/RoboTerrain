@@ -354,7 +354,24 @@ class RoverEnvFused(gym.Env):
                                    dtype=np.float32)
         }    
             
+    def get_center_heatmap_sum(observation: Dict[str, np.ndarray]) -> float:
+        """
+        Calculate sum of heatmap values in the center 4 columns.
+    
+        Args:
+             observation: Observation dict containing 'fused_image' [H, W, 3]
         
+        Returns:
+             Sum of all values in columns 46,47,48,49 of channel 1 (heatmap)
+        """
+        fused_image = observation['fused_image']  # Shape: [96, 96, 3]
+        heatmap_channel = fused_image[:, :, 1]    # Channel 1: heatmap [96, 96]
+    
+        # Sum all values in center 4 columns (46, 47, 48, 49)
+        center_sum = np.sum(heatmap_channel[:, 46:50])  # 46:50 gives columns 46,47,48,49
+    
+        return float(center_sum)
+
     def heading_controller(self, desired_heading, current_heading):
         """
         PID controller given a desired *absolute* heading,

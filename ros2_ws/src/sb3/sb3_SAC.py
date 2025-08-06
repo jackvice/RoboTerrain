@@ -121,7 +121,7 @@ def main():
             
             # Load existing normalization stats
             env = VecNormalize.load(args.normalize_stats, env)
-            
+
             # Disable updates during prediction
             if args.mode == 'predict':
                 env.training = False
@@ -144,6 +144,8 @@ def main():
                 print(f"Loading model from {args.checkpoint_name}")
                 model = SAC.load(args.checkpoint_name, env=env, 
                                tensorboard_log=tensorboard_dir)
+
+
             else:
                 print("Creating new model")
                 model = SAC("MultiInputPolicy",
@@ -153,7 +155,7 @@ def main():
                             buffer_size=300_000,
                             learning_starts=50_000,
                             batch_size=512,
-                            train_freq=(768),  # wait until we have 2 048 new transitions
+                            train_freq=(512),  # wait until we have 2 048 new transitions
                             gradient_steps=6,         # run ~one full pass through the buffer
                             tensorboard_log=tensorboard_dir,
                             ent_coef="auto_0.5",

@@ -558,8 +558,8 @@
     </plugin>
     <plugin name='gz::sim::systems::DiffDrive' filename='libgz-sim-diff-drive-system.so'>
       <left_joint>wheel_FL_joint</left_joint>
-      <right_joint>wheel_FR_joint</right_joint>
       <left_joint>wheel_RL_joint</left_joint>
+      <right_joint>wheel_FR_joint</right_joint>
       <right_joint>wheel_RR_joint</right_joint>
       <wheel_separation>0.358</wheel_separation>
       <wheel_radius>0.0625</wheel_radius>
@@ -567,7 +567,7 @@
       <child_frame_id>base_footprint</child_frame_id>
       <odom_publish_frequency>20</odom_publish_frequency>
       <topic>cmd_vel</topic>
-      <odom_topic>odom</odom_topic>
+      <odom_topic>odometry/wheels</odom_topic>
       <tf_topic>tf</tf_topic>
       <max_linear_acceleration>2.5</max_linear_acceleration>
       <max_angular_acceleration>3</max_angular_acceleration>
