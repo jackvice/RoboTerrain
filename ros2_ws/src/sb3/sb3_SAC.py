@@ -35,6 +35,7 @@ Last Updated: 01/26/25
 Rover Navigation Training and Inference Script with proper cleanup handling
 """
 
+import torch, math
 import sys
 import argparse
 from datetime import datetime
@@ -140,11 +141,32 @@ def main():
 
         # Create or load model
         try:
+            """
             if args.load == 'True':
                 print(f"Loading model from {args.checkpoint_name}")
                 model = SAC.load(args.checkpoint_name, env=env, 
                                tensorboard_log=tensorboard_dir)
+            """
 
+            if args.load == 'True':
+                import torch, math
+                print("Loading model …")
+                model = SAC.load(args.checkpoint_name, env=env, tensorboard_log=tensorboard_dir)
+
+                # ---- keep a copy of the previous alpha BEFORE overwriting ----------
+                old_alpha = float(torch.exp(model.log_ent_coef).cpu().item())
+
+                # ---- reset alpha ----------------------------------------------------
+
+                new_ent_coef = 0.05
+                model.log_ent_coef = torch.nn.Parameter(
+                    torch.tensor(math.log(new_ent_coef), device=model.device)
+                )
+                model.ent_coef_optimizer = torch.optim.Adam([model.log_ent_coef], lr=3e-4)
+                model.target_entropy = -1.0   # optional
+
+                print(f"α reset: {old_alpha:.5f}  →  {new_ent_coef:.5f}")
+                print(f"Target entropy adjusted: -2.0 → {model.target_entropy}")
 
             else:
                 print("Creating new model")
@@ -203,7 +225,7 @@ def main():
             print("Starting training mode")
             # Setup checkpoint callback
             checkpoint_callback = SaveVecNormalizeCallback(
-                save_freq=50_000,
+                save_freq=100_000,
                 save_path=checkpoint_dir,
                 name_prefix=f"sac_{args.world}_{timestamp}",
                 env=env
@@ -214,7 +236,7 @@ def main():
             
             try:
                 model.learn(
-                    total_timesteps=5_000_000,
+                    total_timesteps=8_000_000,
                     callback=checkpoint_callback,
                     reset_num_timesteps=False if args.load == 'True' else True
                 )

@@ -23,7 +23,7 @@ from sensor_msgs.msg import Image
 import cv2
 from collections import deque
 from time import strftime
-from typing import Optional
+from typing import Optional, Dict
 import numpy.typing as npt
 from datetime import datetime
 from time import perf_counter
@@ -178,8 +178,8 @@ class RoverEnvFused(gym.Env):
             self.too_far_away_high_y = -17  # 29 for inspection
         elif self.world_name == 'moon': # moon is island
             # Navigation parameters previous
-            self.rand_goal_x_range = (-4, 4) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
-            self.rand_goal_y_range = (-4, 4) # -27,-19 for inspection
+            self.rand_goal_x_range = (-5, 5) #(-4, 4) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
+            self.rand_goal_y_range = (-5, 5) #(-4, 4) # -27,-19 for inspection
             self.rand_x_range = (-4, 4) #x(-5.4, -1) # moon y(-9.3, -0.5) # moon,  x(-3.5, 2.5) 
             self.rand_y_range = (-4, 4) # -27,-19 for inspection
             self.too_far_away_low_x = -20 #for inspection
@@ -207,7 +207,7 @@ class RoverEnvFused(gym.Env):
         # Define action space
         # [speed, desired_heading]
         self.action_space = spaces.Box(
-            low=np.array([-1.0, -np.pi]),  # [min_speed, min_heading]
+            low=np.array([-0.6, -np.pi]),  # [min_speed, min_heading]
             high=np.array([1.0, np.pi]),   # [max_speed, max_heading]
             dtype=np.float32
         )
@@ -353,8 +353,25 @@ class RoverEnvFused(gym.Env):
             'velocities': np.array([self.current_linear_velocity, self.current_angular_velocity],
                                    dtype=np.float32)
         }    
-            
+    
+    def get_center_heatmap_sum(self, observation: Dict[str, np.ndarray]) -> float:
         
+        #Calculate sum of heatmap values in the center 4 columns.
+    
+        #Args:
+        #     observation: Observation dict containing 'fused_image' [H, W, 3]
+        
+        #Returns:
+        #     Sum of all values in columns 46,47,48,49 of channel 1 (heatmap)
+        
+        fused_image = observation['fused_image']  # Shape: [96, 96, 3]
+        heatmap_channel = fused_image[:, :, 1]    # Channel 1: heatmap [96, 96]
+    
+        # Sum all values in center 4 columns (46, 47, 48, 49)
+        center_sum = np.sum(heatmap_channel[:, 46:50])  # 46:50 gives columns 46,47,48,49
+    
+        return float(center_sum)
+    
     def heading_controller(self, desired_heading, current_heading):
         """
         PID controller given a desired *absolute* heading,
@@ -454,9 +471,12 @@ class RoverEnvFused(gym.Env):
         twist.angular.z = angular_velocity
         self.publisher.publish(twist)
         self.last_speed = speed
-        
+
+
+        observation = self.get_observation()
+
         # Calculate reward and components
-        reward = self.task_reward()
+        reward = self.task_reward(observation)
 
         # Check if episode is done
         self._step += 1
@@ -465,8 +485,8 @@ class RoverEnvFused(gym.Env):
             #done = True #(self._step >= self._length)
         #else:
         done = (self._step >= self._length)
-        # Get observation
-        observation = self.get_observation()
+        # Get observatio
+
 
         rclpy.spin_once(self.node, timeout_sec=0.001)  # 1ms
         
@@ -519,15 +539,16 @@ class RoverEnvFused(gym.Env):
         return
 
 
-    def task_reward(self):
+    def task_reward(self, observation):
         """
         Reward function that accounts for robot dynamics and gradual acceleration
         """
         # Constants
-        final_reward_multiplier = 1.5
+        final_reward_multiplier = 1.1
         success_distance = 0.5
-        distance_delta_scale = 0.5
-
+        distance_delta_scale = 0.9
+        heatmap_center_scale = 0.1
+        
         # Get current state info
         distance_heading_info = self.get_target_info()
         current_distance = distance_heading_info[0]
@@ -545,7 +566,8 @@ class RoverEnvFused(gym.Env):
         
         # Calculate distance change (positive means got closer, negative means got further)
         distance_delta = self.previous_distance - current_distance
-
+        distance_reward = distance_delta
+        
         # Heading component - always calculated, can be positive or negative
         # Convert heading difference to range [-π, π]
         heading_diff = math.atan2(math.sin(heading_diff), math.cos(heading_diff))
@@ -560,101 +582,37 @@ class RoverEnvFused(gym.Env):
         
         heading_reward = 0.02 * heading_alignment  # 0.02 per step when perfect (120.0 over 6000 steps)
 
-        # Distance component - simplified logic
-        if abs(distance_delta) > 0.001 and heading_reward > 0.008:  # Only reward meaningful movement with good heading
-            distance_reward = distance_delta * distance_delta_scale
-        else:
-            distance_reward = -0.03
-
+        
         # Velocity component - increased for 6000-step episodes
         velocity_reward = self.current_linear_velocity * 0.01  # 1 m/s gives 60.0 over 6000 steps
 
-        # Combine all rewards
-        reward = (distance_reward + heading_reward) * final_reward_multiplier + velocity_reward
+        heatmap_center = self.get_center_heatmap_sum(observation)
 
+        #if heatmap_center > 0.01:
+        #    heading_reward = -0.1
+        
+        # Combine all rewards
+        #reward = (distance_reward + heading_reward + velocity_reward) * final_reward_multiplier 
+
+        reward = (distance_reward * distance_delta_scale) - (heatmap_center * heatmap_center_scale)
+
+        
         # Debug logging
         if self.total_steps % 10000 == 0:
             print(f"Distance: {current_distance:.3f}, Previous Distance: {self.previous_distance:.3f}, "
-                  f"distance_delta: {distance_delta:.3f}, Heading diff: {math.degrees(heading_diff):.1f}°, "
+                  f"distance_delta: {distance_delta:.3f},  "#Heading diff: {math.degrees(heading_diff):.1f}°, "
                   f"Speed: {self.last_speed:.3f}, Current vel: {self.current_linear_velocity:.3f}, "
-                  f"Distance reward: {distance_reward:.3f}, Heading reward: {heading_reward:.3f}, "
-                  f"Velocity reward: {velocity_reward:.3f}, Total reward: {reward:.3f}")
+                  f"Distance reward: {distance_reward:.3f}, heatmap_center: {heatmap_center:.3f}, " #Heading reward: {heading_reward:.3f}, "
+                  #f"Distance reward: {distance_reward:.3f}, Heading reward: {heading_reward:.3f}, "
+                  #f"Velocity reward: {velocity_reward:.3f}, Total reward: {reward:.3f}")
+                  f"Total reward: {reward:.3f}")
+            #print(f"yaw:{deg(yaw_r):6.1f}°, target:{deg(target_heading):6.1f}°, "
+            #      f"Δ:{deg(heading_diff):6.1f}°")
+
 
         self.previous_distance = current_distance
         return reward
     
-    def task_reward_old(self):
-        """
-        Reward function that accounts for robot dynamics and gradual acceleration
-        """
-        # Constants
-        final_reward_multiplier = 1.5
-        collision_threshold = 0.3
-        collision_penalty = -0.5
-        success_distance = 0.5
-        distance_delta_scale = 0.5
-        heading_tolerance = math.pi/4  # 45 degrees
-
-        # Get current state info
-        distance_heading_info = self.get_target_info()
-        current_distance = distance_heading_info[0]
-        heading_diff = distance_heading_info[1]
-
-        # Initialize previous distance if needed
-        if self.previous_distance is None:
-            self.previous_distance = current_distance
-            return 0.0
-        
-        # Check for goal achievement
-        if current_distance < success_distance:
-            self.update_target_pos()
-            return self.goal_reward
-
-        
-        # Calculate distance change (positive means got closer, negative means got further)
-        distance_delta = self.previous_distance - current_distance
-
-        # Calculate reward components
-        distance_reward = 0.0
-        heading_reward = 0.0
-        
-        # Heading component - reward facing towards target even if not moving much
-        # This helps during acceleration phases
-        heading_alignment = 1.0 - (abs(heading_diff) / math.pi)  # 1.0 when perfect, 0.0 when opposite
-        heading_reward = 0.01 * heading_alignment  # 0.01 per step when perfect (30.0 over 3000 steps)
-        # Heading component with new alignment calculation
-        # Convert heading difference to range [-π, π]
-        heading_diff = math.atan2(math.sin(heading_diff), math.cos(heading_diff))
-        abs_heading_diff = abs(heading_diff)
-
-        if abs_heading_diff <= math.pi/2:
-            # From 0 to 90 degrees: scale from 1 to 0
-            heading_alignment = 1.0 - (2 * abs_heading_diff / math.pi)
-        else:
-            # From 90 to 180 degrees: scale from 0 to -1
-            heading_alignment = -2 * (abs_heading_diff - math.pi/2) / math.pi
-        heading_reward = 0.01 * heading_alignment  # 0.01 per step when perfect (30.0 over 3000 steps)
-
-        # Distance component - reward any progress towards goal
-        if abs(distance_delta) > 0.001 and heading_reward > 0.004:  # Only reward meaningful movement with good heading
-            distance_reward = distance_delta * distance_delta_scale
-            distance_reward += heading_reward
-        else:
-            distance_reward = -0.03 #(-1.1 * distance_delta * distance_delta_scale)
-            
-        # Combine rewards
-        reward = (distance_reward * final_reward_multiplier) + (self.current_linear_velocity * 0.0025)
-
-        # Debug logging
-        if self.total_steps % 10000 == 0:
-            print(f"Distance: {current_distance:.3f}, Previous Distance: {self.previous_distance:.3f}, "
-                  f"distance_delta: {distance_delta:.3f}, Heading diff: {math.degrees(heading_diff):.1f}°, "
-                  f"Speed: {self.last_speed:.3f}, Current vel: {self.current_linear_velocity:.3f}, "
-                  f"Distance reward: {distance_reward:.3f}, Heading reward: {heading_reward:.3f}, "
-                  f"Total reward: {reward:.3f}")
-
-        self.previous_distance = current_distance
-        return reward
     
     def get_target_info(self):
         """Calculate distance and azimuth to current target"""
