@@ -6,6 +6,7 @@ ros2_ws/src/sb3/checkpoints/
 ros2_ws/src/sb3/tboard_logs/
 ros2_ws/src/sb3/out_images/
 ros2_ws/src/dynamic_obstacles/rosbag2*/
+ros2_ws/src/sb3/trained_agents/
 metrics_analyzer/data/
 ros2_ws/src/sb3/notes.txt
 build/
