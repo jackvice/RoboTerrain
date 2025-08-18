@@ -9,6 +9,9 @@ ros2_ws/src/dynamic_obstacles/rosbag2*/
 ros2_ws/src/sb3/trained_agents/
 metrics_analyzer/data/
 ros2_ws/src/sb3/notes.txt
+ros2_ws/src/roverrobotics_ros2/leo_description/models/
+ros2_ws/src/roverrobotics_ros2/roverrobotics_description/meshes
+
 build/
 install/
 log/
