@@ -47,6 +47,7 @@ from stable_baselines3.common.monitor import Monitor
 #from environments.rover_env import RoverEnv
 #from environments.rover_env_vision import RoverEnvVis
 from environments.leo_rover_env_fused import RoverEnvFused
+from environments.discrete_rover_env_fused import RoverEnvFused
 import rclpy
 
 

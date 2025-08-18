@@ -38,7 +38,8 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from stable_baselines3.common.utils import get_linear_fn
 from environments.rover_env import RoverEnv
-from environments.rover_env_vision import RoverEnvVis
+#from environments.rover_env_vision import RoverEnvVis
+from environments.discrete_rover_env_fused import RoverEnvFused
 from stable_baselines3.common.callbacks import CheckpointCallback
 #from custom_features_extractor import CustomCombinedExtractor
 from stable_baselines3.common.monitor import Monitor
@@ -62,7 +63,7 @@ def make_env(do_vision, world_name):
     def _init():
         if do_vision:
             print('Using Vision + lidar model')
-            env = RoverEnvVis(world_n=world_name)
+            env = RoverEnvFused(world_n=world_name)
         else:
             print('Using standard lidar model')
             env = RoverEnv(world_n=world_name)
