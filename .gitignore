@@ -12,7 +12,7 @@ metrics_analyzer/data/
 ros2_ws/src/sb3/notes.txt
 ros2_ws/src/roverrobotics_ros2/leo_description/models/
 ros2_ws/src/roverrobotics_ros2/roverrobotics_description/meshes
-ros2_ws/src/sb3/trained_agents/sac_island_20250807_1752_4500000_steps.zip
+ros2_ws/src/sb3/trained_agents/
 build/
 install/
 log/
