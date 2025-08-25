@@ -77,7 +77,8 @@ def main(args=None):
     node = TrajectoryGeneratorNode()
 
     # Path to your recorded bag file
-    bag_path = 'rover_trajectory'  # Update this to your bag file path
+    #bag_path = 'rover_trajectory'  # Update this to your bag file path
+    bag_path = 'inspect_linear'  # Update this to your bag file path
     
     # Read poses from bag
     poses_3d = node.read_bag_file(bag_path)

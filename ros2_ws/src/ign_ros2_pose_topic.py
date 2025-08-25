@@ -164,13 +164,3 @@ if __name__ == '__main__':
     main()
 
 
-def mainOld(args=None):
-    rclpy.init(args=args)
-    node = PoseConverterNode()
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
