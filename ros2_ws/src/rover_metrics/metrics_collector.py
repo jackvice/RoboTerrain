@@ -9,8 +9,27 @@ import math
 import time
 import csv
 import rclpy
-from geometry_msgs.msg import PoseStamped, PoseArray
 from std_msgs.msg import String
+from geometry_msgs.msg import Pose, PoseStamped, PoseArray
+from typing import Optional, Tuple
+
+# add near your imports
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy
+
+
+ActorXY = Optional[Tuple[float, float]]
+actor1_xy: ActorXY = None  # /linear_actor/pose
+actor2_xy: ActorXY = None  # /triangle_actor/pose
+
+def on_actor1_pose(msg: Pose) -> None:
+    """Store actor1 (x,y) from /linear_actor/pose."""
+    global actor1_xy
+    actor1_xy = (float(msg.position.x), float(msg.position.y))
+
+def on_actor2_pose(msg: Pose) -> None:
+    """Store actor2 (x,y) from /triangle_actor/pose."""
+    global actor2_xy
+    actor2_xy = (float(msg.position.x), float(msg.position.y))
 
 
 def calculate_distance(pos1: Tuple[float, float, float], 
@@ -50,106 +69,145 @@ def write_csv_row(filepath: str, timestamp: float, robot_pos: Tuple[float, float
         ])
 
 
-def main():
-    """Collect metrics for 20 minutes and write to CSV."""
+def distance2d(a: ActorXY, b: ActorXY) -> Optional[float]:
+    """Euclidean 2D distance or None if either is missing."""
+    if a is None or b is None:
+        return None
+    dx = a[0] - b[0]
+    dy = a[1] - b[1]
+    return math.hypot(dx, dy)
+
+def safe_float(x: Optional[float]) -> float:
+    """Replace None with NaN for CSV/plotting convenience."""
+    return float('nan') if x is None else float(x)
+
+
+
+def main() -> None:
+    """Collect 20 minutes of metrics at 1 Hz and write a timestamped CSV."""
+
+    import csv, math, time
+    from typing import Optional, Tuple
+    import rclpy
+    from geometry_msgs.msg import PoseArray, Pose
+    from std_msgs.msg import String
+
+    total_minutes = 10
     
+    # --- helpers -------------------------------------------------------------
+    def safe_float(x: Optional[float]) -> float:
+        return float('nan') if x is None else float(x)
+
+    def distance2d(a: Optional[Tuple[float, float]],
+                   b: Optional[Tuple[float, float]]) -> Optional[float]:
+        if a is None or b is None:
+            return None
+        dx, dy = a[0] - b[0], a[1] - b[1]
+        return math.hypot(dx, dy)
+
+    # --- config & file -------------------------------------------------------
     world_name = "inspect"
-    csv_filename = f"robot_metrics_{world_name}_{int(time.time())}.csv"
-    
-    # Data storage
-    robot_position: Optional[Tuple[float, float, float]] = None
-    actor_positions: List[Tuple[float, float, float]] = [None, None]
+    csv_path = f"robot_metrics_{world_name}_{time.strftime('%m_%d_%H-%M')}.csv"
+    csv_file = open(csv_path, "w", newline="")
+    writer = csv.writer(csv_file)
+    # CSV header (write once)
+    writer.writerow(["step", "time_s", "rx", "ry", "speed_mps",
+                     "d1_linear", "d2_triangle", "dmin", "goals"])
+    csv_file.flush()
+
+    # --- state ---------------------------------------------------------------
+    robot_xy: Optional[Tuple[float, float]] = None
+    last_robot_xy: Optional[Tuple[float, float]] = None
+    last_ts: Optional[float] = None
+
+    actor1_xy: Optional[Tuple[float, float]] = None  # /linear_actor/pose
+    actor2_xy: Optional[Tuple[float, float]] = None  # /triangle_actor/pose
     goals_count: int = 0
-    
-    # Velocity calculation
-    last_robot_position: Optional[Tuple[float, float, float]] = None
-    last_timestamp: float = 0.0
-    
-    # Initialize ROS
+
+    # --- ROS setup -----------------------------------------------------------
     rclpy.init()
-    node = rclpy.create_node('metrics_collector')
-    
-    def robot_pose_callback(msg: PoseArray) -> None:
-        nonlocal robot_position
+    node = rclpy.create_node("metrics_collector")
+
+    def on_robot_pose(msg: PoseArray) -> None:
+        nonlocal robot_xy
         if msg.poses:
-            pose = msg.poses[0]
-            robot_position = (pose.position.x, pose.position.y, pose.position.z)
-    
-    def actor_pose_callback(msg: PoseStamped) -> None:
-        nonlocal actor_positions
-        # Assuming single actor publisher - extend for multiple actors if needed
-        actor_positions[0] = (msg.pose.position.x, msg.pose.position.y, msg.pose.position.z)
-        # For now, duplicate for second actor (modify when you have second actor publisher)
-        actor_positions[1] = (msg.pose.position.x + 1.0, msg.pose.position.y + 1.0, msg.pose.position.z)
-    
-    def goal_event_callback(msg: String) -> None:
+            p = msg.poses[0].position
+            robot_xy = (float(p.x), float(p.y))
+
+    def on_actor1_pose(msg: Pose) -> None:
+        nonlocal actor1_xy
+        actor1_xy = (float(msg.position.x), float(msg.position.y))
+
+    def on_actor2_pose(msg: Pose) -> None:
+        nonlocal actor2_xy
+        actor2_xy = (float(msg.position.x), float(msg.position.y))
+
+    def on_event(msg: String) -> None:
         nonlocal goals_count
         if "goal_reached" in msg.data.lower():
             goals_count += 1
+
+
+    robot_qos = QoSProfile(depth=1, reliability=QoSReliabilityPolicy.BEST_EFFORT)
+    robot_sub = node.create_subscription(PoseArray, '/rover/pose_array', on_robot_pose, robot_qos)
     
-    # Subscribers
-    robot_sub = node.create_subscription(PoseArray, '/rover/pose_array', robot_pose_callback, 10)
-    actor_sub = node.create_subscription(PoseStamped, '/actor/pose', actor_pose_callback, 10)
-    event_sub = node.create_subscription(String, '/robot/events', goal_event_callback, 10)
-    
-    # Create CSV file
-    write_csv_header(csv_filename)
-    print(f"Starting 20-minute metrics collection...")
-    print(f"Writing to: {csv_filename}")
-    
-    start_time = time.time()
-    next_log_time = start_time + 1.0
-    
+    node.create_subscription(Pose, "/linear_actor/pose", on_actor1_pose, 10)
+    node.create_subscription(Pose, "/triangle_actor/pose", on_actor2_pose, 10)
+    node.create_subscription(String, "/robot/events", on_event, 10)
+
+    # --- loop (1 Hz for 20 minutes) -----------------------------------------
+    start = time.time()
+    next_log = start + 1.0
+    step = 0
+    duration_s = total_minutes * 60
+
     try:
-        while time.time() - start_time < 1200:  # 20 minutes = 1200 seconds
+        while (time.time() - start) < duration_s:
             rclpy.spin_once(node, timeout_sec=0.01)
-            
-            current_time = time.time()
-            
-            # Log metrics every second
-            if current_time >= next_log_time:
-                if robot_position is not None and all(pos is not None for pos in actor_positions):
-                    
-                    # Calculate velocity
-                    velocity = 0.0
-                    if last_robot_position is not None and last_timestamp > 0:
-                        time_diff = current_time - last_timestamp
-                        velocity = calculate_velocity(last_robot_position, robot_position, time_diff)
-                    
-                    # Calculate distances to actors
-                    actor_distances = [
-                        calculate_distance(robot_position, actor_positions[0]) if actor_positions[0] else 0.0,
-                        calculate_distance(robot_position, actor_positions[1]) if actor_positions[1] else 0.0
-                    ]
-                    
-                    # Write to CSV
-                    write_csv_row(csv_filename, current_time, robot_position, 
-                                 velocity, actor_distances, goals_count)
-                    
-                    # Update for next velocity calculation
-                    last_robot_position = robot_position
-                    last_timestamp = current_time
-                    
-                    # Progress update
-                    elapsed = current_time - start_time
-                    remaining = 1200 - elapsed
-                    if int(elapsed) % 60 == 0:  # Print every minute
-                        print(f"Progress: {elapsed/60:.1f}/20.0 minutes, Goals: {goals_count}")
-                
-                next_log_time += 1.0
-                
+            now = time.time()
+            if now >= next_log:
+                step += 1
+
+                # speed (m/s) from last position
+                speed = float('nan')
+                if robot_xy is not None and last_robot_xy is not None and last_ts is not None:
+                    dt = now - last_ts
+                    if dt > 0.0:
+                        dx = robot_xy[0] - last_robot_xy[0]
+                        dy = robot_xy[1] - last_robot_xy[1]
+                        speed = math.hypot(dx, dy) / dt
+
+                d1 = distance2d(actor1_xy, robot_xy)
+                d2 = distance2d(actor2_xy, robot_xy)
+                dmin = None if (d1 is None and d2 is None) else min([d for d in (d1, d2) if d is not None])
+
+                writer.writerow([
+                    step, now,
+                    safe_float(robot_xy[0]) if robot_xy else float('nan'),
+                    safe_float(robot_xy[1]) if robot_xy else float('nan'),
+                    safe_float(speed),
+                    safe_float(d1), safe_float(d2), safe_float(dmin),
+                    int(goals_count),
+                ])
+                csv_file.flush()
+
+                last_robot_xy = robot_xy
+                last_ts = now
+                next_log += 1.0
+
+
     except KeyboardInterrupt:
-        print("\nCollection stopped by user")
-    
+        print("Stopped by user.")
     finally:
-        elapsed = time.time() - start_time
-        print(f"\nMetrics collection complete!")
-        print(f"Duration: {elapsed/60:.1f} minutes")
-        print(f"Goals reached: {goals_count}")
-        print(f"Data saved to: {csv_filename}")
-        
-        node.destroy_node()
-        rclpy.shutdown()
+        try:
+            node.destroy_node()
+        except Exception:
+            pass
+        if rclpy.ok():
+            rclpy.shutdown()
+        csv_file.close()
+        print(f"Wrote metrics to {csv_path}")
+
 
 
 if __name__ == '__main__':

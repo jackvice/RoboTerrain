@@ -23,7 +23,8 @@ def generate_launch_description():
     
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        default_value='inspection_simple.world',
+        #default_value='inspection_simple.world',
+        default_value='inspection_boxes.world',
         #default_value='office_cpr_construction.world',
         #default_value='island.sdf',
         

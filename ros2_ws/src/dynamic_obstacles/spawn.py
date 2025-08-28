@@ -150,12 +150,8 @@ def process_trajectory(trajectory_content: str, desired_velocity: float = 1.0,
         print(f"Error creating trajectory: {e}")
         return None
 
-
-def spawn_actor(trajectory_sdf: str, name: str = "first", animate_name: str = 'one',
-                world: str = "inspect") -> bool:
-    """Create actor SDF and spawn it in Gazebo."""
-    # Create the complete actor SDF
-    actor_sdf = f'''<?xml version="1.0" ?>
+def sdf_header(name, animate_name, trajectory_sdf):
+    actor_sdf= f'''<?xml version="1.0" ?>
     <sdf version="1.9">
     <actor name="{name}_actor">
     <pose>0 0 0 0 0 0</pose>
@@ -177,9 +173,24 @@ def spawn_actor(trajectory_sdf: str, name: str = "first", animate_name: str = 'o
     <auto_start>true</auto_start>
     {trajectory_sdf}
     </script>
+    <plugin filename="/home/jack/src/RoboTerrain/actor_publisher/build/lib/libActorPosePublisher.so"
+    name="ignition::gazebo::v6::systems::ActorPosePublisher">
 
+      <actor_name>{name}_actor</actor_name>
+      <topic>/{name}_actor/pose</topic>
+      <rate_hz>30</rate_hz>
+    </plugin>
     </actor>
     </sdf>'''
+    return actor_sdf
+    
+
+def spawn_actor(trajectory_sdf: str, name: str = "first", animate_name: str = 'one',
+                world: str = "inspect") -> bool:
+    """Create actor SDF and spawn it in Gazebo."""
+
+    # Create the complete actor SDF
+    actor_sdf = sdf_header(name, animate_name, trajectory_sdf)
 
     # Write to temp file
     temp_sdf_path = '/tmp/actor_with_trajectory.sdf'

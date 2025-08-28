@@ -381,10 +381,42 @@ def main(trajectory_file: str = "flat_triangle_traject_rev_2nd.sdf",
 
     rclpy.init()
     node = rclpy.create_node('actor_position_publisher')
-    pub = node.create_publisher(PoseStamped, '/actor/pose', 10)
+    pub = node.create_publisher(PoseStamped, '/'+ actor_name +'_actor/pose', 10)
     print("Publishing calculated actor position to /actor/pose")
     print("Press Ctrl+C to stop")
 
+
+    try:
+        count = 0
+        sim_time = 0.0
+    
+        while rclpy.ok():
+            # Update simulation time every 5 iterations (gives ~25 Hz publishing)
+            if count % 5 == 0:
+                new_sim_time = get_simulation_time(world_name)
+                if new_sim_time is not None:
+                    sim_time = new_sim_time
+        
+            if sim_time > 0:
+                pos = interpolate_actor_position(waypoints, sim_time)
+                if pos is not None:
+                    msg = PoseStamped()
+                    msg.header.stamp = node.get_clock().now().to_msg()
+                    msg.header.frame_id = 'world'
+                    msg.pose.position.x, msg.pose.position.y, msg.pose.position.z = pos
+                    msg.pose.orientation.w = 1.0
+                    pub.publish(msg)
+                    count += 1
+                    if count % 200 == 0:
+                        print(f"Published {count} messages - Actor at ({pos[0]:.2f}, {pos[1]:.2f}, {pos[2]:.2f})")
+        
+            rclpy.spin_once(node, timeout_sec=0.01)
+    except KeyboardInterrupt:
+        print("\nShutting down.")
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+    """
     try:
         count = 0
         while rclpy.ok():
@@ -402,11 +434,8 @@ def main(trajectory_file: str = "flat_triangle_traject_rev_2nd.sdf",
                     if count % 100 == 0:
                         print(f"Published {count} messages - Actor at ({pos[0]:.2f}, {pos[1]:.2f}, {pos[2]:.2f})")
             rclpy.spin_once(node, timeout_sec=0.01)
-    except KeyboardInterrupt:
-        print("\nShutting down.")
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
+    """
+
 
 
         
