@@ -1,0 +1,17 @@
+cmake_minimum_required(VERSION 3.10)
+project(actor_pose_publisher)
+
+find_package(ignition-cmake2 REQUIRED)
+ign_configure_project()
+
+ign_find_package(ignition-gazebo6 REQUIRED)
+ign_find_package(ignition-transport11 REQUIRED)
+ign_find_package(ignition-msgs8 REQUIRED)
+
+add_library(ActorPosePublisher SHARED actor_pose_publisher.cc)
+target_link_libraries(ActorPosePublisher
+  ignition-gazebo6::ignition-gazebo6
+  ignition-transport11::ignition-transport11
+  ignition-msgs8::ignition-msgs8)
+
+install(TARGETS ActorPosePublisher LIBRARY DESTINATION lib)
