@@ -36,6 +36,21 @@ def plot_simple(csv_path: str) -> None:
             print(f"Missing column: {col}. Available: {list(df.columns)}", file=sys.stderr)
             sys.exit(1)
 
+    # --- Encounter counting (print steps per contiguous run below threshold) ---
+    THRESH = 0.8  # meters; use 0.08 if you truly meant 8 cm
+    for name in ("d1_linear", "d2_triangle"):
+        inside = (df[name] < THRESH)
+        cnt = 0
+        for flag in inside:
+            if flag:
+                cnt += 1
+            elif cnt > 0:
+                print(f"Encounter steps are {cnt} [{name}]")
+                cnt = 0
+        if cnt > 0:
+            print(f"Encounter steps are {cnt} [{name}]")
+
+            
     t, xlabel = time_axis(df)
 
     plt.figure()

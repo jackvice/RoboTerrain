@@ -84,7 +84,7 @@ def safe_float(x: Optional[float]) -> float:
 
 
 def main() -> None:
-    """Collect 20 minutes of metrics at 1 Hz and write a timestamped CSV."""
+    """Collect total_minutes  of metrics at 1 Hz and write a timestamped CSV."""
 
     import csv, math, time
     from typing import Optional, Tuple
@@ -92,7 +92,7 @@ def main() -> None:
     from geometry_msgs.msg import PoseArray, Pose
     from std_msgs.msg import String
 
-    total_minutes = 10
+    total_minutes = 30
     
     # --- helpers -------------------------------------------------------------
     def safe_float(x: Optional[float]) -> float:
