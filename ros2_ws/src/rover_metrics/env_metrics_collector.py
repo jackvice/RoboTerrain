@@ -107,7 +107,7 @@ def main() -> None:
 
     # --- config & file -------------------------------------------------------
     world_name = "inspect"
-    csv_path = f"robot_metrics_{world_name}_{time.strftime('%m_%d_%H-%M')}.csv"
+    csv_path = f"no_heat_metrics_{world_name}_{time.strftime('%m_%d_%H-%M')}.csv"
     csv_file = open(csv_path, "w", newline="")
     writer = csv.writer(csv_file)
     # CSV header (write once)

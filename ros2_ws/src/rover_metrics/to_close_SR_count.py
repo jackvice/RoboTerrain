@@ -65,12 +65,14 @@ def main() -> None:
     df: pd.DataFrame = load_csv(filepath)
     filtered_df: pd.DataFrame = filter_usable_rows(df)
     
-    encounters_1_5: int = count_encounters(filtered_df, 1.5)
+    encounters_1_2: int = count_encounters(filtered_df, 1.2)
     encounters_0_8: int = count_encounters(filtered_df, 0.8)
+    encounters_0_5: int = count_encounters(filtered_df, 0.5)
     total_goals: int = get_total_goals(df)
     
-    print(f"Encounters < 1.5m: {encounters_1_5}")
+    print(f"Encounters < 1.2m: {encounters_1_2}")
     print(f"Encounters < 0.8m: {encounters_0_8}")
+    print(f"Encounters < 0.5m: {encounters_0_5}")
     print(f"SR (Success Rate): {total_goals}")
 
 if __name__ == "__main__":
