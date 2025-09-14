@@ -133,8 +133,8 @@ def plot_timeline(times: pd.Series, min_dists: pd.Series, total_goals: int) -> N
     range_below_05 = encounter_dists < 0.5
     
     # Plot each range with different colors (no lines, just dots)
-    plt.plot(encounter_times[range_08_12], encounter_dists[range_08_12], 'yo', markersize=5, label=f'0.8m-1.2m ({encounters_08_12} encounters)')
-    plt.plot(encounter_times[range_05_08], encounter_dists[range_05_08], 'o', color='orange', markersize=5, label=f'0.5m-0.8m ({encounters_05_08} encounters)')
+    plt.plot(encounter_times[range_08_12], encounter_dists[range_08_12], 'go', markersize=5, label=f'0.8m-1.2m ({encounters_08_12} encounters)')
+    plt.plot(encounter_times[range_05_08], encounter_dists[range_05_08], 'bo', markersize=5, label=f'0.5m-0.8m ({encounters_05_08} encounters)')
     plt.plot(encounter_times[range_below_05], encounter_dists[range_below_05], 'ro', markersize=5, label=f'<0.5m ({encounters_below_05} encounters)')
     
     # Add horizontal threshold lines
@@ -142,9 +142,9 @@ def plot_timeline(times: pd.Series, min_dists: pd.Series, total_goals: int) -> N
     plt.axhline(y=0.8, color='orange', linestyle='--', alpha=0.7, label='0.8m threshold') 
     plt.axhline(y=0.5, color='green', linestyle='--', alpha=0.7, label='0.5m threshold')
     
-    plt.xlabel('Time (s)')
+    plt.xlabel('Time (min)')
     plt.ylabel('Distance (m)')
-    plt.title(f'Robot-Actor Encounter Timeline with no Attention Mechanism (Success Rate: {total_goals})')
+    plt.title(f'Robot-Actor Encounter Timeline without Attention Mechanism (Success Rate: {total_goals})')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -170,7 +170,8 @@ def main() -> None:
     min_dists: pd.Series = calculate_min_distances(df)
     total_goals: int = get_total_goals_from_files(file_paths)
     
-    times: pd.Series = df['time_s'] if 'time_s' in df.columns else pd.Series(range(len(df)))
+    #times: pd.Series = df['time_s'] if 'time_s' in df.columns else pd.Series(range(len(df))) # milliseconds
+    times: pd.Series = pd.Series(range(len(df))) / 60.0
     
     plot_timeline(times, min_dists, total_goals)
 
