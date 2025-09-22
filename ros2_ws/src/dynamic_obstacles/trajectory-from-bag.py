@@ -79,7 +79,9 @@ def main(args=None):
     # Path to your recorded bag file
     #bag_path = 'rover_trajectory'  # Update this to your bag file path
     #bag_path = 'inspect_linear'  # Update this to your bag file path
-    bag_path = 'rosbag2_2025_09_12-19_30_13'  # Update this to your bag file path
+    #bag_path = 'rosbag2_2025_09_12-19_30_13'  # Update this to your bag file path
+    #bag_path = 'bag_files/rosbag2_2025_09_22-09_14_06'  # construction lower
+    bag_path = 'bag_files/rosbag2_2025_09_22-09_15_41'  # construction upper
     
     # Read poses from bag
     poses_3d = node.read_bag_file(bag_path)
