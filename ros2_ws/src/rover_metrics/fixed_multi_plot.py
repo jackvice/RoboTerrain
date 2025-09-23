@@ -122,7 +122,82 @@ def classify_encounters_by_min_distance(encounter_points: List[Tuple[float, floa
     return (encounters_08_12, encounters_05_08, encounters_below_05)
 
 
+from typing import List, Tuple
+import numpy as np
+import matplotlib.pyplot as plt
+
 def plot_timeline(encounter_points: List[Tuple[float, float]], total_goals: int) -> None:
+    """
+    Plot encounter minima and place a single-row legend under the x-axis.
+    Order: dot series first, then dotted threshold guides.
+    """
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    # -- Empty case
+    if not encounter_points:
+        ax.text(0.5, 0.5, 'No encounters detected', ha='center', va='center', transform=ax.transAxes)
+        ax.set_xlabel('Time (min)')
+        ax.set_ylabel('Distance (m)')
+        ax.set_title(f'Robot–Actor Encounter Timeline (Goals: {total_goals})')
+        plt.show()
+        return
+
+    # -- Unpack
+    times = np.array([t for t, _ in encounter_points], dtype=float)
+    dists = np.array([d for _, d in encounter_points], dtype=float)
+
+    # -- Mutually exclusive bins
+    m_08_12 = (dists >= 0.8) & (dists < 1.2)
+    m_05_08 = (dists >= 0.5) & (dists < 0.8)
+    m_lt_05 = dists < 0.5
+
+    # -- Counts (for labels)
+    c_08_12 = int(m_08_12.sum())
+    c_05_08 = int(m_05_08.sum())
+    c_lt_05 = int(m_lt_05.sum())
+
+    # -- Scatter (legend handles)
+    h_08_12, = ax.plot(times[m_08_12], dists[m_08_12], 'yo', markersize=5, label=f'0.8–1.2 m ({c_08_12})')
+    h_05_08, = ax.plot(times[m_05_08], dists[m_05_08], 'o', color='orange', markersize=5, label=f'0.5–0.8 m ({c_05_08})')
+    h_lt_05, = ax.plot(times[m_lt_05], dists[m_lt_05], 'ro', markersize=5, label=f'<0.5 m ({c_lt_05})')
+
+    # -- Dotted threshold guides (include in legend)
+    th_12 = ax.axhline(1.2, color='red', linestyle='--', alpha=0.6, label='Threshold 1.2 m')
+    th_08 = ax.axhline(0.8, color='orange', linestyle='--', alpha=0.6, label='Threshold 0.8 m')
+    th_05 = ax.axhline(0.5, color='green', linestyle='--', alpha=0.6, label='Threshold 0.5 m')
+
+    # -- Labels, grid, title
+    ax.set_xlabel('Time (min)')
+    ax.set_ylabel('Distance (m)')
+    ax.set_title(f'Robot–Actor Encounter Timeline with Attention Mechanism (Success Rate: {total_goals})')
+    ax.grid(True, alpha=0.3, linestyle='--')
+
+    # -- Legend: dots first, then dashed thresholds, single row under x-axis
+    handles = [h_08_12, h_05_08, h_lt_05, th_12, th_08, th_05]
+    labels = [h.get_label() for h in handles]
+    ax.legend(
+        handles, labels,
+        loc='upper center',
+        bbox_to_anchor=(0.5, -0.20),     # adjust closer/farther as needed
+        bbox_transform=ax.transAxes,     # relative to axes box
+        ncol=len(labels),
+        frameon=False,
+        fontsize=12,
+        handlelength=1.8,
+        handletextpad=0.6,
+        columnspacing=1.2,
+    )
+
+    # -- Reserve bottom space so legend isn't clipped
+    plt.subplots_adjust(bottom=0.30)
+
+    plt.show()
+
+
+
+
+
+def plot_timeline_old(encounter_points: List[Tuple[float, float]], total_goals: int) -> None:
     """Plot timeline with encounter points in separate distance ranges."""
     plt.figure(figsize=(12, 6))
     
