@@ -33,7 +33,7 @@ def on_actor2_pose(msg: Pose) -> None:
     actor2_xy = (float(msg.position.x), float(msg.position.y))
 
 def on_actor3_pose(msg: Pose) -> None:
-    """Store actor2 (x,y) from /triangle_actor/pose."""
+    """Store actor2 (x,y) from /diag_actor/pose."""
     global actor3_xy
     actor3_xy = (float(msg.position.x), float(msg.position.y))
     

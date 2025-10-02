@@ -51,6 +51,16 @@ def main():
     fig, ax = plt.subplots(figsize=(6, 5))
     parts = ax.violinplot(data, showmeans=True, showmedians=True, showextrema=False)
 
+    # color violins (indexing matches your labels order)
+    for i, b in enumerate(parts['bodies']):
+        b.set_edgecolor('black')
+        b.set_alpha(0.85)
+        b.set_facecolor('#8c8c8c')  # default for all
+
+    if len(parts['bodies']) > 1:
+        parts['bodies'][1].set_facecolor('#1f77b4')  # different color for the second violin
+
+    
     # X tick labels at positions 1..N
     ax.set_xticks(range(1, len(labels) + 1))
     ax.set_xticklabels(labels)

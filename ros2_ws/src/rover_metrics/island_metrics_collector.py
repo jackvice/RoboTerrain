@@ -18,22 +18,22 @@ from rclpy.qos import QoSProfile, QoSReliabilityPolicy
 
 
 ActorXY = Optional[Tuple[float, float]]
-actor1_xy: ActorXY = None  # /linear_actor/pose
-actor2_xy: ActorXY = None  # /triangle_actor/pose
-actor3_xy: ActorXY = None  # /diag_actor/pose
+actor1_xy: ActorXY = None  # /triangle_actor/pose
+actor2_xy: ActorXY = None  # /triangle2_actor/pose
+actor3_xy: ActorXY = None  # /triangle3_actor/pose
 
 def on_actor1_pose(msg: Pose) -> None:
-    """Store actor1 (x,y) from /linear_actor/pose."""
+    """Store actor1 (x,y) from //triangle_actor/pose."""
     global actor1_xy
     actor1_xy = (float(msg.position.x), float(msg.position.y))
 
 def on_actor2_pose(msg: Pose) -> None:
-    """Store actor2 (x,y) from /triangle_actor/pose."""
+    """Store actor2 (x,y) from /triangle2_actor/pose."""
     global actor2_xy
     actor2_xy = (float(msg.position.x), float(msg.position.y))
 
 def on_actor3_pose(msg: Pose) -> None:
-    """Store actor2 (x,y) from /triangle_actor/pose."""
+    """Store actor3 (x,y) from /triangle3_actor/pose."""
     global actor3_xy
     actor3_xy = (float(msg.position.x), float(msg.position.y))
     
@@ -118,7 +118,7 @@ def main() -> None:
     writer = csv.writer(csv_file)
     # CSV header (write once)
     writer.writerow(["step", "time_s", "rx", "ry", "speed_mps",
-                     "d1_linear", "d2_triangle","d3_diag", "dmin", "goals"])
+                     "d1_triangle", "d2_triangle2","d3_triangle3", "dmin", "goals"])
     csv_file.flush()
 
     # --- state ---------------------------------------------------------------
@@ -126,9 +126,9 @@ def main() -> None:
     last_robot_xy: Optional[Tuple[float, float]] = None
     last_ts: Optional[float] = None
 
-    actor1_xy: Optional[Tuple[float, float]] = None  # /linear_actor/pose
-    actor2_xy: Optional[Tuple[float, float]] = None  # /triangle_actor/pose
-    actor3_xy: Optional[Tuple[float, float]] = None  # /diag_actor/pose
+    actor1_xy: Optional[Tuple[float, float]] = None  # /triangle_actor/pose
+    actor2_xy: Optional[Tuple[float, float]] = None  # /triangle2_actor/pose
+    actor3_xy: Optional[Tuple[float, float]] = None  # /triangle3_actor/pose
     goals_count: int = 0
 
     # --- ROS setup -----------------------------------------------------------
@@ -162,9 +162,9 @@ def main() -> None:
     robot_qos = QoSProfile(depth=1, reliability=QoSReliabilityPolicy.BEST_EFFORT)
     robot_sub = node.create_subscription(PoseArray, '/rover/pose_array', on_robot_pose, robot_qos)
     
-    node.create_subscription(Pose, "/linear_actor/pose", on_actor1_pose, 10)
-    node.create_subscription(Pose, "/triangle_actor/pose", on_actor2_pose, 10)
-    node.create_subscription(Pose, "/diag_actor/pose", on_actor3_pose, 10)
+    node.create_subscription(Pose, "/triangle_actor/pose", on_actor1_pose, 10)
+    node.create_subscription(Pose, "/triangle2_actor/pose", on_actor2_pose, 10)
+    node.create_subscription(Pose, "/triangle3_actor/pose", on_actor3_pose, 10)
     node.create_subscription(String, "/robot/events", on_event, 10)
 
     # --- loop (1 Hz for 20 minutes) -----------------------------------------
