@@ -9,7 +9,10 @@ import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 from pathlib import Path
+
+
 
 # ↑ Set a larger global font size for everything on the plot
 plt.rcParams.update({
@@ -53,7 +56,107 @@ def load_group(label, files_or_dirs, max_val=1.2):
     v = np.concatenate(vals)
     return label, v
 
+
+
 def main():
+    import seaborn as sns
+    
+    ap = argparse.ArgumentParser(description="Box + beeswarm (beehive) of dmin by condition (≤ 1.2 m).")
+    ap.add_argument("--cond", nargs="+", action="append", required=True,
+                    metavar=("LABEL", "PATH"),
+                    help="Condition label followed by one or more CSV files or directories containing CSVs.")
+    ap.add_argument("--out", type=str, default="box_beehive_dmin2.png",
+                    help="Output image filename.")
+    ap.add_argument("--show", action="store_true", help="Display the plot window after saving.")
+    args = ap.parse_args()
+
+    labels, data = [], []
+    for group in args.cond:
+        label, *paths = group
+        lab, arr = load_group(label, paths, max_val=1.2)
+        labels.append(lab)
+        data.append(arr)
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    # Color boxes (2nd a different color)
+    facecolors = ["#8c8c8c"] * len(labels)
+    if len(labels) > 1:
+        facecolors[1] = "#1f77b4"
+
+    # --- Beeswarm / beehive using seaborn ---
+    # Prepare data in long format
+    plot_data = pd.DataFrame({
+        'condition': np.concatenate([np.full(len(arr), labels[i]) for i, arr in enumerate(data)]),
+        'dmin': np.concatenate(data)
+    })
+    
+    # Create swarmplot (seaborn uses 0-indexed positions)
+    sns.swarmplot(
+        data=plot_data,
+        x='condition',
+        y='dmin',
+        order=labels,
+        hue='condition',
+        hue_order=labels,
+        palette=facecolors,
+        size=5.5,
+        alpha=0.6,
+        legend=False,
+        ax=ax
+    )
+
+    # --- Boxplot (now using 0-indexed positions to match seaborn) ---
+    box = ax.boxplot(
+        data,
+        positions=np.arange(len(labels)),  # Changed from np.arange(1, len(labels) + 1)
+        widths=0.5,
+        showmeans=True,
+        patch_artist=True,
+        manage_ticks=False,
+    )
+
+    for patch, fc in zip(box["boxes"], facecolors):
+        patch.set_facecolor(fc)
+        patch.set_edgecolor("black")
+        patch.set_alpha(0.4)
+    for elem in ("whiskers", "caps", "medians", "means"):
+        for line in box[elem]:
+            line.set_color("black")
+            line.set_linewidth(1.4)
+
+    # Reference lines for social zones
+    for y in (0.5, 0.8, 1.2):
+        ax.axhline(y, linestyle="--", linewidth=1, color="k")
+
+    ax.set_xticks(range(len(labels)))  # Changed to 0-indexed
+    ax.set_xticklabels(labels)
+    ax.set_xlim(-0.5, len(labels) - 0.5)  # Adjusted for 0-indexing
+    ax.set_ylim(0.0, 1.25)
+    ax.set_ylabel("Minimum distance to human, dmin (m)")
+    ax.set_title("Encounter proximity (≤ 1.2 m): box + beehive by condition")
+
+    # Legend
+    from matplotlib.patches import Patch
+    ax.legend(handles=[Patch(facecolor=fc, edgecolor="black", label=lab) for fc, lab in zip(facecolors, labels)],
+              frameon=False, loc="lower right")
+
+    fig.tight_layout()
+    out = Path(args.out)
+    fig.savefig(out, dpi=300)
+    print(f"Saved {out.resolve()}")
+
+    # Quick stats
+    for lab, arr in zip(labels, data):
+        q = np.quantile(arr, [0.25, 0.5, 0.75])
+        print(f"[{lab}] n={arr.size}  mean={arr.mean():.3f}  median={q[1]:.3f}  IQR=({q[0]:.3f}, {q[2]:.3f})")
+
+    if args.show:
+        plt.show()
+
+
+        
+def main_old():
     ap = argparse.ArgumentParser(description="Box + beeswarm (beehive) of dmin by condition (≤ 1.2 m).")
     ap.add_argument("--cond", nargs="+", action="append", required=True,
                     metavar=("LABEL", "PATH"),

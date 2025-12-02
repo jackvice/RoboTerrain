@@ -25,8 +25,8 @@ def generate_launch_description():
         'world',
 
         #default_value='inspection_boxes_x10.world',
-        #default_value='inspection_boxes_x10_v2.world',
-        default_value='inspection_boxes_v3.world',
+        default_value='inspection_boxes_x10_v2.world', # social nave testing world for MDPI publication
+        #default_value='inspection_boxes_v3.world', # lots of boxes for Active vision
         #default_value='office_cpr_construction.world',
         #default_value='island.sdf',
 
