@@ -10,11 +10,15 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, Text
 from launch_ros.substitutions import FindPackageShare
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.substitutions import FindPackageShare
+from launch.conditions import IfCondition, UnlessCondition
+
 
 def generate_launch_description():
     # Create the launch configuration variables
     use_sim_time = LaunchConfiguration('use_sim_time')
     world = LaunchConfiguration('world')
+    headless = LaunchConfiguration('headless')
+
     
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
@@ -27,6 +31,7 @@ def generate_launch_description():
         #default_value='inspection_boxes_x10.world',
         default_value='inspection_boxes_x10_v2.world', # social nave testing world for MDPI publication
         #default_value='inspection_boxes_v3.world', # lots of boxes for Active vision
+        #default_value='inspection_boxes_v4.world', # removed some boxes from v3 for Active vision
         #default_value='office_cpr_construction.world',
         #default_value='island.sdf',
 
@@ -40,6 +45,12 @@ def generate_launch_description():
         #default_value='maze_clean.sdf',
         #default_value='maze_empty.sdf',
         description='World file to use in Gazebo')
+
+
+    declare_headless_cmd = DeclareLaunchArgument(
+        'headless',
+        default_value='false',
+        description='Run Gazebo without GUI (server only) - reduces CPU load for training')
     
     # Construct the world path using substitutions
     world_path = PathJoinSubstitution([
@@ -76,7 +87,6 @@ def generate_launch_description():
         name='IGN_GAZEBO_MODEL_PATH',
         value=f"{pkg_source}"
     )
-
     
     # Set up all environment variables
     path_env = SetEnvironmentVariable(
@@ -87,8 +97,16 @@ def generate_launch_description():
     # Launch Gazebo
     gz_sim = ExecuteProcess(
         cmd=['ign', 'gazebo', world_path],
-        output='screen'
+        output='screen',
+        condition=UnlessCondition(headless)
     )
+
+    gz_sim_headless = ExecuteProcess(
+        cmd=['ign', 'gazebo', '-s', '-r', world_path],
+        output='screen',
+        condition=IfCondition(headless)
+    )
+
     
     # Spawn Rover Robot
     gz_spawn_entity = Node(
@@ -119,14 +137,15 @@ def generate_launch_description():
             '/odometry/wheels@nav_msgs/msg/Odometry@ignition.msgs.Odometry',
             '/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',     # This one-way is correct
             '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',  # This one-way is correct
-            '/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
+            #'/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
             '/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU',
             '/camera/image_raw@sensor_msgs/msg/Image@gz.msgs.Image',
             '/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
             # Fix this direction (it was reversed)
             '/world/default/dynamic_pose/info@geometry_msgs/msg/PoseArray[ignition.msgs.Pose_V',
-            # Remove the spawn service bridge as it's causing issues
-            #'/world/default/create@ros_gz_interfaces/srv/SpawnEntity@ignition.msgs.EntityFactory',
+            '/linear_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            '/diag_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            '/triangle_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
         ],
         output='screen'
     )
@@ -138,6 +157,8 @@ def generate_launch_description():
     # Add all actions to the launch description
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_world_cmd)
+    ld.add_action(declare_headless_cmd)
+    
     
     # Add environment variables
     ld.add_action(path_env)
@@ -146,6 +167,7 @@ def generate_launch_description():
     
     # Add nodes and processes
     ld.add_action(gz_sim)
+    ld.add_action(gz_sim_headless) 
     ld.add_action(gz_spawn_entity)
     ld.add_action(gz_ros2_bridge)
     

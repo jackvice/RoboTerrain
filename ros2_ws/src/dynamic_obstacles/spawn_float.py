@@ -31,7 +31,7 @@ def load_trajectory_file(filepath: str) -> Optional[str]:
 def extract_pose_coordinates(pose_str: str) -> List[float]:
     """Convert a pose string to [x, y, z] with z offset."""
     coords = [float(x) for x in pose_str.split()]
-    coords[2] += 1  # Add 1 to z-coordinate for Actor center mass above robot 
+    coords[2] += 1  # Add 1 to z-coordinate
     return coords[:3]
 
 
@@ -84,20 +84,15 @@ def process_trajectory(trajectory_content: str, desired_velocity: float = 1.0,
             cumulative_time += time_needed
             times.append(cumulative_time)
         
-
-        # Mirror positions for terrain-following return
-        reverse_positions = positions[::-1]
-
-        # Final positions list (full path)
-        positions = positions + reverse_positions
-
-        # Compute times for reverse section
-        for i in range(len(positions)//2, len(positions)):
-            distance = calculate_distance(positions[i-1], positions[i])
-            time_needed = distance / desired_velocity
-            cumulative_time += time_needed
-            times.append(cumulative_time)
-
+        # Add straight-line return to start (like original code)
+        first_pos = positions[0]
+        last_pos = positions[-1]
+        return_distance = calculate_distance(last_pos, first_pos)
+        return_time = return_distance / desired_velocity
+        cumulative_time += return_time
+        
+        positions.append(first_pos)
+        times.append(cumulative_time)
         
         # Build trajectory XML
         new_trajectory = '<trajectory id="0" type="walk">\n'
