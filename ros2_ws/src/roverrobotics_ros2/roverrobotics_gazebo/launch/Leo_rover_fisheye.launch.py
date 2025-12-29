@@ -29,11 +29,11 @@ def generate_launch_description():
         'world',
 
         #default_value='inspection_boxes_x10.world',
-        default_value='inspection_boxes_x10_v2.world', # social nave testing world for MDPI publication
+        #default_value='inspection_boxes_x10_v2.world', # social nave testing world for MDPI publication
         #default_value='inspection_boxes_v3.world', # lots of boxes for Active vision
         #default_value='inspection_boxes_v4.world', # removed some boxes from v3 for Active vision
         #default_value='office_cpr_construction.world',
-        #default_value='island.sdf',
+        default_value='island.sdf',
 
         #default_value='inspection_simple.world',
         #default_value='rubicon.sdf',
@@ -143,9 +143,25 @@ def generate_launch_description():
             '/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
             # Fix this direction (it was reversed)
             '/world/default/dynamic_pose/info@geometry_msgs/msg/PoseArray[ignition.msgs.Pose_V',
-            '/linear_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
-            '/diag_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+
+            # constuct actors:
+            #'/linear_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            #'/diag_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            #'/triangle_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            
+            # island actors:
             '/triangle_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            '/triangle2_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            '/triangle3_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+
+            # construct actors:
+            #'/upper_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            #'/lower_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+
+            # Service bridge for robot pose reset
+            #'/world/inspect/set_pose@ros_gz_interfaces/srv/SetEntityPose',
+            #'/world/default/set_pose@ros_gz_interfaces/srv/SetEntityPose',
+            '/world/moon/set_pose@ros_gz_interfaces/srv/SetEntityPose',
         ],
         output='screen'
     )
