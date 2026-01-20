@@ -149,7 +149,7 @@ def generate_launch_description():
             #'/diag_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
             #'/triangle_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
             
-            # island actors:
+            # island/moon actors:
             '/triangle_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
             '/triangle2_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
             '/triangle3_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',

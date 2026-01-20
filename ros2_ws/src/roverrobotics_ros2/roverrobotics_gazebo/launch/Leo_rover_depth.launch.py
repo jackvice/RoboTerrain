@@ -10,11 +10,15 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, Text
 from launch_ros.substitutions import FindPackageShare
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.substitutions import FindPackageShare
+from launch.conditions import IfCondition, UnlessCondition
+
 
 def generate_launch_description():
     # Create the launch configuration variables
     use_sim_time = LaunchConfiguration('use_sim_time')
     world = LaunchConfiguration('world')
+    headless = LaunchConfiguration('headless')
+
     
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
@@ -23,18 +27,30 @@ def generate_launch_description():
     
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        #default_value='inspection_simple.world',
+
+        #default_value='inspection_boxes_x10.world',
+        #default_value='inspection_boxes_x10_v2.world', # social nave testing world for MDPI publication
+        #default_value='inspection_boxes_v3.world', # lots of boxes for Active vision
+        #default_value='inspection_boxes_v4.world', # removed some boxes from v3 for Active vision
         #default_value='office_cpr_construction.world',
         default_value='island.sdf',
-        
-        #default_value='simplecave3.sdf,'
-        #default_value='maze_simple.sdf',        
+
+        #default_value='inspection_simple.world',
+        #default_value='rubicon.sdf',
+        #default_value='simplecave3.sdf',
+        #default_value='maze_simple.sdf',
         #default_value='maze_pillars.sdf',
         #default_value='inspection.world',
         #default_value='simple_40m2.world',
         #default_value='maze_clean.sdf',
         #default_value='maze_empty.sdf',
         description='World file to use in Gazebo')
+
+
+    declare_headless_cmd = DeclareLaunchArgument(
+        'headless',
+        default_value='false',
+        description='Run Gazebo without GUI (server only) - reduces CPU load for training')
     
     # Construct the world path using substitutions
     world_path = PathJoinSubstitution([
@@ -71,7 +87,6 @@ def generate_launch_description():
         name='IGN_GAZEBO_MODEL_PATH',
         value=f"{pkg_source}"
     )
-
     
     # Set up all environment variables
     path_env = SetEnvironmentVariable(
@@ -82,19 +97,26 @@ def generate_launch_description():
     # Launch Gazebo
     gz_sim = ExecuteProcess(
         cmd=['ign', 'gazebo', world_path],
-        output='screen'
+        output='screen',
+        condition=UnlessCondition(headless)
     )
+
+    gz_sim_headless = ExecuteProcess(
+        cmd=['ign', 'gazebo', '-s', '-r', world_path],
+        output='screen',
+        condition=IfCondition(headless)
+    )
+
     
     # Spawn Rover Robot
-    """
     gz_spawn_entity = Node(
         package='ros_gz_sim',
         executable='create',
         arguments=[
             '-file', os.path.join(
-                get_package_share_directory('roverrobotics_description'),
-                'urdf', 'camera_rover_4wd.sdf'),
-            '-name', 'rover_zero4wd',
+                get_package_share_directory('leo_description'),
+                'sdf', 'leo_depth.sdf'),
+            '-name', 'leo_rover',
             '-allow_renaming', 'true',
             '-x', '0',
             '-y', '0',
@@ -102,41 +124,8 @@ def generate_launch_description():
         ],
         output='screen'
     )
-    """
 
 
-    gz_spawn_entity = Node(
-        package='ros_gz_sim',
-        executable='create',
-        arguments=[
-            '-topic', 'robot_description',
-            '-name', 'leo_rover',
-            '-z', '1.0',
-        ],
-        output='screen'
-    )
-    
-    robot_description_content = Command([
-        'xacro ',
-        os.path.join(
-            get_package_share_directory('leo_description'),  # replace with your actual package name
-            'urdf', 'leo.urdf.xacro'),
-    ])
-
-    robot_state_publisher = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        name='robot_state_publisher',
-        output='screen',
-        parameters=[{
-            'use_sim_time': True,
-        'robot_description': robot_description_content
-        }]
-    )
-
-
-    
-    
     # Bridge between ROS 2 and Ignition Gazebo
     gz_ros2_bridge = Node(
         package='ros_gz_bridge',
@@ -145,17 +134,40 @@ def generate_launch_description():
             # Fix bi-directional topics (use '@' instead of mixed symbols)
             '/cmd_vel@geometry_msgs/msg/Twist@ignition.msgs.Twist',
             '/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock',  # This one-way is correct
-            '/odometry/wheels@nav_msgs/msg/Odometry@ignition.msgs.Odometry',
+            #'/odometry/wheels@nav_msgs/msg/Odometry@ignition.msgs.Odometry',
+            '/odom@nav_msgs/msg/Odometry@ignition.msgs.Odometry',
             '/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',     # This one-way is correct
             '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',  # This one-way is correct
-            '/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
+            #'/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
             '/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU',
             '/camera/image_raw@sensor_msgs/msg/Image@gz.msgs.Image',
             '/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
             # Fix this direction (it was reversed)
             '/world/default/dynamic_pose/info@geometry_msgs/msg/PoseArray[ignition.msgs.Pose_V',
-            # Remove the spawn service bridge as it's causing issues
-            #'/world/default/create@ros_gz_interfaces/srv/SpawnEntity@ignition.msgs.EntityFactory',
+
+            #depth camera
+            '/depth_camera/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
+            '/depth_camera/depth_image@sensor_msgs/msg/Image[gz.msgs.Image',
+            '/depth_camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
+            
+            # constuct actors:
+            #'/linear_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            #'/diag_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            #'/triangle_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            
+            # island/moon actors:
+            '/triangle_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            '/triangle2_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            '/triangle3_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+
+            # construct actors:
+            #'/upper_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            #'/lower_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+
+            # Service bridge for robot pose reset
+            #'/world/inspect/set_pose@ros_gz_interfaces/srv/SetEntityPose',
+            #'/world/default/set_pose@ros_gz_interfaces/srv/SetEntityPose',
+            '/world/moon/set_pose@ros_gz_interfaces/srv/SetEntityPose',
         ],
         output='screen'
     )
@@ -167,6 +179,8 @@ def generate_launch_description():
     # Add all actions to the launch description
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_world_cmd)
+    ld.add_action(declare_headless_cmd)
+    
     
     # Add environment variables
     ld.add_action(path_env)
@@ -175,6 +189,7 @@ def generate_launch_description():
     
     # Add nodes and processes
     ld.add_action(gz_sim)
+    ld.add_action(gz_sim_headless) 
     ld.add_action(gz_spawn_entity)
     ld.add_action(gz_ros2_bridge)
     

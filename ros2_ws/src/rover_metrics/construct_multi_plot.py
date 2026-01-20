@@ -13,6 +13,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def resolve_csv_inputs(path: str) -> List[str]:
+    """Return a list of CSV files from a directory or a single CSV file."""
+    if os.path.isfile(path):
+        return [path] if path.endswith(".csv") else []
+    if os.path.isdir(path):
+        return scan_csv_files(path)
+    return []
+
+
 def scan_csv_files(directory: str) -> List[str]:
     """Scan directory for CSV files, return sorted by filename."""
     pattern: str = os.path.join(directory, "*.csv")
@@ -194,64 +203,18 @@ def plot_timeline(encounter_points: List[Tuple[float, float]], total_goals: int)
     plt.show()
 
 
-
-
-
-def plot_timeline_old(encounter_points: List[Tuple[float, float]], total_goals: int) -> None:
-    """Plot timeline with encounter points in separate distance ranges."""
-    plt.figure(figsize=(12, 6))
-    
-    if not encounter_points:
-        plt.text(0.5, 0.5, 'No encounters detected', ha='center', va='center', transform=plt.gca().transAxes)
-        plt.xlabel('Time (min)')
-        plt.ylabel('Distance (m)')
-        plt.title(f'Robot-Actor Encounter Timeline without Attention Mechanism (Success Rate: {total_goals})')
-        plt.show()
-        return
-    
-    # Extract times and distances from encounter points
-    encounter_times: List[float] = [point[0] for point in encounter_points]
-    encounter_dists: List[float] = [point[1] for point in encounter_points]
-    
-    # Convert to numpy arrays for easier masking
-    encounter_times_array = np.array(encounter_times)
-    encounter_dists_array = np.array(encounter_dists)
-    
-    # Classify encounters by their minimum distance reached
-    encounters_08_12, encounters_05_08, encounters_below_05 = classify_encounters_by_min_distance(encounter_points)
-    
-    # Create masks for each distance range
-    range_08_12 = (encounter_dists_array >= 0.8) & (encounter_dists_array < 1.2)
-    range_05_08 = (encounter_dists_array >= 0.5) & (encounter_dists_array < 0.8)
-    range_below_05 = encounter_dists_array < 0.5
-    
-    # Plot each range with different colors (no lines, just dots)
-    plt.plot(encounter_times_array[range_08_12], encounter_dists_array[range_08_12], 'go', markersize=5, label=f'0.8m-1.2m ({encounters_08_12} encounters)')
-    plt.plot(encounter_times_array[range_05_08], encounter_dists_array[range_05_08], 'bo', markersize=5, label=f'0.5m-0.8m ({encounters_05_08} encounters)')
-    plt.plot(encounter_times_array[range_below_05], encounter_dists_array[range_below_05], 'ro', markersize=5, label=f'<0.5m ({encounters_below_05} encounters)')
-    
-    # Add horizontal threshold lines
-    plt.axhline(y=1.2, color='red', linestyle='--', alpha=0.7, label='1.2m threshold')
-    plt.axhline(y=0.8, color='orange', linestyle='--', alpha=0.7, label='0.8m threshold') 
-    plt.axhline(y=0.5, color='green', linestyle='--', alpha=0.7, label='0.5m threshold')
-    
-    plt.xlabel('Time (min)')
-    plt.ylabel('Distance (m)')
-    plt.title(f'Robot-Actor Encounter Timeline without Attention Mechanism (Success Rate: {total_goals})')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-
 def main() -> None:
     """Main function."""
     if len(sys.argv) != 2:
         print("Usage: python multi_plot.py /path/to/csvs")
         sys.exit(1)
     
-    directory: str = sys.argv[1]
-    file_paths: List[str] = scan_csv_files(directory)
+    #directory: str = sys.argv[1]
+    #file_paths: List[str] = scan_csv_files(directory)
+
+    input_path: str = sys.argv[1]
+    file_paths: List[str] = resolve_csv_inputs(input_path)
+
     
     if not file_paths:
         print(f"No CSV files found in {directory}")

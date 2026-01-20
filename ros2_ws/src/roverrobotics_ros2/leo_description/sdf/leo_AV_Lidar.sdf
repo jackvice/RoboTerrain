@@ -65,29 +65,81 @@
           </mesh>
         </geometry>
       </visual>
-      <sensor name='camera' type='camera'>
-        <camera name='leo_camera'>
-          <horizontal_fov>1.047</horizontal_fov>
+
+      <!-- Wide-angle camera with fisheye-like distortion -->
+      <sensor name="camera" type="camera">
+        <always_on>true</always_on>
+        <update_rate>30</update_rate>
+        <visualize>false</visualize>
+        <topic>camera/image_raw</topic>
+        <pose>0.15 0 0.2313 0 0 0</pose>
+        <ignition_frame_id>camera_optical_frame</ignition_frame_id>
+
+        <camera name="leo_camera">
+          <horizontal_fov>2.8</horizontal_fov>
+          
           <image>
-            <width>640</width>
-            <height>480</height>
+            <width>1600</width>
+            <height>600</height>
             <format>R8G8B8</format>
           </image>
+
           <clip>
-            <near>0.1</near>
-            <far>100</far>
+            <near>0.02</near>
+            <far>300</far>
           </clip>
+
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.007</stddev>
+          </noise>
+          <!-- 
+          <distortion>
+            <k1>-0.279817</k1>
+            <k2>0.060321</k2>
+            <k3>0.000487</k3>
+            <p1>0.000310</p1>
+            <p2>0.000000</p2>
+            <center>0.5 0.5</center>
+          </distortion>
+          -->
         </camera>
-        <always_on>true</always_on>
-        <update_rate>20</update_rate>
-        <visualize>true</visualize>
-        <topic>/camera/image_raw</topic>
-        <pose>0.0971 0 0.15513 0 0.2094 0</pose>
-        <ignition_frame_id>camera_optical_frame</ignition_frame_id>
       </sensor>
-      <sensor name='leo_imu_sensor' type='imu'>
-        <update_rate>100</update_rate>
+
+      < sensor name='gpu_lidar' type='gpu_lidar'>
+        <pose relative_to="lidar_mount">0 0 0 0 0 0</pose>
+        <topic>scan</topic>
+        <update_rate>20</update_rate>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>640</samples>
+              <resolution>1</resolution>
+              <min_angle>-3.1415899999999999</min_angle>
+              <max_angle>3.1415899999999999</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>1</samples>
+              <resolution>1</resolution>
+              <min_angle>0</min_angle>
+              <max_angle>0</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.14999999999999999</min>
+            <max>10</max>
+            <resolution>0.01</resolution>
+          </range>
+        </lidar>
         <visualize>true</visualize>
+        
+        <ignition_frame_id>lidar_link</ignition_frame_id>
+      </sensor>
+      
+      <sensor name='leo_imu_sensor' type='imu'>
+        <update_rate>20</update_rate>
+        <visualize>false</visualize>
         <topic>imu/data_raw</topic>
         <always_on>true</always_on>
         <pose>0.0628 -0.0314 0.15853 0 -0 0</pose>
@@ -170,8 +222,8 @@
       <axis>
         <xyz>0 -1 0</xyz>
         <limit>
-          <effort>2</effort>
-          <velocity>6</velocity>
+          <effort>4</effort>
+          <velocity>12</velocity>
           <lower>-10000000000000000</lower>
           <upper>10000000000000000</upper>
         </limit>
@@ -183,6 +235,7 @@
         </dynamics>
       </axis>
     </joint>
+
     <link name='wheel_FL_link'>
       <pose relative_to='wheel_FL_joint'>0 0 0 0 0 0</pose>
       <inertial>
@@ -197,90 +250,35 @@
           <izz>0.00039100000000000002</izz>
         </inertia>
       </inertial>
+      
+      <!-- SINGLE SIMPLIFIED COLLISION -->
       <collision name='wheel_FL_link_collision'>
         <pose>0 0.04485 0 1.570796326794896 0 0</pose>
         <geometry>
           <cylinder>
-            <length>0.070000000000000007</length>
-            <radius>0.057000000000000002</radius>
+            <length>0.070</length>
+            <radius>0.0625</radius>  <!-- Use the larger radius for better contact -->
           </cylinder>
         </geometry>
         <surface>
           <friction>
-            <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
+            <dart>
+              <mu_primary>5.0</mu_primary>
+              <mu_secondary>4.0</mu_secondary>
+              <slip_primary>0.001</slip_primary>  <!-- Reduced slip -->
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 1 0</primary_axis>
+            </dart>
             <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
+              <friction>5.0</friction>
+              <friction2>4.0</friction2>
+              <rolling_friction>0.05</rolling_friction>
             </bullet>
           </friction>
-          <contact>
-            <ode/>
-          </contact>
         </surface>
       </collision>
-      <collision name='wheel_FL_link_collision_1'>
-        <pose>0 0.04485 0 1.570796326794896 0 0</pose>
-        <geometry>
-          <cylinder>
-            <length>0.040000000000000001</length>
-            <radius>0.0625</radius>
-          </cylinder>
-        </geometry>
-        <surface>
-          <friction>
-            <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
-      <collision name='wheel_FL_link_collision_2'>
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://leo_description/models/Wheel_outline.stl</uri>
-          </mesh>
-        </geometry>
-        <surface>
-          <friction>
-            <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
+      
+      <!-- KEEP VISUAL FOR APPEARANCE -->
       <visual name='wheel_FL_link_visual'>
         <pose>0 0 0 0 0 0</pose>
         <geometry>
@@ -291,6 +289,7 @@
         </geometry>
       </visual>
     </link>
+
     <joint name='wheel_RL_joint' type='revolute'>
       <pose relative_to='rocker_L_link'>0.15256 -0.08214 -0.08802 0 0 0</pose>
       <parent>rocker_L_link</parent>
@@ -298,8 +297,8 @@
       <axis>
         <xyz>0 -1 0</xyz>
         <limit>
-          <effort>2</effort>
-          <velocity>6</velocity>
+          <effort>4</effort>
+          <velocity>12</velocity>
           <lower>-10000000000000000</lower>
           <upper>10000000000000000</upper>
         </limit>
@@ -325,55 +324,29 @@
           <izz>0.00039100000000000002</izz>
         </inertia>
       </inertial>
+      
+      <!-- SINGLE SIMPLIFIED COLLISION -->
       <collision name='wheel_RL_link_collision'>
         <pose>0 0.04485 0 1.570796326794896 0 0</pose>
         <geometry>
           <cylinder>
             <length>0.070000000000000007</length>
-            <radius>0.057000000000000002</radius>
-          </cylinder>
-        </geometry>
-        <surface>
-          <friction>
-            <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
-      <collision name='wheel_RL_link_collision_1'>
-        <pose>0 0.04485 0 1.570796326794896 0 0</pose>
-        <geometry>
-          <cylinder>
-            <length>0.040000000000000001</length>
             <radius>0.0625</radius>
           </cylinder>
         </geometry>
         <surface>
           <friction>
-            <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
+            <dart>
+              <mu_primary>5.0</mu_primary>
+              <mu_secondary>4.0</mu_secondary>
+              <slip_primary>0.001</slip_primary>
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 1 0</primary_axis>
+            </dart>
             <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
+              <friction>5.0</friction>
+              <friction2>4.0</friction2>
+              <rolling_friction>0.05</rolling_friction>
             </bullet>
           </friction>
           <contact>
@@ -381,34 +354,8 @@
           </contact>
         </surface>
       </collision>
-      <collision name='wheel_RL_link_collision_2'>
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://leo_description/models/Wheel_outline.stl</uri>
-          </mesh>
-        </geometry>
-        <surface>
-          <friction>
-            <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
+      
+      <!-- KEEP VISUAL FOR APPEARANCE -->
       <visual name='wheel_RL_link_visual'>
         <pose>0 0 0 0 0 0</pose>
         <geometry>
@@ -495,8 +442,8 @@
       <axis>
         <xyz>0 1 0</xyz>
         <limit>
-          <effort>2</effort>
-          <velocity>6</velocity>
+          <effort>4</effort>
+          <velocity>12</velocity>
           <lower>-10000000000000000</lower>
           <upper>10000000000000000</upper>
         </limit>
@@ -522,55 +469,29 @@
           <izz>0.00039100000000000002</izz>
         </inertia>
       </inertial>
+      
+      <!-- SINGLE SIMPLIFIED COLLISION -->
       <collision name='wheel_FR_link_collision'>
         <pose>0 0.04485 0 1.570796326794896 0 0</pose>
         <geometry>
           <cylinder>
             <length>0.070000000000000007</length>
-            <radius>0.057000000000000002</radius>
-          </cylinder>
-        </geometry>
-        <surface>
-          <friction>
-            <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
-      <collision name='wheel_FR_link_collision_1'>
-        <pose>0 0.04485 0 1.570796326794896 0 0</pose>
-        <geometry>
-          <cylinder>
-            <length>0.040000000000000001</length>
             <radius>0.0625</radius>
           </cylinder>
         </geometry>
         <surface>
           <friction>
-            <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
+            <dart>
+              <mu_primary>5.0</mu_primary>
+              <mu_secondary>4.0</mu_secondary>
+              <slip_primary>0.001</slip_primary>
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 1 0</primary_axis>
+            </dart>
             <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
+              <friction>5.0</friction>
+              <friction2>4.0</friction2>
+              <rolling_friction>0.05</rolling_friction>
             </bullet>
           </friction>
           <contact>
@@ -578,34 +499,8 @@
           </contact>
         </surface>
       </collision>
-      <collision name='wheel_FR_link_collision_2'>
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://leo_description/models/Wheel_outline.stl</uri>
-          </mesh>
-        </geometry>
-        <surface>
-          <friction>
-            <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
+      
+      <!-- KEEP VISUAL FOR APPEARANCE -->
       <visual name='wheel_FR_link_visual'>
         <pose>0 0 0 0 0 0</pose>
         <geometry>
@@ -623,8 +518,8 @@
       <axis>
         <xyz>0 1 0</xyz>
         <limit>
-          <effort>2</effort>
-          <velocity>6</velocity>
+          <effort>4</effort>
+          <velocity>12</velocity>
           <lower>-10000000000000000</lower>
           <upper>10000000000000000</upper>
         </limit>
@@ -650,55 +545,29 @@
           <izz>0.00039100000000000002</izz>
         </inertia>
       </inertial>
+      
+      <!-- SINGLE SIMPLIFIED COLLISION -->
       <collision name='wheel_RR_link_collision'>
         <pose>0 0.04485 0 1.570796326794896 0 0</pose>
         <geometry>
           <cylinder>
             <length>0.070000000000000007</length>
-            <radius>0.057000000000000002</radius>
-          </cylinder>
-        </geometry>
-        <surface>
-          <friction>
-            <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
-      <collision name='wheel_RR_link_collision_1'>
-        <pose>0 0.04485 0 1.570796326794896 0 0</pose>
-        <geometry>
-          <cylinder>
-            <length>0.040000000000000001</length>
             <radius>0.0625</radius>
           </cylinder>
         </geometry>
         <surface>
           <friction>
-            <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
+            <dart>
+              <mu_primary>5.0</mu_primary>
+              <mu_secondary>4.0</mu_secondary>
+              <slip_primary>0.001</slip_primary>
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 1 0</primary_axis>
+            </dart>
             <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
+              <friction>5.0</friction>
+              <friction2>4.0</friction2>
+              <rolling_friction>0.05</rolling_friction>
             </bullet>
           </friction>
           <contact>
@@ -706,34 +575,8 @@
           </contact>
         </surface>
       </collision>
-      <collision name='wheel_RR_link_collision_2'>
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://leo_description/models/Wheel_outline.stl</uri>
-          </mesh>
-        </geometry>
-        <surface>
-          <friction>
-            <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
-              <slip1>0.035000000000000003</slip1>
-              <slip2>0</slip2>
-              <fdir1>0 0 1</fdir1>
-            </ode>
-            <bullet>
-              <friction>1</friction>
-              <friction2>1</friction2>
-              <rolling_friction>0.10000000000000001</rolling_friction>
-            </bullet>
-          </friction>
-          <contact>
-            <ode/>
-          </contact>
-        </surface>
-      </collision>
+      
+      <!-- KEEP VISUAL FOR APPEARANCE -->
       <visual name='wheel_RR_link_visual'>
         <pose>0 0 0 0 0 0</pose>
         <geometry>
@@ -754,8 +597,8 @@
     </plugin>
     <plugin name='gz::sim::systems::DiffDrive' filename='libgz-sim-diff-drive-system.so'>
       <left_joint>wheel_FL_joint</left_joint>
-      <right_joint>wheel_FR_joint</right_joint>
       <left_joint>wheel_RL_joint</left_joint>
+      <right_joint>wheel_FR_joint</right_joint>
       <right_joint>wheel_RR_joint</right_joint>
       <wheel_separation>0.358</wheel_separation>
       <wheel_radius>0.0625</wheel_radius>
@@ -763,7 +606,7 @@
       <child_frame_id>base_footprint</child_frame_id>
       <odom_publish_frequency>20</odom_publish_frequency>
       <topic>cmd_vel</topic>
-      <odom_topic>odom</odom_topic>
+      <odom_topic>odometry/wheels</odom_topic>
       <tf_topic>tf</tf_topic>
       <max_linear_acceleration>2.5</max_linear_acceleration>
       <max_angular_acceleration>3</max_angular_acceleration>
@@ -773,6 +616,21 @@
     <plugin name="gz::sim::systems::Sensors" filename="libgz-sim-sensors-system.so">
       <render_engine>ogre2</render_engine>
     </plugin>
+    <plugin
+        filename="libignition-gazebo-pose-publisher-system.so"
+        name="ignition::gazebo::systems::PosePublisher">
+      <publish_link_pose>false</publish_link_pose>
+      <publish_sensor_pose>true</publish_sensor_pose>  <!-- turn this on for sensors -->
+      <use_world_frame>true</use_world_frame>
+    </plugin>
+    
+    <!-- LIDAR frames -->
+    <frame name='lidar_mount' attached_to='base_link'>
+      <!-- match the pose you used on the sensor -->
+      <pose>0.174 0 0.6 0 -0 3.1415</pose>
+    </frame>
+    <frame name='lidar_link' attached_to='lidar_mount'/>
+
     <frame name='antenna_joint' attached_to='base_link'>
       <pose>-0.0052 0.056 -0.0065 0 -0 0</pose>
     </frame>
