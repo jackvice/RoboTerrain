@@ -46,7 +46,7 @@ def generate_launch_description():
         #default_value='maze_empty.sdf',
         description='World file to use in Gazebo')
 
-
+    
     declare_headless_cmd = DeclareLaunchArgument(
         'headless',
         default_value='false',
@@ -125,7 +125,18 @@ def generate_launch_description():
         output='screen'
     )
 
+    # Static transform: base_footprint -> camera_link
+    # Adjust x, y, z values based on actual camera position on Leo
 
+    static_tf_camera = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_tf_camera',
+        arguments=['--x', '0.1', '--y', '0', '--z', '0.15', 
+                   '--roll', '0', '--pitch', '0', '--yaw', '0',
+                   '--frame-id', 'base_footprint', '--child-frame-id', 'camera_link']
+    )
+    
     # Bridge between ROS 2 and Ignition Gazebo
     gz_ros2_bridge = Node(
         package='ros_gz_bridge',
@@ -171,7 +182,8 @@ def generate_launch_description():
         ],
         output='screen'
     )
-    
+
+
     
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -192,6 +204,8 @@ def generate_launch_description():
     ld.add_action(gz_sim_headless) 
     ld.add_action(gz_spawn_entity)
     ld.add_action(gz_ros2_bridge)
+
+    ld.add_action(static_tf_camera)    
     
     return ld
 
