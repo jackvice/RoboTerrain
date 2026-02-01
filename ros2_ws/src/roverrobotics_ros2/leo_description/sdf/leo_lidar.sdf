@@ -1,0 +1,611 @@
+<sdf version='1.9'>
+  <model name='leo_sim'>
+    <link name='base_footprint'>
+      <inertial>
+        <pose>-0.01965072201211552 0.01167759118438614 0.1660702125213793 0 0 0</pose>
+        <mass>1.5862309999999999</mass>
+        <inertia>
+          <ixx>0.01042630889712674</ixx>
+          <ixy>0.001176207094533427</ixy>
+          <ixz>-0.00088806760314957389</ixz>
+          <iyy>0.01045413545998981</iyy>
+          <iyz>0.00021963222424937429</iyz>
+          <izz>0.018172704009346379</izz>
+        </inertia>
+      </inertial>
+      <collision name='base_footprint_fixed_joint_lump__base_link_collision'>
+        <pose>0 0 0.19783 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://leo_description/models/Chassis_outline.stl</uri>
+          </mesh>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>0.29999999999999999</mu>
+              <mu2>0.29999999999999999</mu2>
+            </ode>
+            <bullet>
+              <friction>0.29999999999999999</friction>
+              <friction2>0.29999999999999999</friction2>
+              <rolling_friction>0.10000000000000001</rolling_friction>
+            </bullet>
+          </friction>
+          <contact>
+            <ode/>
+          </contact>
+        </surface>
+      </collision>
+      <collision name='base_footprint_fixed_joint_lump__antenna_link_collision_1'>
+        <pose>-0.0052 0.056 0.21933 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.056000000000000001</length>
+            <radius>0.0054999999999999997</radius>
+          </cylinder>
+        </geometry>
+      </collision>
+      <visual name='base_footprint_fixed_joint_lump__base_link_visual'>
+        <pose>0 0 0.19783 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://leo_description/models/Chassis.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <visual name='base_footprint_fixed_joint_lump__antenna_link_visual_1'>
+        <pose>-0.0052 0.056 0.19133 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://leo_description/models/Antenna.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+
+      <sensor name="gpu_lidar" type="gpu_lidar">
+        <pose relative_to="lidar_mount">0 0 0 0 0 0</pose>
+        <topic>/scan</topic>
+        <update_rate>20</update_rate>
+        
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>640</samples>
+              <resolution>1</resolution>
+              <min_angle>-3.14159</min_angle>
+              <max_angle> 3.14159</max_angle>
+            </horizontal>
+          </scan>
+          
+          <range>
+            <min>0.15</min>
+            <max>10.0</max>
+            <resolution>0.01</resolution>
+          </range>
+        </lidar>
+
+        <visualize>true</visualize>
+        <ignition_frame_id>lidar_link</ignition_frame_id>
+      </sensor>
+
+      
+      <sensor name='leo_imu_sensor' type='imu'>
+        <update_rate>20</update_rate>
+        <visualize>false</visualize>
+        <topic>imu/data_raw</topic>
+        <always_on>true</always_on>
+        <pose>0.0628 -0.0314 0.15853 0 -0 0</pose>
+        <ignition_frame_id>imu_frame</ignition_frame_id>
+      </sensor>
+    </link>
+    <joint name='rocker_L_joint' type='revolute'>
+      <pose relative_to='base_footprint'>0.00263 0.14167 0.15052 0 0 3.141592653589793</pose>
+      <parent>base_footprint</parent>
+      <child>rocker_L_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.23999999999999999</lower>
+          <upper>0.23999999999999999</upper>
+          <effort>100</effort>
+          <velocity>100</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.10000000000000001</damping>
+          <friction>1</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='rocker_L_link'>
+      <pose relative_to='rocker_L_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0.01346 -0.06506000000000001 0 0 0</pose>
+        <mass>1.3873359999999999</mass>
+        <inertia>
+          <ixx>0.0029559999999999999</ixx>
+          <ixy>-1.4893239999999999e-06</ixy>
+          <ixz>-8.1034070000000002e-06</ixz>
+          <iyy>0.029239999999999999</iyy>
+          <iyz>7.1119999999999997e-05</iyz>
+          <izz>0.028320000000000001</izz>
+        </inertia>
+      </inertial>
+      <collision name='rocker_L_link_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://leo_description/models/Rocker_outline.stl</uri>
+          </mesh>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>0.29999999999999999</mu>
+              <mu2>0.29999999999999999</mu2>
+            </ode>
+            <bullet>
+              <friction>0.29999999999999999</friction>
+              <friction2>0.29999999999999999</friction2>
+              <rolling_friction>0.10000000000000001</rolling_friction>
+            </bullet>
+          </friction>
+          <contact>
+            <ode/>
+          </contact>
+        </surface>
+      </collision>
+      <visual name='rocker_L_link_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://leo_description/models/Rocker.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='wheel_FL_joint' type='revolute'>
+      <pose relative_to='rocker_L_link'>-0.15256 -0.08214 -0.08802 0 0 0</pose>
+      <parent>rocker_L_link</parent>
+      <child>wheel_FL_link</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <effort>4</effort>
+          <velocity>12</velocity>
+          <lower>-10000000000000000</lower>
+          <upper>10000000000000000</upper>
+        </limit>
+        <dynamics>
+          <damping>0.10000000000000001</damping>
+          <friction>0.3125</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+
+    <link name='wheel_FL_link'>
+      <pose relative_to='wheel_FL_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0.030026 0 0 0 0</pose>
+        <mass>0.28364200000000001</mass>
+        <inertia>
+          <ixx>0.00039100000000000002</ixx>
+          <ixy>1.2396200000000001e-06</ixy>
+          <ixz>5.5258200000000004e-07</ixz>
+          <iyy>0.00047160000000000002</iyy>
+          <iyz>-2.082042e-06</iyz>
+          <izz>0.00039100000000000002</izz>
+        </inertia>
+      </inertial>
+      
+      <!-- SINGLE SIMPLIFIED COLLISION -->
+      <collision name='wheel_FL_link_collision'>
+        <pose>0 0.04485 0 1.570796326794896 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.070</length>
+            <radius>0.0625</radius>  <!-- Use the larger radius for better contact -->
+          </cylinder>
+        </geometry>
+        <surface>
+          <friction>
+            <dart>
+              <mu_primary>5.0</mu_primary>
+              <mu_secondary>4.0</mu_secondary>
+              <slip_primary>0.001</slip_primary>  <!-- Reduced slip -->
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 1 0</primary_axis>
+            </dart>
+            <bullet>
+              <friction>5.0</friction>
+              <friction2>4.0</friction2>
+              <rolling_friction>0.05</rolling_friction>
+            </bullet>
+          </friction>
+        </surface>
+      </collision>
+      
+      <!-- KEEP VISUAL FOR APPEARANCE -->
+      <visual name='wheel_FL_link_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://leo_description/models/WheelA.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+
+    <joint name='wheel_RL_joint' type='revolute'>
+      <pose relative_to='rocker_L_link'>0.15256 -0.08214 -0.08802 0 0 0</pose>
+      <parent>rocker_L_link</parent>
+      <child>wheel_RL_link</child>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <effort>4</effort>
+          <velocity>12</velocity>
+          <lower>-10000000000000000</lower>
+          <upper>10000000000000000</upper>
+        </limit>
+        <dynamics>
+          <damping>0.10000000000000001</damping>
+          <friction>0.3125</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='wheel_RL_link'>
+      <pose relative_to='wheel_RL_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0.030026 0 0 0 0</pose>
+        <mass>0.28364200000000001</mass>
+        <inertia>
+          <ixx>0.00039100000000000002</ixx>
+          <ixy>1.2396200000000001e-06</ixy>
+          <ixz>5.5258200000000004e-07</ixz>
+          <iyy>0.00047160000000000002</iyy>
+          <iyz>-2.082042e-06</iyz>
+          <izz>0.00039100000000000002</izz>
+        </inertia>
+      </inertial>
+      
+      <!-- SINGLE SIMPLIFIED COLLISION -->
+      <collision name='wheel_RL_link_collision'>
+        <pose>0 0.04485 0 1.570796326794896 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.070000000000000007</length>
+            <radius>0.0625</radius>
+          </cylinder>
+        </geometry>
+        <surface>
+          <friction>
+            <dart>
+              <mu_primary>5.0</mu_primary>
+              <mu_secondary>4.0</mu_secondary>
+              <slip_primary>0.001</slip_primary>
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 1 0</primary_axis>
+            </dart>
+            <bullet>
+              <friction>5.0</friction>
+              <friction2>4.0</friction2>
+              <rolling_friction>0.05</rolling_friction>
+            </bullet>
+          </friction>
+          <contact>
+            <ode/>
+          </contact>
+        </surface>
+      </collision>
+      
+      <!-- KEEP VISUAL FOR APPEARANCE -->
+      <visual name='wheel_RL_link_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://leo_description/models/WheelA.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='rocker_R_joint' type='revolute'>
+      <pose relative_to='base_footprint'>0.00263 -0.14167 0.15052 0 0 0</pose>
+      <parent>base_footprint</parent>
+      <child>rocker_R_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-0.23999999999999999</lower>
+          <upper>0.23999999999999999</upper>
+          <effort>100</effort>
+          <velocity>100</velocity>
+        </limit>
+        <dynamics>
+          <damping>0.10000000000000001</damping>
+          <friction>1</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='rocker_R_link'>
+      <pose relative_to='rocker_R_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0.01346 -0.06506000000000001 0 0 0</pose>
+        <mass>1.3873359999999999</mass>
+        <inertia>
+          <ixx>0.0029559999999999999</ixx>
+          <ixy>-1.4893239999999999e-06</ixy>
+          <ixz>-8.1034070000000002e-06</ixz>
+          <iyy>0.029239999999999999</iyy>
+          <iyz>7.1119999999999997e-05</iyz>
+          <izz>0.028320000000000001</izz>
+        </inertia>
+      </inertial>
+      <collision name='rocker_R_link_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://leo_description/models/Rocker_outline.stl</uri>
+          </mesh>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>0.29999999999999999</mu>
+              <mu2>0.29999999999999999</mu2>
+            </ode>
+            <bullet>
+              <friction>0.29999999999999999</friction>
+              <friction2>0.29999999999999999</friction2>
+              <rolling_friction>0.10000000000000001</rolling_friction>
+            </bullet>
+          </friction>
+          <contact>
+            <ode/>
+          </contact>
+        </surface>
+      </collision>
+      <visual name='rocker_R_link_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://leo_description/models/Rocker.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='wheel_FR_joint' type='revolute'>
+      <pose relative_to='rocker_R_link'>0.15256 -0.08214 -0.08802 0 0 0</pose>
+      <parent>rocker_R_link</parent>
+      <child>wheel_FR_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <effort>4</effort>
+          <velocity>12</velocity>
+          <lower>-10000000000000000</lower>
+          <upper>10000000000000000</upper>
+        </limit>
+        <dynamics>
+          <damping>0.10000000000000001</damping>
+          <friction>0.3125</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='wheel_FR_link'>
+      <pose relative_to='wheel_FR_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0.030026 0 0 0 0</pose>
+        <mass>0.28364200000000001</mass>
+        <inertia>
+          <ixx>0.00039100000000000002</ixx>
+          <ixy>1.2396200000000001e-06</ixy>
+          <ixz>5.5258200000000004e-07</ixz>
+          <iyy>0.00047160000000000002</iyy>
+          <iyz>-2.082042e-06</iyz>
+          <izz>0.00039100000000000002</izz>
+        </inertia>
+      </inertial>
+      
+      <!-- SINGLE SIMPLIFIED COLLISION -->
+      <collision name='wheel_FR_link_collision'>
+        <pose>0 0.04485 0 1.570796326794896 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.070000000000000007</length>
+            <radius>0.0625</radius>
+          </cylinder>
+        </geometry>
+        <surface>
+          <friction>
+            <dart>
+              <mu_primary>5.0</mu_primary>
+              <mu_secondary>4.0</mu_secondary>
+              <slip_primary>0.001</slip_primary>
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 1 0</primary_axis>
+            </dart>
+            <bullet>
+              <friction>5.0</friction>
+              <friction2>4.0</friction2>
+              <rolling_friction>0.05</rolling_friction>
+            </bullet>
+          </friction>
+          <contact>
+            <ode/>
+          </contact>
+        </surface>
+      </collision>
+      
+      <!-- KEEP VISUAL FOR APPEARANCE -->
+      <visual name='wheel_FR_link_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://leo_description/models/WheelB.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='wheel_RR_joint' type='revolute'>
+      <pose relative_to='rocker_R_link'>-0.15256 -0.08214 -0.08802 0 0 0</pose>
+      <parent>rocker_R_link</parent>
+      <child>wheel_RR_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <effort>4</effort>
+          <velocity>12</velocity>
+          <lower>-10000000000000000</lower>
+          <upper>10000000000000000</upper>
+        </limit>
+        <dynamics>
+          <damping>0.10000000000000001</damping>
+          <friction>0.3125</friction>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name='wheel_RR_link'>
+      <pose relative_to='wheel_RR_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0.030026 0 0 0 0</pose>
+        <mass>0.28364200000000001</mass>
+        <inertia>
+          <ixx>0.00039100000000000002</ixx>
+          <ixy>1.2396200000000001e-06</ixy>
+          <ixz>5.5258200000000004e-07</ixz>
+          <iyy>0.00047160000000000002</iyy>
+          <iyz>-2.082042e-06</iyz>
+          <izz>0.00039100000000000002</izz>
+        </inertia>
+      </inertial>
+      
+      <!-- SINGLE SIMPLIFIED COLLISION -->
+      <collision name='wheel_RR_link_collision'>
+        <pose>0 0.04485 0 1.570796326794896 0 0</pose>
+        <geometry>
+          <cylinder>
+            <length>0.070000000000000007</length>
+            <radius>0.0625</radius>
+          </cylinder>
+        </geometry>
+        <surface>
+          <friction>
+            <dart>
+              <mu_primary>5.0</mu_primary>
+              <mu_secondary>4.0</mu_secondary>
+              <slip_primary>0.001</slip_primary>
+              <slip_secondary>0.0</slip_secondary>
+              <primary_axis>0 1 0</primary_axis>
+            </dart>
+            <bullet>
+              <friction>5.0</friction>
+              <friction2>4.0</friction2>
+              <rolling_friction>0.05</rolling_friction>
+            </bullet>
+          </friction>
+          <contact>
+            <ode/>
+          </contact>
+        </surface>
+      </collision>
+      
+      <!-- KEEP VISUAL FOR APPEARANCE -->
+      <visual name='wheel_RR_link_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://leo_description/models/WheelB.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <plugin name='leo_gz::DifferentialSystem' filename='libleo_gz_differential_plugin.so'>
+      <jointA>rocker_L_joint</jointA>
+      <jointB>rocker_R_joint</jointB>
+      <forceConstant>100.0</forceConstant>
+    </plugin>
+    <plugin name='gz::sim::systems::JointStatePublisher' filename='libgz-sim-joint-state-publisher-system.so'>
+      <topic>joint_states</topic>
+    </plugin>
+    <plugin name='gz::sim::systems::DiffDrive' filename='libgz-sim-diff-drive-system.so'>
+      <left_joint>wheel_FL_joint</left_joint>
+      <left_joint>wheel_RL_joint</left_joint>
+      <right_joint>wheel_FR_joint</right_joint>
+      <right_joint>wheel_RR_joint</right_joint>
+      <wheel_separation>0.358</wheel_separation>
+      <wheel_radius>0.0625</wheel_radius>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_footprint</child_frame_id>
+      <odom_publish_frequency>20</odom_publish_frequency>
+      <topic>cmd_vel</topic>
+      <odom_topic>odometry/wheels</odom_topic>
+      <tf_topic>tf</tf_topic>
+      <max_linear_acceleration>2.5</max_linear_acceleration>
+      <max_angular_acceleration>3</max_angular_acceleration>
+      <min_linear_acceleration>-2.5</min_linear_acceleration>
+      <min_angular_acceleration>-3</min_angular_acceleration>
+    </plugin>
+    <plugin name="gz::sim::systems::Sensors" filename="libgz-sim-sensors-system.so">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin
+        filename="libignition-gazebo-pose-publisher-system.so"
+        name="ignition::gazebo::systems::PosePublisher">
+      <publish_link_pose>false</publish_link_pose>
+      <publish_sensor_pose>true</publish_sensor_pose>  <!-- turn this on for sensors -->
+      <use_world_frame>true</use_world_frame>
+    </plugin>
+    
+    <!-- LIDAR frames -->
+    <frame name='lidar_mount' attached_to='base_link'>
+      <!-- match the pose you used on the sensor -->
+      <pose>0.174 0 0.6 0 -0 3.1415</pose>
+    </frame>
+    <frame name='lidar_link' attached_to='lidar_mount'/>
+
+    <frame name='antenna_joint' attached_to='base_link'>
+      <pose>-0.0052 0.056 -0.0065 0 -0 0</pose>
+    </frame>
+    <frame name='antenna_link' attached_to='antenna_joint'/>
+    <frame name='camera_optical_joint' attached_to='camera_frame'>
+      <pose>0 0 0 -1.5708 -0 -1.5708</pose>
+    </frame>
+    <frame name='camera_optical_frame' attached_to='camera_optical_joint'/>
+    <frame name='camera_joint' attached_to='base_link'>
+      <pose>0.0971 0 -0.0427 0 0.2094 0</pose>
+    </frame>
+    <frame name='camera_frame' attached_to='camera_joint'/>
+    <frame name='imu_joint' attached_to='base_link'>
+      <pose>0.0628 -0.0314 -0.0393 0 -0 0</pose>
+    </frame>
+    <frame name='imu_frame' attached_to='imu_joint'/>
+    <frame name='base_joint' attached_to='base_footprint'>
+      <pose>0 0 0.19783 0 -0 0</pose>
+    </frame>
+    <frame name='base_link' attached_to='base_joint'/>
+  </model>
+</sdf>
