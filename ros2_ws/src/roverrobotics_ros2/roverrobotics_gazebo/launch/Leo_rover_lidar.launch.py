@@ -68,7 +68,8 @@ def generate_launch_description():
     
     # Create combined resource path
     resource_path = ':'.join([
-        os.path.join(os.path.expanduser('~'), 'worlds/gazebo_models_worlds_collection/models/cpr_office_construction'),
+        os.path.join(os.path.expanduser('~'),
+                     'worlds/gazebo_models_worlds_collection/models/cpr_office_construction'),
         pkg_source,                   # Source directory
         os.path.dirname(pkg_source)   # Parent of source directory
     ])
@@ -135,7 +136,8 @@ def generate_launch_description():
             '/cmd_vel@geometry_msgs/msg/Twist@ignition.msgs.Twist',
             '/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock',  # This one-way is correct
             #'/odometry/wheels@nav_msgs/msg/Odometry@ignition.msgs.Odometry', fisheye
-            '/odometry/wheels@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
+            #'/odometry/wheels@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
+            '/odom_ground_truth@nav_msgs/msg/Odometry[ignition.msgs.Odometry', # nav2 lidar
             '/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',     # This one-way is correct
             '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',  # This one-way is correct
             '/scan@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
@@ -231,6 +233,22 @@ def generate_launch_description():
 
     ld.add_action(static_tf_lidar)
     ld.add_action(static_tf_base_footprint)
+
+
+    # Ground truth pose converter for Nav2
+    # Set world_name to match Ignition world: 'moon', 'construct', or 'inspect'
+    world_name = 'moon'
+    
+    pose_converter = ExecuteProcess(
+        cmd=['python3', 
+             os.path.join(os.path.expanduser('~'), 
+                         'src/RoboTerrain/ros2_ws/src/pose_topic/ign_ros2_Nav2_topics.py'),
+             world_name, 
+             'leo_rover'],
+        output='screen',
+    )
+    
+    ld.add_action(pose_converter)
     
     return ld
 

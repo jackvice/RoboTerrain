@@ -6,6 +6,8 @@ import tf2_ros
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 import threading
 import subprocess
+from nav_msgs.msg import Odometry
+
 
 class PoseConverterNode(Node):
     def __init__(self, world_name, robot_name):
@@ -30,7 +32,12 @@ class PoseConverterNode(Node):
             PoseArray,
             '/rover/pose_array',
             qos)
-            
+
+        self.odom_pub = self.create_publisher(
+            Odometry,
+            '/odom_ground_truth',
+            10)
+        
         # TF2 broadcaster
         self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
 
@@ -121,6 +128,13 @@ class PoseConverterNode(Node):
                         
                         # Publish pose array
                         self.pose_array_pub.publish(pose_array)
+                        # Publish as Odometry for Nav2
+                        odom_msg = Odometry()
+                        odom_msg.header.stamp = self.get_clock().now().to_msg()
+                        odom_msg.header.frame_id = 'odom'
+                        odom_msg.child_frame_id = 'base_footprint'
+                        odom_msg.pose.pose = current_pose
+                        self.odom_pub.publish(odom_msg)
                         
                         # Broadcast transform
                         t = TransformStamped()

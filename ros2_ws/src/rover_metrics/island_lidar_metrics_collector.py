@@ -12,6 +12,7 @@ import rclpy
 from std_msgs.msg import String
 from geometry_msgs.msg import Pose, PoseStamped, PoseArray
 from typing import Optional, Tuple
+from rclpy.parameter import Parameter
 
 # add near your imports
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy
@@ -176,7 +177,14 @@ def main() -> None:
 
     # --- ROS setup -----------------------------------------------------------
     rclpy.init()
-    node = rclpy.create_node("metrics_collector")
+    
+    #node = rclpy.create_node("metrics_collector")
+    
+    node = rclpy.create_node(
+        "metrics_collector",
+        parameter_overrides=[Parameter("use_sim_time", Parameter.Type.BOOL, True)],
+    )
+
 
     def on_robot_pose(msg: PoseArray) -> None:
         nonlocal robot_xy
@@ -196,14 +204,8 @@ def main() -> None:
         nonlocal actor3_xy
         actor3_xy = (float(msg.position.x), float(msg.position.y))
 
-    def on_odom(msg: Odometry) -> None:
-        nonlocal robot_xy
-        p = msg.pose.pose.position
-        robot_xy = (float(p.x), float(p.y))
-
     robot_qos = QoSProfile(depth=1, reliability=QoSReliabilityPolicy.BEST_EFFORT)
-    #node.create_subscription(PoseArray, '/rover/pose_array', on_robot_pose, robot_qos)
-    node.create_subscription(Odometry, '/odometry/wheels', on_odom, 10)
+    node.create_subscription(PoseArray, '/rover/pose_array', on_robot_pose, robot_qos)
     node.create_subscription(Pose, "/triangle_actor/pose", on_actor1_pose, 10)
     node.create_subscription(Pose, "/triangle2_actor/pose", on_actor2_pose, 10)
     node.create_subscription(Pose, "/triangle3_actor/pose", on_actor3_pose, 10)
@@ -226,6 +228,11 @@ def main() -> None:
     next_log = start + 1.0
     step = 0
     duration_s = TOTAL_MINUTES * 60
+
+    print("Waiting for Nav2 to connect...")
+    while goal_pub.get_subscription_count() == 0:
+        rclpy.spin_once(node, timeout_sec=0.1)
+    print("Nav2 connected.")
 
     send_new_goal()
 
