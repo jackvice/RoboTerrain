@@ -119,8 +119,47 @@ class PoseConverterNode(Node):
                     elif 'w:' in line:
                         current_pose.orientation.w = float(line.split(':')[1])
 
-
     def _publish_from_queue(self) -> None:
+        """Timer callback: publish only the newest pose (drop older queued poses)."""
+        latest_pose = None
+
+        while True:
+            try:
+                latest_pose = self.pose_queue.get_nowait()
+            except queue.Empty:
+                break
+
+        if latest_pose is None:
+            return
+
+        now = self.get_clock().now().to_msg()
+
+        pose_array = PoseArray()
+        pose_array.header.stamp = now
+        pose_array.header.frame_id = "world"
+        pose_array.poses.append(latest_pose)
+        self.pose_array_pub.publish(pose_array)
+        
+        odom_msg = Odometry()
+        odom_msg.header.stamp = now
+        odom_msg.header.frame_id = "odom"
+        odom_msg.child_frame_id = "base_footprint"
+        odom_msg.pose.pose = latest_pose
+        odom_msg.pose.covariance = [0.01 if i in [0, 7, 14, 21, 28, 35] else 0.0 for i in range(36)]
+        self.odom_pub.publish(odom_msg)
+        
+        t = TransformStamped()
+        t.header.stamp = now
+        t.header.frame_id = "odom"
+        t.child_frame_id = "base_footprint"
+        t.transform.translation.x = latest_pose.position.x
+        t.transform.translation.y = latest_pose.position.y
+        t.transform.translation.z = latest_pose.position.z
+        t.transform.rotation = latest_pose.orientation
+        self.tf_broadcaster.sendTransform(t)
+        
+                        
+    def _publish_from_queue_old(self) -> None:
         """Timer callback: non-blocking publish newest pose (drain queue)."""
         current_pose = None
         while True:

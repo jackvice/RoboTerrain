@@ -137,11 +137,11 @@ def main() -> None:
     from geometry_msgs.msg import PoseArray, Pose, PoseStamped
     from std_msgs.msg import String
 
-    # --- config --------------------------------------------------------------
+    # --- island/moon config --------------------------------------------------------------
     TOTAL_MINUTES = 90
     GOAL_X_RANGE = (-8.3, -2.2)
     GOAL_Y_RANGE = (-5.3, 2.8)
-    GOAL_THRESHOLD = 0.3
+    GOAL_THRESHOLD = 0.4 #0.3
     GOAL_TIMEOUT = 207.0
     WORLD_NAME = "island"
 

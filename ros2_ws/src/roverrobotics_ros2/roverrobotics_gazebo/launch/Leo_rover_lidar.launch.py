@@ -138,7 +138,9 @@ def generate_launch_description():
             #'/odometry/wheels@nav_msgs/msg/Odometry@ignition.msgs.Odometry', fisheye
             #'/odometry/wheels@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
             '/odom_ground_truth@nav_msgs/msg/Odometry[ignition.msgs.Odometry', # nav2 lidar
-            '/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',     # This one-way is correct
+            
+            #'/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',     # This may be conflicting with NAV2 
+
             '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',  # This one-way is correct
             '/scan@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
             '/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU',
