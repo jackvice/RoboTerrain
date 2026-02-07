@@ -215,8 +215,8 @@ global_costmap:
   global_costmap:
     ros__parameters:
       use_sim_time: true
-      update_frequency: 2.0
-      publish_frequency: 1.0
+      update_frequency: 5.0 #2.0
+      publish_frequency: 2.0 #1.0
       global_frame: odom
       robot_base_frame: base_footprint
       rolling_window: true
