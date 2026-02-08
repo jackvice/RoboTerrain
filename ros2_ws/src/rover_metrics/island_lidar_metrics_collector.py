@@ -259,7 +259,7 @@ def main() -> None:
     time.sleep(5)
     goal_start_time = time.time() - GOAL_TIMEOUT - 1  # Force immediate timeout
     goals_failed = -1 
-    
+    goals_count = -1
     # In main loop, add periodic clear (e.g., every 2 or 3 seconds):
     COSTMAP_CLEAR_INTERVAL = 2.0 #3.0
     last_clear_time = time.time()
