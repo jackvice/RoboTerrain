@@ -19,63 +19,19 @@ from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
 
 
 ActorXY = Optional[Tuple[float, float]]
-actor1_xy: ActorXY = None  # /triangle_actor/pose
-actor2_xy: ActorXY = None  # /triangle2_actor/pose
-actor3_xy: ActorXY = None  # /triangle3_actor/pose
+actor1_xy: ActorXY = None  # /upper_actor/pose
+actor2_xy: ActorXY = None  # /lower_actor/pose
 
 def on_actor1_pose(msg: Pose) -> None:
-    """Store actor1 (x,y) from //triangle_actor/pose."""
+    """Store actor1 (x,y) from //upper_actor/pose."""
     global actor1_xy
     actor1_xy = (float(msg.position.x), float(msg.position.y))
 
 def on_actor2_pose(msg: Pose) -> None:
-    """Store actor2 (x,y) from /triangle2_actor/pose."""
+    """Store actor2 (x,y) from /lower_actor/pose."""
     global actor2_xy
     actor2_xy = (float(msg.position.x), float(msg.position.y))
-
-def on_actor3_pose(msg: Pose) -> None:
-    """Store actor3 (x,y) from /triangle3_actor/pose."""
-    global actor3_xy
-    actor3_xy = (float(msg.position.x), float(msg.position.y))
     
-
-def calculate_distance(pos1: Tuple[float, float, float], 
-                      pos2: Tuple[float, float, float]) -> float:
-    """Calculate 2D distance between two positions."""
-    return math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)
-
-
-def calculate_velocity(pos1: Tuple[float, float, float], 
-                      pos2: Tuple[float, float, float], 
-                      time_diff: float) -> float:
-    """Calculate velocity from position change over time."""
-    if time_diff <= 0:
-        return 0.0
-    distance = calculate_distance(pos1, pos2)
-    return distance / time_diff
-
-
-def write_csv_header(filepath: str) -> None:
-    """Write CSV header row."""
-    with open(filepath, 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            'timestamp', 'robot_x', 'robot_y', 'robot_z', 
-            'velocity_mps', 'actor1_dist', 'actor2_dist', 'actor3_dist', 'goals_total'
-        ])
-
-
-def write_csv_row(filepath: str, timestamp: float, robot_pos: Tuple[float, float, float],
-                 velocity: float, actor_distances: List[float], goals_count: int) -> None:
-    """Write one data row to CSV."""
-    with open(filepath, 'a', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            f"{timestamp:.2f}", f"{robot_pos[0]:.3f}", f"{robot_pos[1]:.3f}", f"{robot_pos[2]:.3f}", f"{robot_pos[3]:.3f}",
-            f"{velocity:.3f}", f"{actor_distances[0]:.3f}", f"{actor_distances[1]:.3f}", goals_count
-        ])
-
-
 def distance2d(a: ActorXY, b: ActorXY) -> Optional[float]:
     """Euclidean 2D distance or None if either is missing."""
     if a is None or b is None:
@@ -87,7 +43,6 @@ def distance2d(a: ActorXY, b: ActorXY) -> Optional[float]:
 def safe_float(x: Optional[float]) -> float:
     """Replace None with NaN for CSV/plotting convenience."""
     return float('nan') if x is None else float(x)
-
 
 
 def generate_random_goal(
@@ -139,11 +94,11 @@ def main() -> None:
 
     # --- island/moon config --------------------------------------------------------------
     TOTAL_MINUTES = 30 #33 for the extra 207 seconds for first goal 90
-    GOAL_X_RANGE = (-8.3, -2.2)
-    GOAL_Y_RANGE = (-5.3, 2.8)
+    GOAL_X_RANGE = (-8.7, -5) 
+    GOAL_Y_RANGE = (-6, 3.5)
     GOAL_THRESHOLD = 0.3
     GOAL_TIMEOUT = 207.0
-    WORLD_NAME = "island"
+    WORLD_NAME = "default" # default for construct  
 
     # --- helpers (local) -----------------------------------------------------
     def safe_float(x: Optional[float]) -> float:
@@ -156,11 +111,13 @@ def main() -> None:
         return math.hypot(a[0] - b[0], a[1] - b[1])
 
     # --- CSV setup -----------------------------------------------------------
-    csv_path = f"metrics_data/island_csv/Nav2_lidar/Nav2_lidar_{WORLD_NAME}_{time.strftime('%m_%d_%H-%M')}.csv"
+    csv_path = f"metrics_data/construct_csv/Nav2_lidar/Nav2_lidar_{WORLD_NAME}_{time.strftime('%m_%d_%H-%M')}.csv"
     csv_file = open(csv_path, "w", newline="")
     writer = csv.writer(csv_file)
     writer.writerow(["step", "time_s", "rx", "ry", "speed_mps",
-                     "d1_triangle", "d2_triangle2", "d3_triangle3", "dmin", "goals"])
+                     "d1_lower", "d2_upper", "dmin", "goals"])
+    #writer.writerow(["step", "time_s", "rx", "ry", "speed_mps",  # island
+    #                 "d1_triangle", "d2_triangle2", "d3_triangle3", "dmin", "goals"])
     csv_file.flush()
 
     # --- state ---------------------------------------------------------------
@@ -169,7 +126,7 @@ def main() -> None:
     last_ts: Optional[float] = None
     actor1_xy: Optional[Tuple[float, float]] = None
     actor2_xy: Optional[Tuple[float, float]] = None
-    actor3_xy: Optional[Tuple[float, float]] = None
+    #actor3_xy: Optional[Tuple[float, float]] = None
     goals_count: int = 0
     goals_failed: int = 0
     current_goal_xy: Optional[Tuple[float, float]] = None
@@ -205,15 +162,11 @@ def main() -> None:
         nonlocal actor2_xy
         actor2_xy = (float(msg.position.x), float(msg.position.y))
 
-    def on_actor3_pose(msg: Pose) -> None:
-        nonlocal actor3_xy
-        actor3_xy = (float(msg.position.x), float(msg.position.y))
 
     robot_qos = QoSProfile(depth=1, reliability=QoSReliabilityPolicy.BEST_EFFORT)
     node.create_subscription(PoseArray, '/rover/pose_array', on_robot_pose, robot_qos)
-    node.create_subscription(Pose, "/triangle_actor/pose", on_actor1_pose, 10)
-    node.create_subscription(Pose, "/triangle2_actor/pose", on_actor2_pose, 10)
-    node.create_subscription(Pose, "/triangle3_actor/pose", on_actor3_pose, 10)
+    node.create_subscription(Pose, "/lower_actor/pose", on_actor1_pose, 10)
+    node.create_subscription(Pose, "/upper_actor/pose", on_actor2_pose, 10)
     
     goal_pub = node.create_publisher(PoseStamped, '/goal_pose', goal_qos)
 
@@ -261,7 +214,7 @@ def main() -> None:
     goals_failed = -1 
     
     # In main loop, add periodic clear (e.g., every 2 or 3 seconds):
-    COSTMAP_CLEAR_INTERVAL = 2.0 #3.0
+    COSTMAP_CLEAR_INTERVAL = 3.0
     last_clear_time = time.time()
     
     try:
@@ -292,7 +245,6 @@ def main() -> None:
 
                 d1 = distance2d(actor1_xy, robot_xy)
                 d2 = distance2d(actor2_xy, robot_xy)
-                d3 = distance2d(actor3_xy, robot_xy)
                 dists = [d for d in (d1, d2, d3) if d is not None]
                 dmin = min(dists) if dists else None
 
@@ -301,7 +253,7 @@ def main() -> None:
                     safe_float(robot_xy[0]) if robot_xy else float('nan'),
                     safe_float(robot_xy[1]) if robot_xy else float('nan'),
                     safe_float(speed),
-                    safe_float(d1), safe_float(d2), safe_float(d3),
+                    safe_float(d1), safe_float(d2),
                     safe_float(dmin),
                     goals_count,
                 ])
