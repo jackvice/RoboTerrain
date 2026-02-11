@@ -24,6 +24,9 @@ def generate_launch_description():
         'use_sim_time',
         default_value='true',
         description='Use simulation (Gazebo) clock if true')
+
+    #world_name = 'moon'
+    world_name = 'default'
     
     declare_world_cmd = DeclareLaunchArgument(
         'world',
@@ -32,8 +35,8 @@ def generate_launch_description():
         #default_value='inspection_boxes_x10_v2.world', # social nave testing world for MDPI publication
         #default_value='inspection_boxes_v3.world', # lots of boxes for Active vision
         #default_value='inspection_boxes_v4.world', # removed some boxes from v3 for Active vision
-        #default_value='office_cpr_construction.world',
-        default_value='island.sdf',
+        default_value='office_cpr_construction.world',
+        #default_value='island.sdf',
 
         #default_value='inspection_simple.world',
         #default_value='rubicon.sdf',
@@ -126,7 +129,7 @@ def generate_launch_description():
         output='screen'
     )
 
-
+    
     # Bridge between ROS 2 and Ignition Gazebo
     gz_ros2_bridge = Node(
         package='ros_gz_bridge',
@@ -155,18 +158,18 @@ def generate_launch_description():
             #'/triangle_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
             
             # island/moon actors:
-            '/triangle_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
-            '/triangle2_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
-            '/triangle3_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            #'/triangle_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            #'/triangle2_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            #'/triangle3_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
 
             # construct actors:
-            #'/upper_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
-            #'/lower_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            '/upper_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            '/lower_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
 
             # Service bridge for robot pose reset
             #'/world/inspect/set_pose@ros_gz_interfaces/srv/SetEntityPose',
-            #'/world/default/set_pose@ros_gz_interfaces/srv/SetEntityPose',
-            '/world/moon/set_pose@ros_gz_interfaces/srv/SetEntityPose',
+            '/world/default/set_pose@ros_gz_interfaces/srv/SetEntityPose',
+            #'/world/moon/set_pose@ros_gz_interfaces/srv/SetEntityPose',
         ],
         output='screen'
     )
@@ -236,10 +239,6 @@ def generate_launch_description():
     ld.add_action(static_tf_lidar)
     ld.add_action(static_tf_base_footprint)
 
-
-    # Ground truth pose converter for Nav2
-    # Set world_name to match Ignition world: 'moon', 'construct', or 'inspect'
-    world_name = 'moon'
     
     pose_converter = ExecuteProcess(
         cmd=['python3', 

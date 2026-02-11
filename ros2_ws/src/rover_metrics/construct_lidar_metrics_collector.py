@@ -16,6 +16,9 @@ from rclpy.parameter import Parameter
 from nav2_msgs.srv import ClearEntireCostmap
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
 
+from ros_gz_interfaces.srv import SetEntityPose
+from ros_gz_interfaces.msg import Entity
+from transforms3d.euler import quat2euler
 
 
 ActorXY = Optional[Tuple[float, float]]
@@ -43,6 +46,8 @@ def distance2d(a: ActorXY, b: ActorXY) -> Optional[float]:
 def safe_float(x: Optional[float]) -> float:
     """Replace None with NaN for CSV/plotting convenience."""
     return float('nan') if x is None else float(x)
+
+
 
 
 def generate_random_goal(
@@ -92,13 +97,17 @@ def main() -> None:
     from geometry_msgs.msg import PoseArray, Pose, PoseStamped
     from std_msgs.msg import String
 
-    # --- island/moon config --------------------------------------------------------------
+    # --- construct config --------------------------------------------------------------
     TOTAL_MINUTES = 30 #33 for the extra 207 seconds for first goal 90
     GOAL_X_RANGE = (-8.7, -5) 
     GOAL_Y_RANGE = (-6, 3.5)
     GOAL_THRESHOLD = 0.3
     GOAL_TIMEOUT = 207.0
     WORLD_NAME = "default" # default for construct  
+
+    current_roll: float = 0.0
+    current_pitch: float = 0.0
+    FLIP_THRESHOLD_RAD = 1.48  # ~85 deg, matches your env
 
     # --- helpers (local) -----------------------------------------------------
     def safe_float(x: Optional[float]) -> float:
@@ -110,6 +119,41 @@ def main() -> None:
             return None
         return math.hypot(a[0] - b[0], a[1] - b[1])
 
+    def respawn_robot() -> None:
+        # Wait for service
+        if not set_pose_client.service_is_ready():
+            set_pose_client.wait_for_service(timeout_sec=1.0)
+
+        req = SetEntityPose.Request()
+        req.entity.name = "leo_rover"
+        req.entity.type = Entity.MODEL
+
+        # Fixed construct spawn (matches leorover.py for world 'default')
+        req.pose.position.x = -8.5
+        req.pose.position.y = -0.5
+        req.pose.position.z = 0.75
+
+        # No random yaw
+        req.pose.orientation.x = 0.0
+        req.pose.orientation.y = 0.0
+        req.pose.orientation.z = 0.0
+        req.pose.orientation.w = 1.0
+
+        fut = set_pose_client.call_async(req)
+        rclpy.spin_until_future_complete(node, fut, timeout_sec=2.0)
+
+        # Clear costmaps
+        if clear_global_costmap.service_is_ready():
+            clear_global_costmap.call_async(ClearEntireCostmap.Request())
+        if clear_local_costmap.service_is_ready():
+            clear_local_costmap.call_async(ClearEntireCostmap.Request())
+
+        time.sleep(0.5)
+
+    def is_flipped() -> bool:
+        return (abs(current_roll) > FLIP_THRESHOLD_RAD) or (abs(current_pitch) > FLIP_THRESHOLD_RAD)
+
+    
     # --- CSV setup -----------------------------------------------------------
     csv_path = f"metrics_data/construct_csv/Nav2_lidar/Nav2_lidar_{WORLD_NAME}_{time.strftime('%m_%d_%H-%M')}.csv"
     csv_file = open(csv_path, "w", newline="")
@@ -149,11 +193,25 @@ def main() -> None:
     )
     
     def on_robot_pose(msg: PoseArray) -> None:
-        nonlocal robot_xy
-        if msg.poses:
-            p = msg.poses[0].position
-            robot_xy = (float(p.x), float(p.y))
+        nonlocal robot_xy, current_roll, current_pitch
+        if not msg.poses:
+            return
 
+        pose = msg.poses[0]
+        p = pose.position
+        robot_xy = (float(p.x), float(p.y))
+
+        # quat2euler wants [w, x, y, z] like you do in leorover.py
+        q = pose.orientation
+        quat = [float(q.w), float(q.x), float(q.y), float(q.z)]
+        norm = math.sqrt(sum(v*v for v in quat))
+        if norm > 0.0:
+            quat = [v / norm for v in quat]
+            roll, pitch, _yaw = quat2euler(quat, axes='sxyz')
+            current_roll = float(roll)
+            current_pitch = float(pitch)
+
+            
     def on_actor1_pose(msg: Pose) -> None:
         nonlocal actor1_xy
         actor1_xy = (float(msg.position.x), float(msg.position.y))
@@ -170,6 +228,8 @@ def main() -> None:
     
     goal_pub = node.create_publisher(PoseStamped, '/goal_pose', goal_qos)
 
+    set_pose_client = node.create_client(SetEntityPose, f"/world/{WORLD_NAME}/set_pose")
+    
     # After node creation, add service clients:
     clear_global_costmap = node.create_client(
         ClearEntireCostmap, 
@@ -210,9 +270,9 @@ def main() -> None:
 
     send_new_goal()
     time.sleep(5)
-    goal_start_time = time.time() - GOAL_TIMEOUT - 1  # Force immediate timeout
-    goals_failed = -1
-    goals_count = -1
+
+    discard_first_timeout = True  # replaces the 207s hack cleanly
+
     
     # In main loop, add periodic clear (e.g., every 2 or 3 seconds):
     COSTMAP_CLEAR_INTERVAL = 3.0
@@ -223,16 +283,31 @@ def main() -> None:
             rclpy.spin_once(node, timeout_sec=0.01)
             now = time.time()
 
+            if is_flipped():
+                goals_failed += 1
+                print(f"FLIPPED! Respawning... Total: {goals_count}, Failed: {goals_failed}")
+                respawn_robot()
+                send_new_goal()
+                continue
+
             # Goal checking
             if current_goal_xy is not None:
                 if check_goal_reached(robot_xy, current_goal_xy, GOAL_THRESHOLD):
                     goals_count += 1
                     print(f"Goal reached! Total: {goals_count}, Failed: {goals_failed}")
                     send_new_goal()
+
                 elif (now - goal_start_time) > GOAL_TIMEOUT:
-                    goals_failed += 1
-                    print(f"Goal timeout! Total: {goals_count}, Failed: {goals_failed}")
-                    send_new_goal()
+                    if discard_first_timeout:
+                        discard_first_timeout = False
+                        print("Discarding first goal timeout (startup stall); sending new goal.")
+                        send_new_goal()
+                    else:
+                        goals_failed += 1
+                        print(f"Goal timeout! Respawning... Total: {goals_count}, Failed: {goals_failed}")
+                        respawn_robot()
+                        send_new_goal()
+
 
             # Logging at 1 Hz
             if now >= next_log:
@@ -246,7 +321,7 @@ def main() -> None:
 
                 d1 = distance2d(actor1_xy, robot_xy)
                 d2 = distance2d(actor2_xy, robot_xy)
-                dists = [d for d in (d1, d2, d3) if d is not None]
+                dists = [d for d in (d1, d2) if d is not None]
                 dmin = min(dists) if dists else None
 
                 writer.writerow([
