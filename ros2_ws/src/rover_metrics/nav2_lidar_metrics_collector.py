@@ -16,6 +16,8 @@ from ros_gz_interfaces.srv import SetEntityPose
 from rclpy.parameter import Parameter
 from rclpy.qos import QoSHistoryPolicy, QoSReliabilityPolicy, QoSProfile
 from transforms3d.euler import quat2euler
+from action_msgs.msg import GoalStatusArray, GoalStatus as ActionGoalStatus
+
 
 # Type aliases
 RobotXY = Tuple[float, float]
@@ -45,7 +47,7 @@ class EnvironmentConfig(NamedTuple):
     actor_topics: Dict[str, str]
     flip_threshold_rad: float = 1.48
     total_duration_min: int = 30
-    costmap_clear_interval_sec: float = 3.0
+    costmap_clear_interval_sec: float = 4.0
 
 
 class MetricsCollectorState(NamedTuple):
@@ -78,8 +80,8 @@ class MetricsRow(NamedTuple):
 ENVIRONMENT_CONFIGS: Dict[str, EnvironmentConfig] = {
     "construct": EnvironmentConfig(
         world_name="default",
-        spawn_x=-8.5,
-        spawn_y=-0.5,
+        spawn_x=-7.0,
+        spawn_y=0.82,
         spawn_z=0.75,
         goal_x_range=(-8.7, -5),
         goal_y_range=(-6, 3.5),
@@ -102,16 +104,20 @@ ENVIRONMENT_CONFIGS: Dict[str, EnvironmentConfig] = {
             "triangle3_actor": "/triangle3_actor/pose",
         },
     ),
-    "inspect": EnvironmentConfig(
-        world_name="default",
-        spawn_x=0.0,
-        spawn_y=0.0,
+     "inspect": EnvironmentConfig(
+        world_name="inspect",
+        spawn_x=-19.5,
+        spawn_y=-22.1,
         spawn_z=6.0,
-        goal_x_range=(-20, 20),
-        goal_y_range=(-20, 20),
+        goal_x_range=(-27, -14),
+        goal_y_range=(-25, -18),
         goal_threshold=0.3,
         goal_timeout_sec=207.0,
-        actor_topics={"linear_actor": "/linear_actor/pose", "diag_actor": "/diag_actor/pose"},
+        actor_topics={
+            "linear_actor": "/linear_actor/pose",
+            "diag_actor": "/diag_actor/pose",
+            "triangle_actor": "/triangle_actor/pose",
+        },
     ),
 }
 
@@ -190,25 +196,25 @@ def is_flipped(roll: float, pitch: float, threshold: float) -> bool:
 # Pure functions: State transitions
 def update_robot_xy(state: MetricsCollectorState, xy: Optional[RobotXY]) -> MetricsCollectorState:
     """Update robot position."""
-    return state.replace(robot_xy=xy)
+    return state._replace(robot_xy=xy)
 
 
 def update_actor_xy(state: MetricsCollectorState, actor_id: str, xy: ActorXY) -> MetricsCollectorState:
     """Update actor position."""
     new_actors = dict(state.actor_positions)
     new_actors[actor_id] = xy
-    return state.replace(actor_positions=new_actors)
+    return state._replace(actor_positions=new_actors)
 
 
 def update_orientation(state: MetricsCollectorState, roll: float, pitch: float) -> MetricsCollectorState:
     """Update robot orientation."""
-    return state.replace(current_roll=roll, current_pitch=pitch)
+    return state._replace(current_roll=roll, current_pitch=pitch)
 
 
 def on_goal_reached(state: MetricsCollectorState, new_goal: GoalXY) -> MetricsCollectorState:
     """Transition to goal achieved and set new goal."""
-    return state.replace(
-        goal_status=GoalStatus.ACHIEVED,
+    return state._replace(
+        #goal_status=GoalStatus.ACHIEVED,
         goals_succeeded=state.goals_succeeded + 1,
         current_goal=new_goal,
         goal_status=GoalStatus.WAITING,
@@ -219,13 +225,13 @@ def on_goal_reached(state: MetricsCollectorState, new_goal: GoalXY) -> MetricsCo
 def on_goal_timeout(state: MetricsCollectorState, is_first: bool) -> MetricsCollectorState:
     """Handle goal timeout."""
     if is_first and state.discard_first_timeout:
-        return state.replace(discard_first_timeout=False)
-    return state.replace(goals_failed=state.goals_failed + 1, goal_status=GoalStatus.FAILED)
+        return state._replace(discard_first_timeout=False)
+    return state._replace(goals_failed=state.goals_failed + 1, goal_status=GoalStatus.FAILED)
 
 
 def on_robot_flipped(state: MetricsCollectorState) -> MetricsCollectorState:
     """Mark robot as failed due to flip."""
-    return state.replace(goals_failed=state.goals_failed + 1, goal_status=GoalStatus.FAILED)
+    return state._replace(goals_failed=state.goals_failed + 1, goal_status=GoalStatus.FAILED)
 
 
 # Pure functions: Metrics assembly
@@ -249,16 +255,26 @@ def build_metrics_row(step: int, time_s: float, state: MetricsCollectorState) ->
 
 # I/O functions
 def write_metrics_header(writer: csv.writer, actor_ids: List[str]) -> None:
-    """Write CSV header."""
-    actor_cols = [f"{actor_id}_dist" for actor_id in actor_ids]
+    """Write CSV header with actor distances in sorted order."""
+    actor_cols = [f"{actor_id}_dist" for actor_id in sorted(actor_ids)]
     header = ["step", "time_s", "robot_x", "robot_y", "speed_mps"] + actor_cols + ["dmin", "goals_count"]
     writer.writerow(header)
 
 
 def write_metrics_row(writer: csv.writer, row: MetricsRow) -> None:
-    """Write metrics row to CSV."""
-    actor_dists = [row.actor_distances.get(actor_id, float("nan")) for actor_id in sorted(row.actor_distances.keys())]
-    values = [row.step, f"{row.time_s:.2f}", f"{row.robot_x:.2f}", f"{row.robot_y:.2f}", f"{row.speed_mps:.2f}"] + [f"{d:.2f}" if d is not None else "nan" for d in actor_dists] + [f"{row.dmin:.2f}" if row.dmin is not None else "nan", row.goals_count]
+    """Write metrics row to CSV with actor distances in sorted order."""
+    sorted_actor_ids = sorted(row.actor_distances.keys())
+    actor_dists = [row.actor_distances[actor_id] for actor_id in sorted_actor_ids]
+    values = [
+        row.step,
+        f"{row.time_s:.2f}",
+        f"{row.robot_x:.2f}",
+        f"{row.robot_y:.2f}",
+        f"{row.speed_mps:.2f}",
+    ] + [f"{d:.2f}" if d is not None else "nan" for d in actor_dists] + [
+        f"{row.dmin:.2f}" if row.dmin is not None else "nan",
+        row.goals_count,
+    ]
     writer.writerow(values)
 
 
@@ -327,6 +343,15 @@ class MetricsCollectorNode:
         self.clear_global_costmap = self.node.create_client(ClearEntireCostmap, "/global_costmap/clear_entirely_global_costmap")
         self.clear_local_costmap = self.node.create_client(ClearEntireCostmap, "/local_costmap/clear_entirely_local_costmap")
 
+        # In __init__:
+        self.nav2_goal_failed: bool = False
+        self.node.create_subscription(
+            GoalStatusArray,
+            '/navigate_to_pose/_action/status',
+            self._on_nav_status,
+            10,
+        )
+
     def _on_robot_pose(self, msg: PoseArray) -> None:
         """Update robot position and orientation."""
         xy = extract_robot_xy(msg)
@@ -346,7 +371,7 @@ class MetricsCollectorNode:
         msg = create_goal_msg(goal_xy[0], goal_xy[1], "odom")
         msg.header.stamp = self.node.get_clock().now().to_msg()
         self.goal_pub.publish(msg)
-        self.state = self.state.replace(current_goal=goal_xy, goal_status=GoalStatus.WAITING, goal_start_time=time.time())
+        self.state = self.state._replace(current_goal=goal_xy, goal_status=GoalStatus.WAITING, goal_start_time=time.time())
         print(f"New goal: ({goal_xy[0]:.2f}, {goal_xy[1]:.2f})")
 
     def respawn_robot(self) -> None:
@@ -385,16 +410,129 @@ class MetricsCollectorNode:
     def spin_once(self) -> None:
         """Process one ROS callback."""
         rclpy.spin_once(self.node, timeout_sec=0.01)
+        
+    def _on_nav_status(self, msg: GoalStatusArray) -> None:
+        """Detect Nav2 goal abort/failure."""
+        if msg.status_list:
+            latest = msg.status_list[-1]
+            # STATUS_ABORTED = 6, STATUS_CANCELED = 5
+            if latest.status in (5, 6):
+                self.nav2_goal_failed = True
+
 
 
 def main(env_name: str = "construct") -> None:
     """Main metrics collection loop."""
     config = ENVIRONMENT_CONFIGS[env_name]
     rclpy.init()
+    collector = MetricsCollectorNode(config)
+
+    csv_path = f"metrics_data/{env_name}_csv/Nav2_lidar/{env_name}_nav2_{time.strftime('%m_%d_%H-%M')}.csv"
+    csv_file = open(csv_path, "w", newline="")
+    writer = csv.writer(csv_file)
+    write_metrics_header(writer, sorted(config.actor_topics.keys()))
+    csv_file.flush()
+
+    # Wait for Nav2 and sim time
+    print("Waiting for Nav2 to connect...")
+    while collector.goal_pub.get_subscription_count() == 0:
+        rclpy.spin_once(collector.node, timeout_sec=0.1)
+    print("Nav2 connected.")
+
+    print("Waiting for sim time...")
+    while collector.node.get_clock().now().nanoseconds == 0:
+        rclpy.spin_once(collector.node, timeout_sec=0.1)
+    print(f"Sim time active: {collector.node.get_clock().now().nanoseconds / 1e9:.2f}s")
+    print("Respawning robot at configured spawn...")
+    collector.respawn_robot()
+
+
+    # Send throwaway goal, then force immediate timeout so first real goal
+    # is sent after Nav2 is fully ready to act on it
+    collector.send_goal()
+    time.sleep(5)
+    collector.state = collector.state._replace(
+        goal_start_time=time.time() - config.goal_timeout_sec - 1.0
+    )
+
+    # Data collection starts here — duration is exactly total_duration_min
+    start: float = time.time()
+    next_log: float = start + 1.0
+    step: int = 0
+    last_clear_time: float = start
+    duration_s: float = config.total_duration_min * 60
+
+    try:
+        while (time.time() - start) < duration_s:
+            collector.spin_once()
+            now: float = time.time()
+
+            # Check flip
+            if is_flipped(collector.state.current_roll, collector.state.current_pitch, config.flip_threshold_rad):
+                collector.state = on_robot_flipped(collector.state)
+                print(f"FLIPPED! Respawning... Total: {collector.state.goals_succeeded}, Failed: {collector.state.goals_failed}")
+                collector.respawn_robot()
+                collector.send_goal()
+                continue
+
+            # Check goal reached or timeout
+            if collector.state.current_goal and collector.state.robot_xy:
+                if is_goal_reached(collector.state.robot_xy, collector.state.current_goal, config.goal_threshold):
+                    collector.state = collector.state._replace(goals_succeeded=collector.state.goals_succeeded + 1)
+                    print(f"Goal reached! Total: {collector.state.goals_succeeded}, Failed: {collector.state.goals_failed}")
+                    collector.send_goal()
+                elif is_goal_timeout(now - collector.state.goal_start_time, config.goal_timeout_sec):
+                    is_first: bool = collector.state.discard_first_timeout
+                    collector.state = on_goal_timeout(collector.state, is_first)
+                    if is_first:
+                        print("Discarding first goal timeout (startup); sending new goal.")
+                    else:
+                        print(f"Goal timeout! Respawning... Total: {collector.state.goals_succeeded}, Failed: {collector.state.goals_failed}")
+                        collector.respawn_robot()
+                    collector.send_goal()
+
+            # Check Nav2 abort (immediate re-goal without waiting for 207s timeout)
+            if collector.nav2_goal_failed:
+                collector.nav2_goal_failed = False
+                collector.state = collector.state._replace(goals_failed=collector.state.goals_failed + 1)
+                print(f"Nav2 goal aborted — respawning. Total: {collector.state.goals_succeeded}, Failed: {collector.state.goals_failed}")
+                collector.respawn_robot()
+                collector.send_goal()
+                    
+            # Log metrics at 1 Hz
+            if now >= next_log:
+                step += 1
+                row = build_metrics_row(step, now - start, collector.state)
+                write_metrics_row(writer, row)
+                csv_file.flush()
+                collector.state = collector.state._replace(
+                    last_robot_xy=collector.state.robot_xy, last_metric_time=now
+                )
+                next_log += 1.0
+
+            # Clear costmaps periodically
+            if (now - last_clear_time) > config.costmap_clear_interval_sec:
+                collector.clear_costmaps()
+                last_clear_time = now
+
+    except KeyboardInterrupt:
+        print("Stopped by user.")
+    finally:
+        collector.node.destroy_node()
+        rclpy.shutdown()
+        csv_file.close()
+        print(f"Wrote metrics to {csv_path}")
+        print(f"Final: {collector.state.goals_succeeded} succeeded, {collector.state.goals_failed} failed")
+
+        
+def main_old(env_name: str = "construct") -> None:
+    """Main metrics collection loop."""
+    config = ENVIRONMENT_CONFIGS[env_name]
+    rclpy.init()
 
     collector = MetricsCollectorNode(config)
 
-    csv_path = f"metrics_data/{env_name}/Nav2_lidar/{env_name}_nav2_{time.strftime('%m_%d_%H-%M')}.csv"
+    csv_path = f"metrics_data/{env_name}_csv/Nav2_lidar/{env_name}_nav2_{time.strftime('%m_%d_%H-%M')}.csv"
     csv_file = open(csv_path, "w", newline="")
     writer = csv.writer(csv_file)
     write_metrics_header(writer, sorted(config.actor_topics.keys()))
@@ -412,7 +550,11 @@ def main(env_name: str = "construct") -> None:
 
     collector.send_goal()
     time.sleep(5)
-
+    # Force immediate timeout on first goal (Nav2 doesn't act on goals sent during startup)
+    collector.state = collector.state._replace(
+        goal_start_time=time.time() - config.goal_timeout_sec - 1.0
+    )
+    
     start = time.time()
     next_log = start + 1.0
     step = 0
@@ -424,7 +566,7 @@ def main(env_name: str = "construct") -> None:
             collector.spin_once()
             now = time.time()
 
-            # Check flip
+	    # Check flip
             if is_flipped(collector.state.current_roll, collector.state.current_pitch, config.flip_threshold_rad):
                 collector.state = on_robot_flipped(collector.state)
                 print(f"FLIPPED! Respawning... Total: {collector.state.goals_succeeded}, Failed: {collector.state.goals_failed}")
@@ -432,7 +574,7 @@ def main(env_name: str = "construct") -> None:
                 collector.send_goal()
                 continue
 
-            # Check goal reached
+	    # Check goal reached or timeout
             if collector.state.current_goal and collector.state.robot_xy:
                 if is_goal_reached(collector.state.robot_xy, collector.state.current_goal, config.goal_threshold):
                     new_goal = generate_random_goal(config.goal_x_range, config.goal_y_range)
@@ -440,25 +582,28 @@ def main(env_name: str = "construct") -> None:
                     print(f"Goal reached! Total: {collector.state.goals_succeeded}, Failed: {collector.state.goals_failed}")
                     collector.send_goal()
                 elif is_goal_timeout(now - collector.state.goal_start_time, config.goal_timeout_sec):
-                    collector.state = on_goal_timeout(collector.state, collector.state.discard_first_timeout)
-                    if collector.state.goal_status == GoalStatus.FAILED:
+                    is_first = collector.state.discard_first_timeout
+                    collector.state = on_goal_timeout(collector.state, is_first)
+                    if is_first:
+                        print("Discarding first goal timeout (startup stall); sending new goal.")
+                    else:
                         print(f"Goal timeout! Respawning... Total: {collector.state.goals_succeeded}, Failed: {collector.state.goals_failed}")
                         collector.respawn_robot()
                     collector.send_goal()
 
-            # Log metrics at 1 Hz
+	    # Log metrics at 1 Hz
             if now >= next_log:
                 step += 1
                 row = build_metrics_row(step, now - start, collector.state)
                 write_metrics_row(writer, row)
                 csv_file.flush()
-                collector.state = collector.state.replace(last_robot_xy=collector.state.robot_xy, last_metric_time=now)
+                collector.state = collector.state._replace(last_robot_xy=collector.state.robot_xy, last_metric_time=now)
                 next_log += 1.0
 
-            # Clear costmaps periodically
-            if (now - last_clear_time) > config.costmap_clear_interval_sec:
-                collector.clear_costmaps()
-                last_clear_time = now
+                # Clear costmaps periodically
+                if (now - last_clear_time) > config.costmap_clear_interval_sec:
+                    collector.clear_costmaps()
+                    last_clear_time = now
 
     except KeyboardInterrupt:
         print("Stopped by user.")

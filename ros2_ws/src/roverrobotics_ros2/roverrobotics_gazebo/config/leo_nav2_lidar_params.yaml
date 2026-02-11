@@ -127,7 +127,7 @@ controller_server:
       short_circuit_trajectory_evaluation: true
       stateful: true
       critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
-      BaseObstacle.scale: 0.02
+      BaseObstacle.scale: 0.08
       PathAlign.scale: 32.0
       PathAlign.forward_point_distance: 0.1
       GoalAlign.scale: 24.0
@@ -175,7 +175,7 @@ local_costmap:
           topic: /scan
           sensor_frame: lidar_link
           data_type: "LaserScan"
-          observation_persistence: 0.0
+          observation_persistence: 1.0
           expected_update_rate: 20.0
           inf_is_valid: false
           clearing: true
