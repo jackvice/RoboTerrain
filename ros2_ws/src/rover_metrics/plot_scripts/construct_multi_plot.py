@@ -42,8 +42,8 @@ def get_total_goals_from_files(file_paths: List[str]) -> int:
     total: int = 0
     for path in file_paths:
         df: pd.DataFrame = pd.read_csv(path)
-        if not df.empty and 'goals' in df.columns:
-            total += int(df['goals'].max())
+        if not df.empty:
+            total += get_total_goals(df)
     return total
 
 
@@ -96,20 +96,19 @@ def detect_all_actor_encounters(df: pd.DataFrame, times: pd.Series) -> List[Tupl
     all_encounters: List[Tuple[float, float]] = []
     
     # Process each actor separately
-    for col in ['d1_lower', 'd2_upper']:
+    for col in ['d1_lower', 'd2_upper', 'lower_actor_dist', 'upper_actor_dist']:
         if col in df.columns:
             actor_encounters = detect_encounters_for_single_actor(times, df[col])
             all_encounters.extend(actor_encounters)
-    
+            
     return all_encounters
 
 
 def get_total_goals(df: pd.DataFrame) -> int:
-    """Get total number of goals reached."""
-    if df.empty or 'goals' not in df.columns:
-        return 0
-    return int(df['goals'].max())
-
+    for col in ['goals', 'goals_count']:
+        if col in df.columns:
+            return int(df[col].max())
+    return 0
 
 def classify_encounters_by_min_distance(encounter_points: List[Tuple[float, float]]) -> Tuple[int, int, int]:
     """Classify encounter points by their minimum distance. Returns (count_08_12, count_05_08, count_below_05)."""
@@ -175,10 +174,11 @@ def plot_timeline(encounter_points: List[Tuple[float, float]], total_goals: int)
     th_08 = ax.axhline(0.8, color='orange', linestyle='--', alpha=0.6, label='Threshold 0.8 m')
     th_05 = ax.axhline(0.5, color='green', linestyle='--', alpha=0.6, label='Threshold 0.5 m')
 
+    goal_dot5_ratio = round(total_goals / c_lt_05, 2)
     # -- Labels, grid, title
     ax.set_xlabel('Time (min)')
     ax.set_ylabel('Distance (m)')
-    ax.set_title(f'Robot–Actor Encounter Timeline with Attention Mechanism (Success Rate: {total_goals})')
+    ax.set_title(f'Robot–Actor Encounter Timeline (Success Rate: {total_goals}, Success Ratio: {goal_dot5_ratio})')
     ax.grid(True, alpha=0.3, linestyle='--')
 
     # -- Legend: dots first, then dashed thresholds, single row under x-axis
