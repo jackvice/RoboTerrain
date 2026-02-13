@@ -47,7 +47,7 @@ class EnvironmentConfig(NamedTuple):
     actor_topics: Dict[str, str]
     flip_threshold_rad: float = 1.48
     total_duration_min: int = 30
-    costmap_clear_interval_sec: float = 2.0 #60.0
+    costmap_clear_interval_sec: float = 0.0 #60.0
 
 
 class MetricsCollectorState(NamedTuple):
@@ -339,9 +339,10 @@ class MetricsCollectorNode:
         self.clear_local_costmap = self.node.create_client(ClearEntireCostmap,
                                                            "/local_costmap/clear_entirely_local_costmap")
 
-        # In __init__:
         self.nav2_goal_failed: bool = False
         self.nav2_goal_succeeded: bool = False
+        self.controller_abort_hard: bool = False
+
         self.node.create_subscription(
             GoalStatusArray,
             '/navigate_to_pose/_action/status',
@@ -407,8 +408,6 @@ class MetricsCollectorNode:
         for _ in range(50):
             rclpy.spin_once(self.node, timeout_sec=0.05)
 
-        #if self.clear_global_costmap.service_is_ready():
-        #    self.clear_global_costmap.call_async(ClearEntireCostmap.Request())
         if self.clear_local_costmap.service_is_ready():
             self.clear_local_costmap.call_async(ClearEntireCostmap.Request())
 
@@ -433,6 +432,7 @@ class MetricsCollectorNode:
             latest = msg.status_list[-1]
             if latest.status in (5, 6):  # CANCELED or ABORTED
                 self.nav2_goal_failed = True
+                self.controller_abort_hard = False
             elif latest.status == 4:  # SUCCEEDED
                 self.nav2_goal_succeeded = True
                 self.controller_abort_count = 0
@@ -447,9 +447,9 @@ class MetricsCollectorNode:
                 self.controller_abort_count += 1
                 if self.controller_abort_count >= 2:
                     self.nav2_goal_failed = True
+                    self.controller_abort_hard = True
                     self.controller_abort_count = 0
 
-                
 
 def main(env_name: str = "construct") -> None:
     """Main metrics collection loop."""
@@ -531,14 +531,6 @@ def main(env_name: str = "construct") -> None:
             if collector.nav2_goal_failed:
                 collector.nav2_goal_failed = False
                 collector.state = collector.state._replace(goals_failed=collector.state.goals_failed + 1)
-                print(f"Nav2 goal aborted — respawning. Total: {collector.state.goals_succeeded}, Failed: {collector.state.goals_failed}")
-                collector.respawn_robot()
-                collector.send_goal()
-
-
-            if collector.nav2_goal_failed:
-                collector.nav2_goal_failed = False
-                collector.state = collector.state._replace(goals_failed=collector.state.goals_failed + 1)
 
                 if collector.controller_abort_hard:
                     collector.controller_abort_hard = False
@@ -546,10 +538,10 @@ def main(env_name: str = "construct") -> None:
                     collector.respawn_robot()
                 else:
                     print(f"Nav2 goal aborted — clearing + re-goal. Total: {collector.state.goals_succeeded}, Failed: {collector.state.goals_failed}")
-                    collector.clear_costmaps()
+                    if collector.clear_local_costmap.service_is_ready():
+                        collector.clear_local_costmap.call_async(ClearEntireCostmap.Request())
 
                 collector.send_goal()
-
                 
             # Log metrics at 1 Hz
             if now_sim_ns >= next_log_ns:

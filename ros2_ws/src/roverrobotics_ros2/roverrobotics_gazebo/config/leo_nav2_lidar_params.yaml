@@ -106,7 +106,7 @@ controller_server:
       max_vel_x: 0.7 #0.6
       max_vel_y: 0.0
       max_vel_theta: 1.5
-      min_speed_xy: 0.7 #0.0
+      min_speed_xy: 0.0
       max_speed_xy: 0.7 #0.6
       min_speed_theta: 0.0
       acc_lim_x: 1.0
@@ -182,7 +182,7 @@ local_costmap:
           topic: /scan
           sensor_frame: lidar_link
           data_type: "LaserScan"
-          observation_persistence: 0.0
+          observation_persistence: 2.0
           expected_update_rate: 20.0
           inf_is_valid: false
           clearing: true
@@ -324,7 +324,7 @@ velocity_smoother:
     min_velocity: [-0.7, 0.0, -0.7] # [0.0, 0.0, -0.7]
     max_accel: [1.0, 0.0, 2.5]
     max_decel: [-1.0, 0.0, -2.5]
-    odom_topic: "odom"
+    odom_topic: "odom_ground_truth"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
