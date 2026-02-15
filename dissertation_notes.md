@@ -33,6 +33,12 @@ Click the 2D Goal Pose button in the toolbar
 Click and drag on the map to set a goal position and orientation
 
 
+#################  Statistical Analysis ########################
+
+python statistical_analysis.py /path/to/metrics_data/island --output island_results.csv
+python csv_to_latex.py island_results.csv --output island_table.tex
+
+
 #################  Roboterrain and Attention: ########################
 
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp

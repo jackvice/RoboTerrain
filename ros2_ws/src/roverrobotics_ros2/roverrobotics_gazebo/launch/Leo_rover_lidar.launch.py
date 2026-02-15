@@ -26,7 +26,8 @@ def generate_launch_description():
         description='Use simulation (Gazebo) clock if true')
 
     #world_name = 'moon'
-    world_name = 'default'
+    #world_name = 'default'
+    world_name = 'inspect'
     
     declare_world_cmd = DeclareLaunchArgument(
         'world',
@@ -34,8 +35,8 @@ def generate_launch_description():
         #default_value='inspection_boxes_x10.world',
         #default_value='inspection_boxes_x10_v2.world', # social nave testing world for MDPI publication
         #default_value='inspection_boxes_v3.world', # lots of boxes for Active vision
-        #default_value='inspection_boxes_v4.world', # removed some boxes from v3 for Active vision
-        default_value='office_cpr_construction.world',
+        default_value='inspection_boxes_v4.world', # removed some boxes from v3 for Active vision
+        #default_value='office_cpr_construction.world',
         #default_value='island.sdf',
 
         #default_value='inspection_simple.world',
@@ -129,8 +130,76 @@ def generate_launch_description():
         output='screen'
     )
 
+
+    # Inspect Bridge between ROS 2 and Ignition Gazebo
+    gz_ros2_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=[
+            # Fix bi-directional topics (use '@' instead of mixed symbols)
+            '/cmd_vel@geometry_msgs/msg/Twist@ignition.msgs.Twist',
+            '/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock',  # This one-way is correct
+            #'/odometry/wheels@nav_msgs/msg/Odometry@ignition.msgs.Odometry', fisheye
+            #'/odometry/wheels@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
+            '/odom_ground_truth@nav_msgs/msg/Odometry[ignition.msgs.Odometry', # nav2 lidar
+            
+            #'/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',     # This may be conflicting with NAV2 
+
+            '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',  # This one-way is correct
+            '/scan@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
+            '/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU',
+            #'/camera/image_raw@sensor_msgs/msg/Image@gz.msgs.Image',
+            #'/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
+            # Fix this direction (it was reversed)
+            '/world/inspect/dynamic_pose/info@geometry_msgs/msg/PoseArray[ignition.msgs.Pose_V',
+
+            # constuct actors:
+            '/linear_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            '/diag_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            '/triangle_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            
+            # Service bridge for robot pose reset
+            '/world/inspect/set_pose@ros_gz_interfaces/srv/SetEntityPose',
+         ],
+        output='screen'
+    )
     
-    # Bridge between ROS 2 and Ignition Gazebo
+    """
+    # Moon Bridge between ROS 2 and Ignition Gazebo
+    gz_ros2_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=[
+            # Fix bi-directional topics (use '@' instead of mixed symbols)
+            '/cmd_vel@geometry_msgs/msg/Twist@ignition.msgs.Twist',
+            '/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock',  # This one-way is correct
+            #'/odometry/wheels@nav_msgs/msg/Odometry@ignition.msgs.Odometry', fisheye
+            #'/odometry/wheels@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
+            '/odom_ground_truth@nav_msgs/msg/Odometry[ignition.msgs.Odometry', # nav2 lidar
+            
+            #'/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',     # This may be conflicting with NAV2 
+
+            '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',  # This one-way is correct
+            '/scan@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
+            '/imu/data@sensor_msgs/msg/Imu@gz.msgs.IMU',
+            #'/camera/image_raw@sensor_msgs/msg/Image@gz.msgs.Image',
+            #'/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo',
+            # Fix this direction (it was reversed)
+            '/world/moon/dynamic_pose/info@geometry_msgs/msg/PoseArray[ignition.msgs.Pose_V',
+
+            # island/moon actors:
+            '/triangle_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            '/triangle2_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+            '/triangle3_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
+
+            # Service bridge for robot pose reset
+            '/world/moon/set_pose@ros_gz_interfaces/srv/SetEntityPose',
+        ],
+        output='screen'
+    )
+    """
+    """
+    # Construct Bridge between ROS 2 and Ignition Gazebo
     gz_ros2_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -152,29 +221,18 @@ def generate_launch_description():
             # Fix this direction (it was reversed)
             '/world/default/dynamic_pose/info@geometry_msgs/msg/PoseArray[ignition.msgs.Pose_V',
 
-            # constuct actors:
-            #'/linear_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
-            #'/diag_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
-            #'/triangle_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
-            
-            # island/moon actors:
-            #'/triangle_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
-            #'/triangle2_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
-            #'/triangle3_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
-
             # construct actors:
             '/upper_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
             '/lower_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose',
 
             # Service bridge for robot pose reset
-            #'/world/inspect/set_pose@ros_gz_interfaces/srv/SetEntityPose',
             '/world/default/set_pose@ros_gz_interfaces/srv/SetEntityPose',
-            #'/world/moon/set_pose@ros_gz_interfaces/srv/SetEntityPose',
+
         ],
         output='screen'
     )
-
-
+    """
+    
     # Static transform: base_link -> lidar_link
     # Required for Nav2 costmaps - Gazebo TF bridge doesn't publish internal robot frames
     # Values from SDF: <pose>0.174 0 0.6 0 -0 3.1415</pose>

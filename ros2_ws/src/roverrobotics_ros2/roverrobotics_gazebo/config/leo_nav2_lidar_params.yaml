@@ -182,7 +182,7 @@ local_costmap:
           topic: /scan
           sensor_frame: lidar_link
           data_type: "LaserScan"
-          observation_persistence: 2.0
+          observation_persistence: 0.5 #0.0
           expected_update_rate: 20.0
           inf_is_valid: false
           clearing: true
@@ -191,7 +191,7 @@ local_costmap:
           obstacle_min_range: 0.15
           raytrace_max_range: 10.0
           raytrace_min_range: 0.15
-          max_obstacle_height: 2.0
+          max_obstacle_height: 15.0
 
         # DEPTH CAMERA CONFIG (commented out for later use)
         # observation_sources: depth_camera
@@ -212,8 +212,8 @@ local_costmap:
 
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.65 # 0.55
+        cost_scaling_factor: 5.0 #3.0
+        inflation_radius: 0.7 # 0.65 # 0.55
 
       always_send_full_costmap: true
 
@@ -252,7 +252,7 @@ global_costmap:
           obstacle_min_range: 0.15
           raytrace_max_range: 10.0
           raytrace_min_range: 0.15
-          max_obstacle_height: 2.0
+          max_obstacle_height: 15.0
 
         # DEPTH CAMERA CONFIG (commented out for later use)
         # observation_sources: depth_camera

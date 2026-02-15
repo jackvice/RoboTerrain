@@ -47,7 +47,7 @@ class EnvironmentConfig(NamedTuple):
     actor_topics: Dict[str, str]
     flip_threshold_rad: float = 1.48
     total_duration_min: int = 30
-    costmap_clear_interval_sec: float = 0.0 #60.0
+    costmap_clear_interval_sec: float = 0.0 # 2.0 #60.0
 
 
 class MetricsCollectorState(NamedTuple):
@@ -457,7 +457,7 @@ def main(env_name: str = "construct") -> None:
     rclpy.init()
     collector = MetricsCollectorNode(config)
 
-    csv_path = f"metrics_data/{env_name}_csv/Nav2_lidar/{env_name}_nav2_{time.strftime('%m_%d_%H-%M')}.csv"
+    csv_path = f"metrics_data/{env_name}/Nav2_lidar/{env_name}_nav2_{time.strftime('%m_%d_%H-%M')}.csv"
     csv_file = open(csv_path, "w", newline="")
     writer = csv.writer(csv_file)
     write_metrics_header(writer, sorted(config.actor_topics.keys()))
