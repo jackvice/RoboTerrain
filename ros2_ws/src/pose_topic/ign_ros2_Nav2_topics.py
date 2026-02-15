@@ -1,5 +1,7 @@
+import math
 import rclpy
 import sys
+from typing import Tuple
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 from geometry_msgs.msg import PoseArray, Pose, TransformStamped
@@ -9,6 +11,20 @@ import threading
 import subprocess
 from nav_msgs.msg import Odometry
 import queue
+
+
+def quat_to_yaw(x: float, y: float, z: float, w: float) -> float:
+    """Extract yaw from quaternion, discarding roll/pitch."""
+    siny_cosp: float = 2.0 * (w * z + x * y)
+    cosy_cosp: float = 1.0 - 2.0 * (y * y + z * z)
+    return math.atan2(siny_cosp, cosy_cosp)
+
+
+def yaw_to_quat(yaw: float) -> Tuple[float, float, float, float]:
+    """Yaw-only → quaternion (x, y, z, w) with roll=pitch=0."""
+    half: float = 0.5 * yaw
+    return (0.0, 0.0, math.sin(half), math.cos(half))
+
 
 class PoseConverterNode(Node):
     def __init__(self, world_name, robot_name):
@@ -144,7 +160,19 @@ class PoseConverterNode(Node):
         odom_msg.header.stamp = now
         odom_msg.header.frame_id = "odom"
         odom_msg.child_frame_id = "base_footprint"
-        odom_msg.pose.pose = latest_pose
+        # Planar projection: keep x,y,yaw — zero z,roll,pitch
+        yaw: float = quat_to_yaw(
+            latest_pose.orientation.x, latest_pose.orientation.y,
+            latest_pose.orientation.z, latest_pose.orientation.w,
+        )
+        qx, qy, qz, qw = yaw_to_quat(yaw)
+        odom_msg.pose.pose.position.x = latest_pose.position.x
+        odom_msg.pose.pose.position.y = latest_pose.position.y
+        odom_msg.pose.pose.position.z = 0.0
+        odom_msg.pose.pose.orientation.x = qx
+        odom_msg.pose.pose.orientation.y = qy
+        odom_msg.pose.pose.orientation.z = qz
+        odom_msg.pose.pose.orientation.w = qw
         odom_msg.pose.covariance = [0.01 if i in [0, 7, 14, 21, 28, 35] else 0.0 for i in range(36)]
         self.odom_pub.publish(odom_msg)
         
@@ -154,8 +182,11 @@ class PoseConverterNode(Node):
         t.child_frame_id = "base_footprint"
         t.transform.translation.x = latest_pose.position.x
         t.transform.translation.y = latest_pose.position.y
-        t.transform.translation.z = latest_pose.position.z
-        t.transform.rotation = latest_pose.orientation
+        t.transform.translation.z = 0.0
+        t.transform.rotation.x = qx
+        t.transform.rotation.y = qy
+        t.transform.rotation.z = qz
+        t.transform.rotation.w = qw
         self.tf_broadcaster.sendTransform(t)
         
                         

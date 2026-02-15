@@ -404,6 +404,8 @@ class MetricsCollectorNode:
         fut = self.set_pose_client.call_async(req)
         rclpy.spin_until_future_complete(self.node, fut, timeout_sec=2.0)
 
+        time.sleep(1.5)
+        
         # Spin to let odom and costmap update to new position
         for _ in range(50):
             rclpy.spin_once(self.node, timeout_sec=0.05)

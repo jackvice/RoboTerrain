@@ -8,7 +8,8 @@ ros2 launch roverrobotics_gazebo leo_nav2_lidar_launch.py
 
 # Terminal 3: RViz2
 cd /rover_metrics
-python island_lidar_metrics_collector.py
+python nav2_lidar_metrics_collector.py inspect
+
 
 
 rviz2
