@@ -36,9 +36,13 @@ Click and drag on the map to set a goal position and orientation
 
 #################  Statistical Analysis ########################
 
+~/src/RoboTerrain/ros2_ws/src/rover_metrics/metrics_data$ python table_metrics.py inspect inspect/Active_Vision/ test_out.csv
+
 python statistical_analysis.py /path/to/metrics_data/island --output island_results.csv
 python csv_to_latex.py island_results.csv --output island_table.tex
 
+
+python permutation_test.py island   --base_dir /home/jack/src/RoboTerrain/ros2_ws/src/rover_metrics/metrics_data   --metric p05   --cond_a "Active_Vision"   --cond_b "no_soc_nav"   --n_perm 50000   --seed 0
 
 #################  Roboterrain and Attention: ########################
 

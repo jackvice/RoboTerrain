@@ -1,0 +1,4 @@
+filename,total_goals,goal_dot5_ratio,goal_dot5_dot8_ratio,goal_all_three_ratio
+construct_nav2_02_11_18-03.csv,89,3.18,1.78,0.88
+construct_nav2_02_11_18-54.csv,96,2.53,1.48,0.95
+construct_nav2_02_12_09-00.csv,93,3.58,2.21,1.18

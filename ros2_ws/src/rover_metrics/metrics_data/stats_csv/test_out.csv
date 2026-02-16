@@ -1,0 +1,4 @@
+filename,total_goals,goal_dot5_ratio,goal_dot5_dot8_ratio,goal_all_three_ratio
+baseline_metrics_construct_10_02_15-21.csv,69,3.63,1.64,0.66
+baseline_metrics_construct_10_02_16-00.csv,85,3.70,1.55,0.73
+baseline_metrics_construct_10_02_16-57.csv,130,5.91,2.36,1.30

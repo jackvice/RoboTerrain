@@ -1,0 +1,4 @@
+filename,total_goals,goal_dot5_ratio,goal_dot5_dot8_ratio,goal_all_three_ratio
+inspect_nav2_02_15_17-33.csv,60,0.70,0.34,0.26
+inspect_nav2_02_15_20-33.csv,64,0.88,0.40,0.26
+inspect_nav2_02_16_10-10.csv,72,1.53,0.60,0.33

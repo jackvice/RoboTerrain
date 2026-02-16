@@ -21,9 +21,10 @@ from scipy import stats
 
 # ── Types ───────────────────────────────────────────────────────────────────
 
-class GoalWindowMetrics(NamedTuple):
-    risk_secs_per_goal: float  # seconds with dmin < 0.5m per goal (lower = safer)
-    secs_per_goal: float       # seconds to complete one goal (lower = faster)
+class BlockMetrics(NamedTuple):
+    p05: float               # fraction of seconds with dmin < 0.5
+    goal_rate: float         # goals per minute in this block
+    encounters_per_goal: float  # encounters(<0.5m) per goal achieved
 
 
 class TestResult(NamedTuple):
@@ -45,7 +46,7 @@ class TestResult(NamedTuple):
 
 # ── Constants ───────────────────────────────────────────────────────────────
 
-GOALS_PER_WINDOW: int = 10
+BLOCK_MINUTES: int = 5
 
 ENVIRONMENTS: List[str] = ["construct", "inspect", "island"]
 
@@ -67,7 +68,7 @@ PLANNED_COMPARISONS: List[Tuple[str, str]] = [
     ("Active Vision",   "Nav2 (w/reverse)"),
 ]
 
-METRICS: List[str] = ["risk_secs_per_goal", "secs_per_goal"]
+METRICS: List[str] = ["p05", "goal_rate", "encounters_per_goal"]
 
 
 # ── Data loading ────────────────────────────────────────────────────────────
@@ -106,51 +107,47 @@ def extract_goals(df: pd.DataFrame) -> pd.Series:
     raise ValueError(f"No goals column found. Columns: {list(df.columns)}")
 
 
-# ── Goal-window segmentation and metrics ────────────────────────────────────
+# ── Block segmentation and metrics ──────────────────────────────────────────
 
-def find_goal_boundaries(goals: pd.Series) -> List[int]:
-    """Return row indices where the cumulative goal count increments."""
-    diffs: pd.Series = goals.diff().fillna(0)
-    return list(diffs[diffs > 0].index)
-
-
-def compute_goal_window_metrics(
+def compute_block_metrics_array(
     dmin: pd.Series,
     goals: pd.Series,
-    goals_per_window: int
+    block_minutes: int
 ) -> np.ndarray:
     """
-    Segment time series into windows of G goals each, compute metrics per window.
+    Segment time series into fixed blocks, compute metrics per block.
 
-    Returns: np.ndarray of shape (n_windows, 2) with columns
-             [risk_secs_per_goal, secs_per_goal].
+    Returns: np.ndarray of shape (n_blocks, 3) with columns [p05, goal_rate, encounters_per_goal].
+    Data is at ~1 Hz, so index ≈ seconds.
     """
-    boundaries: List[int] = find_goal_boundaries(goals)
-    n_goals: int = len(boundaries)
-    n_windows: int = n_goals // goals_per_window
+    block_size: int = block_minutes * 60  # seconds per block
+    n_rows: int = len(dmin)
+    n_blocks: int = n_rows // block_size
 
-    if n_windows == 0:
-        raise ValueError(f"Not enough goals for even one window "
-                         f"({n_goals} goals, need {goals_per_window})")
+    if n_blocks == 0:
+        raise ValueError(f"Not enough data for even one {block_minutes}-min block "
+                         f"({n_rows} rows, need {block_size})")
 
     results: List[List[float]] = []
 
-    for i in range(n_windows):
-        # Window spans from just after previous window's last goal to this window's last goal
-        first_goal_idx: int = i * goals_per_window
-        last_goal_idx: int = (i + 1) * goals_per_window - 1
+    for i in range(n_blocks):
+        start: int = i * block_size
+        end: int = (i + 1) * block_size
 
-        start: int = boundaries[first_goal_idx - 1] + 1 if first_goal_idx > 0 else 0
-        end: int = boundaries[last_goal_idx] + 1  # inclusive of the goal row
+        block_dmin: pd.Series = dmin.iloc[start:end].dropna()
+        block_goals: pd.Series = goals.iloc[start:end]
 
-        window_dmin: pd.Series = dmin.iloc[start:end].dropna()
-        duration_secs: int = end - start
+        n_valid: int = len(block_dmin)
+        p05: float = float((block_dmin < 0.5).sum() / n_valid) if n_valid > 0 else 0.0
 
-        risk_secs: float = float((window_dmin < 0.5).sum())
-        risk_secs_per_goal: float = risk_secs / goals_per_window
-        secs_per_goal: float = float(duration_secs) / goals_per_window
+        goals_in_block: float = float(block_goals.iloc[-1] - block_goals.iloc[0])
+        goal_rate: float = goals_in_block / block_minutes
 
-        results.append([risk_secs_per_goal, secs_per_goal])
+        # Encounters per goal (lower is better; NaN if no goals in block)
+        count_05: float = float((block_dmin < 0.5).sum())
+        encounters_per_goal: float = count_05 / goals_in_block if goals_in_block > 0 else float('nan')
+
+        results.append([p05, goal_rate, encounters_per_goal])
 
     return np.array(results)
 
@@ -158,10 +155,10 @@ def compute_goal_window_metrics(
 def load_condition_metrics(
     base_path: str,
     condition_dir: str,
-    goals_per_window: int
+    block_minutes: int
 ) -> Optional[np.ndarray]:
     """
-    Load CSVs for one condition, return goal-window metrics array.
+    Load CSVs for one condition, return block metrics array.
     Returns None if directory doesn't exist or has no CSVs.
     """
     csv_dir: str = os.path.join(base_path, condition_dir)
@@ -177,7 +174,7 @@ def load_condition_metrics(
     dmin: pd.Series = extract_dmin(df)
     goals: pd.Series = extract_goals(df)
 
-    return compute_goal_window_metrics(dmin, goals, goals_per_window)
+    return compute_block_metrics_array(dmin, goals, block_minutes)
 
 
 # ── Statistical tests ───────────────────────────────────────────────────────
@@ -270,7 +267,7 @@ def run_environment_analysis(
     base_path: str,
     environment: str,
     comparisons: List[Tuple[str, str]],
-    goals_per_window: int
+    block_minutes: int
 ) -> List[TestResult]:
     """
     Run all planned comparisons for one environment.
@@ -286,11 +283,11 @@ def run_environment_analysis(
     for cond_name in needed_conditions:
         cond_dir: str = CONDITION_DIRS[cond_name]
         data: Optional[np.ndarray] = load_condition_metrics(
-            base_path, cond_dir, goals_per_window
+            base_path, cond_dir, block_minutes
         )
         condition_data[cond_name] = data
         if data is not None:
-            print(f"  {environment}/{cond_dir}: {data.shape[0]} windows loaded")
+            print(f"  {environment}/{cond_dir}: {data.shape[0]} blocks loaded")
         else:
             print(f"  {environment}/{cond_dir}: NOT FOUND — skipping")
 
@@ -366,14 +363,14 @@ def run_environment_analysis(
 def run_full_analysis(
     base_path: str,
     comparisons: List[Tuple[str, str]],
-    goals_per_window: int
+    block_minutes: int
 ) -> pd.DataFrame:
     """Run analysis for a single environment directory, return results DataFrame."""
     env_name: str = os.path.basename(os.path.normpath(base_path))
     print(f"\nProcessing environment: {env_name}")
 
     all_results: List[TestResult] = run_environment_analysis(
-        base_path, env_name, comparisons, goals_per_window
+        base_path, env_name, comparisons, block_minutes
     )
 
     columns: List[str] = [
@@ -394,8 +391,8 @@ def main() -> None:
                         help="Path to metrics_data directory")
     parser.add_argument("--output", type=str, default="statistical_results.csv",
                         help="Output CSV path (default: statistical_results.csv)")
-    parser.add_argument("--goals_per_window", type=int, default=GOALS_PER_WINDOW,
-                        help="Goals per sampling window (default: 10)")
+    parser.add_argument("--block_minutes", type=int, default=BLOCK_MINUTES,
+                        help="Block size in minutes (default: 5)")
     args: argparse.Namespace = parser.parse_args()
 
     if not os.path.isdir(args.data_path):
@@ -403,24 +400,14 @@ def main() -> None:
         sys.exit(1)
 
     results_df: pd.DataFrame = run_full_analysis(
-        args.data_path, PLANNED_COMPARISONS, args.goals_per_window
+        args.data_path, PLANNED_COMPARISONS, args.block_minutes
     )
 
     results_df.to_csv(args.output, index=False, float_format="%.6f")
     print(f"\nResults saved to {args.output}")
     print(f"Total tests: {len(results_df)}")
 
-    # Print all results
-    print("\nAll results:")
-    print("Columns:", list(results_df.columns))
-    for _, row in results_df.iterrows():
-        print(f"  {row['environment']} | {row['metric']} | "
-              f"{row['condition_a']} vs {row['condition_b']} | "
-              f"Δ={row['mean_diff']:.6f} | "
-              f"p_corr={row['p_corrected']:.4f}{row['significant']} | "
-              f"d={row['cohen_d']:.2f}")
-
-    # Optional: also print significant-only summary
+    # Print summary of significant results
     sig: pd.DataFrame = results_df[results_df["significant"] != ""]
     if not sig.empty:
         print(f"\nSignificant results ({len(sig)}):")

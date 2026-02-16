@@ -13,12 +13,11 @@ import pandas as pd
 
 
 METRIC_LABELS: Dict[str, str] = {
-    "p05": r"$p_{0.5}$",
-    "goal_rate": "Goal rate",
-    "encounters_per_goal": r"Encounters ($<$0.5\,m) per goal",
+    "risk_secs_per_goal": r"Risk secs per goal ($d_{\min} < 0.5$\,m)",
+    "secs_per_goal": "Secs per goal",
 }
 
-METRIC_ORDER: List[str] = ["p05", "goal_rate", "encounters_per_goal"]
+METRIC_ORDER: List[str] = ["risk_secs_per_goal", "secs_per_goal"]
 
 
 def format_p_value(p: float) -> str:
@@ -76,13 +75,13 @@ def build_latex_table(df: pd.DataFrame) -> str:
     lines.append(r"\bottomrule")
     lines.append(r"\end{tabular}")
     lines.append(
-        r"\caption{Statistical comparisons for " + env_name + r" environment. "
-        r"$\Delta$: difference in mean per-block rates (A$-$B). "
+        r"\caption{Statistical comparisons for " + env_name + r" environment "
+        r"using goal-normalized windows ($G = 10$ goals per window). "
+        r"$\Delta$: difference in means (A$-$B). "
         r"$d$: Cohen's $d$. "
         r"$p_{\mathrm{corr}}$: Holm--Bonferroni corrected. "
-        r"$p_{0.5}$: fraction of time $d_{\min} < 0.5$\,m; "
-        r"goal rate in goals/min; "
-        r"encounters per goal: count of $d_{\min} < 0.5$\,m seconds per goal achieved. "
+        r"Risk secs per goal: seconds with $d_{\min} < 0.5$\,m per goal achieved (lower = safer). "
+        r"Secs per goal: time to complete one goal (lower = faster). "
         r"*\,$p < .05$, **\,$p < .01$, ***\,$p < .001$.}"
     )
     lines.append(r"\label{tab:stats_" + env_name.lower() + r"}")

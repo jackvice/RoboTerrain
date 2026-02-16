@@ -101,7 +101,8 @@ controller_server:
       plugin: "dwb_core::DWBLocalPlanner"
       debug_trajectory_details: true
       # Leo Rover velocity limits (adjust based on your robot)
-      min_vel_x: -0.7 #0.0 #no reverse
+      #min_vel_x: -0.7 
+      min_vel_x: 0.0 #no reverse
       min_vel_y: 0.0
       max_vel_x: 0.7 #0.6
       max_vel_y: 0.0
@@ -321,7 +322,8 @@ velocity_smoother:
     scale_velocities: false
     feedback: "OPEN_LOOP"
     max_velocity: [0.7, 0.0, 0.7]   # [x, y, theta]
-    min_velocity: [-0.7, 0.0, -0.7] # [0.0, 0.0, -0.7]
+    #min_velocity: [-0.7, 0.0, -0.7] # [0.0, 0.0, -0.7]
+    min_velocity: [0.0, 0.0, -0.7]
     max_accel: [1.0, 0.0, 2.5]
     max_decel: [-1.0, 0.0, -2.5]
     odom_topic: "odom_ground_truth"

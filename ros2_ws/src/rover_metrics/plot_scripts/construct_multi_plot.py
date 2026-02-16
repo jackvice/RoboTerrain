@@ -175,10 +175,13 @@ def plot_timeline(encounter_points: List[Tuple[float, float]], total_goals: int)
     th_05 = ax.axhline(0.5, color='green', linestyle='--', alpha=0.6, label='Threshold 0.5 m')
 
     goal_dot5_ratio = round(total_goals / c_lt_05, 2)
+    goal_dot5_dot8_ratio = round(total_goals / (c_lt_05 + c_05_08), 2)
+    goal_all_three_ratio = round(total_goals / (c_lt_05 + c_05_08 + c_08_12), 2)
+                                 
     # -- Labels, grid, title
     ax.set_xlabel('Time (min)')
     ax.set_ylabel('Distance (m)')
-    ax.set_title(f'Robot–Actor Encounter Timeline (Success Rate: {total_goals}, Success Ratio: {goal_dot5_ratio})')
+    ax.set_title(f'goals: {total_goals}, .5 Ratio: {goal_dot5_ratio}, .5 and .8: {goal_dot5_dot8_ratio}, allthree: {goal_all_three_ratio}')
     ax.grid(True, alpha=0.3, linestyle='--')
 
     # -- Legend: dots first, then dashed thresholds, single row under x-axis
