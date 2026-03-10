@@ -1,0 +1,27 @@
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lrrrl}
+\toprule
+\textbf{Comparison} & \textbf{$\Delta$} & \textbf{$d$} & \textbf{$p_{\mathrm{corr}}$} & \\
+\midrule
+\multicolumn{5}{l}{\textbf{Risk secs per goal ($d_{\min} < 0.5$\,m)}} \\
+\quad With Attention vs No Attention & -0.0216 & -0.28 & 0.41 &  \\
+\quad With Attention vs No Social Nav & -0.4262 & -2.57 & $<$0.001 & *** \\
+\quad With Attention vs Nav2 (w/reverse) & -0.3874 & -1.90 & $<$0.001 & *** \\
+\quad Active Vision vs With Attention & -0.0045 & -0.08 & 0.69 &  \\
+\quad Active Vision vs No Social Nav & -0.4308 & -2.72 & $<$0.001 & *** \\
+\quad Active Vision vs Nav2 (w/reverse) & -0.3919 & -2.00 & $<$0.001 & *** \\
+\midrule
+\multicolumn{5}{l}{\textbf{Secs per goal}} \\
+\quad With Attention vs No Attention & -0.3447 & -0.14 & 1.00 &  \\
+\quad With Attention vs No Social Nav & 1.8977 & 0.88 & $<$0.001 & *** \\
+\quad With Attention vs Nav2 (w/reverse) & 3.0668 & 1.71 & $<$0.001 & *** \\
+\quad Active Vision vs With Attention & -1.9112 & -0.95 & $<$0.001 & *** \\
+\quad Active Vision vs No Social Nav & -0.0135 & -0.01 & 1.00 &  \\
+\quad Active Vision vs Nav2 (w/reverse) & 1.1556 & 0.72 & $<$0.001 & *** \\
+\bottomrule
+\end{tabular}
+\caption{Statistical comparisons for Island environment using goal-normalized windows ($G = 10$ goals per window). $\Delta$: difference in means (A$-$B). $d$: Cohen's $d$. $p_{\mathrm{corr}}$: Holm--Bonferroni corrected. Risk secs per goal: seconds with $d_{\min} < 0.5$\,m per goal achieved (lower = safer). Secs per goal: time to complete one goal (lower = faster). *\,$p < .05$, **\,$p < .01$, ***\,$p < .001$.}
+\label{tab:stats_island}
+\end{table}

@@ -1,0 +1,11 @@
+env,metric,cond_a,cond_b,n_a,n_b,mean_a,mean_b,diff_a_minus_b,alternative,p_perm_raw,p_perm_holm
+island,risk_secs_per_goal,Active Vision,With Attention,3,3,0.024181,0.029109,-0.004928,less,0.400000,0.400000
+island,risk_secs_per_goal,Active Vision,No Attention,3,3,0.024181,0.050014,-0.025832,less,0.050000,0.250000
+island,risk_secs_per_goal,Active Vision,No Social Nav,3,3,0.024181,0.453735,-0.429554,less,0.050000,0.250000
+island,risk_secs_per_goal,Active Vision,Nav2 (forward),3,3,0.024181,0.420026,-0.395845,less,0.050000,0.250000
+island,risk_secs_per_goal,Active Vision,Nav2 (w/reverse),3,3,0.024181,0.418498,-0.394316,less,0.050000,0.250000
+island,secs_per_goal,Active Vision,With Attention,3,3,10.066345,12.111012,-2.044667,less,0.050000,0.250000
+island,secs_per_goal,Active Vision,No Attention,3,3,10.066345,12.453061,-2.386716,less,0.050000,0.250000
+island,secs_per_goal,Active Vision,No Social Nav,3,3,10.066345,10.323549,-0.257204,less,0.450000,0.900000
+island,secs_per_goal,Active Vision,Nav2 (forward),3,3,10.066345,11.088877,-1.022532,less,0.100000,0.300000
+island,secs_per_goal,Active Vision,Nav2 (w/reverse),3,3,10.066345,9.001057,1.065288,less,1.000000,1.000000

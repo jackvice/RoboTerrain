@@ -1,0 +1,13 @@
+environment,metric,condition_a,condition_b,mean_a,mean_b,mean_diff,ci_low,ci_high,t_stat,p_value,p_corrected,cohen_d,significant
+construct,risk_secs_per_goal,With Attention,No Attention,0.050000,0.130769,-0.080769,-0.175597,0.014059,-1.808882,0.089716,0.179433,-0.684148,
+construct,risk_secs_per_goal,With Attention,No Social Nav,0.050000,0.260714,-0.210714,-0.298680,-0.122749,-4.867465,0.000025,0.000076,-1.139141,***
+construct,risk_secs_per_goal,With Attention,Nav2 (w/reverse),0.050000,0.351613,-0.301613,-0.420288,-0.182937,-5.161406,0.000010,0.000040,-1.098070,***
+construct,risk_secs_per_goal,Active Vision,With Attention,0.020000,0.050000,-0.030000,-0.071940,0.011940,-1.515106,0.149049,0.179433,-0.649961,
+construct,risk_secs_per_goal,Active Vision,No Social Nav,0.020000,0.260714,-0.240714,-0.325100,-0.156329,-5.820125,0.000002,0.000011,-1.389321,***
+construct,risk_secs_per_goal,Active Vision,Nav2 (w/reverse),0.020000,0.351613,-0.331613,-0.447740,-0.215486,-5.815716,0.000002,0.000011,-1.282565,***
+construct,secs_per_goal,With Attention,No Attention,52.620000,40.146154,12.473846,-17.769678,42.717370,0.863701,0.398605,0.398605,0.366374,
+construct,secs_per_goal,With Attention,No Social Nav,52.620000,19.185714,33.434286,8.063869,58.804702,2.954249,0.015097,0.045292,1.687738,*
+construct,secs_per_goal,With Attention,Nav2 (w/reverse),52.620000,17.109677,35.510323,10.240180,60.780466,3.167184,0.011077,0.044307,1.975700,*
+construct,secs_per_goal,Active Vision,With Attention,34.620000,52.620000,-18.000000,-44.382980,8.382980,-1.480368,0.163600,0.327200,-0.679366,
+construct,secs_per_goal,Active Vision,No Social Nav,34.620000,19.185714,15.434286,4.433679,26.434893,2.939397,0.008504,0.042522,1.110363,*
+construct,secs_per_goal,Active Vision,Nav2 (w/reverse),34.620000,17.109677,17.510323,6.860321,28.160324,3.488372,0.003077,0.018462,1.452689,*

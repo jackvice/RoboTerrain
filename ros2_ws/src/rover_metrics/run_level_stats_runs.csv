@@ -1,0 +1,19 @@
+env,condition,run_file,goals,seconds,risk_secs,encounter_events,risk_secs_per_goal,secs_per_goal,goals_per_encounter
+island,With Attention,with_heat_metrics_inspect_09_27_16-42.csv,152,1800,6,6,0.039474,11.842105,23.384615
+island,With Attention,with_heat_metrics_inspect_09_27_17-35.csv,146,1800,6,6,0.041096,12.328767,22.461538
+island,With Attention,with_heat_metrics_inspect_09_27_20-07.csv,148,1800,1,1,0.006757,12.162162,98.666667
+island,No Attention,no_heat_metrics_inspect_09_28_22-24.csv,125,1800,6,5,0.048000,14.400000,22.727273
+island,No Attention,no_heat_metrics_inspect_09_29_09-13.csv,168,1800,8,8,0.047619,10.714286,19.764706
+island,No Attention,no_heat_metrics_inspect_09_29_09-54.csv,147,1800,8,5,0.054422,12.244898,26.727273
+island,No Social Nav,baseline_metrics_island_09_30_13-36.csv,149,1800,74,60,0.496644,12.080537,2.462810
+island,No Social Nav,baseline_metrics_island_09_30_14-20.csv,182,1800,80,67,0.439560,9.890110,2.696296
+island,No Social Nav,baseline_metrics_island_09_30_14-51.csv,200,1800,85,68,0.425000,9.000000,2.919708
+island,Active Vision,AV_island_01_05_15-57.csv,171,1800,4,3,0.023392,10.526316,48.857143
+island,Active Vision,island_12_29_10-13.csv,182,1800,4,4,0.021978,9.890110,40.444444
+island,Active Vision,island_12_30_09-21.csv,184,1800,5,4,0.027174,9.782609,40.888889
+island,Nav2 (forward),Nav2_lidar_island_02_08_11-13.csv,164,1800,80,69,0.487805,10.975610,2.359712
+island,Nav2 (forward),Nav2_lidar_island_02_08_12-30.csv,153,1800,60,51,0.392157,11.764706,2.970874
+island,Nav2 (forward),Nav2_lidar_island_02_08_13-00.csv,171,1800,65,60,0.380117,10.526316,2.826446
+island,Nav2 (w/reverse),Nav2_lidar_island_02_07_15-52.csv,202,1800,71,63,0.351485,8.910891,3.181102
+island,Nav2 (w/reverse),Nav2_lidar_island_02_07_17-58.csv,201,1800,96,78,0.477612,8.955224,2.560510
+island,Nav2 (w/reverse),Nav2_lidar_island_02_07_21-21.csv,197,1800,84,70,0.426396,9.137056,2.794326

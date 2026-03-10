@@ -1,0 +1,13 @@
+environment,metric,condition_a,condition_b,mean_a,mean_b,mean_diff,ci_low,ci_high,t_stat,p_value,p_corrected,cohen_d,significant
+island,risk_secs_per_goal,With Attention,No Attention,0.029545,0.051163,-0.021617,-0.055196,0.011961,859.500000,0.356107,0.712214,-0.276640,
+island,risk_secs_per_goal,With Attention,No Social Nav,0.029545,0.455769,-0.426224,-0.489349,-0.363098,30.000000,0.000000,0.000000,-2.572785,***
+island,risk_secs_per_goal,With Attention,Nav2 (w/reverse),0.029545,0.416949,-0.387404,-0.458490,-0.316317,106.500000,0.000000,0.000000,-1.896462,***
+island,risk_secs_per_goal,Active Vision,With Attention,0.025000,0.029545,-0.004545,-0.027382,0.018291,1104.500000,0.694810,0.712214,-0.081964,
+island,risk_secs_per_goal,Active Vision,No Social Nav,0.025000,0.455769,-0.430769,-0.493061,-0.368478,29.500000,0.000000,0.000000,-2.716039,***
+island,risk_secs_per_goal,Active Vision,Nav2 (w/reverse),0.025000,0.416949,-0.391949,-0.462294,-0.321604,114.000000,0.000000,0.000000,-1.996594,***
+island,secs_per_goal,With Attention,No Attention,12.122727,12.467442,-0.344715,-1.404692,0.715263,917.000000,0.808768,1.000000,-0.139077,
+island,secs_per_goal,With Attention,No Social Nav,12.122727,10.225000,1.897727,1.014770,2.780685,1677.500000,0.000089,0.000354,0.878509,***
+island,secs_per_goal,With Attention,Nav2 (w/reverse),12.122727,9.055932,3.066795,2.306362,3.827228,2282.000000,0.000000,0.000000,1.708368,***
+island,secs_per_goal,Active Vision,With Attention,10.211538,12.122727,-1.911189,-2.743410,-1.078968,578.500000,0.000032,0.000162,-0.951641,***
+island,secs_per_goal,Active Vision,No Social Nav,10.211538,10.225000,-0.013462,-0.778014,0.751091,1369.000000,0.914552,1.000000,-0.006851,
+island,secs_per_goal,Active Vision,Nav2 (w/reverse),10.211538,9.055932,1.155606,0.539908,1.771304,2124.500000,0.000487,0.001461,0.720168,**

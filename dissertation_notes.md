@@ -1,4 +1,29 @@
 
+#### active vision
+ros2 launch roverrobotics_gazebo Leo_rover_fisheye.launch.py
+ros2 launch roverrobotics_gazebo Leo_rover_fisheye.launch.py headless:=true
+
+
+cd attention/inference
+python fisheye_ros2_mem_share.py
+
+cd ~/src/attention
+conda activate attent 
+python inference.py --attention_mode ./model_output/checkpoint_epoch_1000.pkl 
+
+
+###### Dreamerv3 commands ########################
+conda activate jaxRos
+FILTERED_LD_LIBRARY_PATH=$(echo $LD_LIBRARY_PATH | tr ':' '\n' | grep -E '^/opt/ros' | tr '\n' ':' | sed 's/:$//')
+
+env LD_LIBRARY_PATH="$FILTERED_LD_LIBRARY_PATH" CUDA_HOME="" XLA_PYTHON_CLIENT_PREALLOCATE=false XLA_PYTHON_CLIENT_ALLOCATOR=platform python dreamerv3/main.py --configs leorover --logdir ./logdir/dreamer/{timestamp}
+
+env LD_LIBRARY_PATH="$FILTERED_LD_LIBRARY_PATH" CUDA_HOME="" XLA_PYTHON_CLIENT_PREALLOCATE=false XLA_PYTHON_CLIENT_ALLOCATOR=platform python dreamerv3/main.py --configs leorover --script eval_only --logdir ./logdir/dreamer/0831T1151_working --run.eval_eps 100 --run.eval_envs 1 --run.from_checkpoint ./logdir/dreamer/0831T1151_working/ckpt/2025
+
+
+
+
+
 # Terminal 1: Gazebo (includes static TF now)
 ros2 launch roverrobotics_gazebo Leo_rover_depth.launch.py
 ros2 launch roverrobotics_gazebo Leo_rover_lidar.launch.py
@@ -17,7 +42,7 @@ rviz2 --ros-args -p use_sim_time:=true
 
 
 
-############# Nav2
+##### Nav2
 
 Open RViz2: rviz2
 Set Fixed Frame to odom
@@ -38,7 +63,7 @@ Click and drag on the map to set a goal position and orientation
 
 ~/src/RoboTerrain/ros2_ws/src/rover_metrics/metrics_data$ python table_metrics.py inspect inspect/Active_Vision/ test_out.csv
 
-python statistical_analysis.py /path/to/metrics_data/island --output island_results.csv
+python statistical_analysis.py island --output island_results.csv
 python csv_to_latex.py island_results.csv --output island_table.tex
 
 
@@ -49,6 +74,7 @@ python permutation_test.py island   --base_dir /home/jack/src/RoboTerrain/ros2_w
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 ros2 launch roverrobotics_gazebo Leo_rover_gazebo.launch.py
+
 # active vision
 ros2 launch roverrobotics_gazebo Leo_rover_fisheye.launch.py
 ros2 launch roverrobotics_gazebo Leo_rover_fisheye.launch.py headless:=true
@@ -90,7 +116,7 @@ python spawn.py --trajectory_file trajectories/construction_upper.sdf --actor_na
 python spawn_float.py --trajectory_file trajectories/flat_triangle_traject.sdf --world_name moon --actor_name triangle
 
 
-############## Dreamerv3 commands ########################
+###### Dreamerv3 commands ########################
 conda activate jaxRos
 FILTERED_LD_LIBRARY_PATH=$(echo $LD_LIBRARY_PATH | tr ':' '\n' | grep -E '^/opt/ros' | tr '\n' ':' | sed 's/:$//')
 

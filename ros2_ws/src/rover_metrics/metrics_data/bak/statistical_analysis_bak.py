@@ -193,8 +193,8 @@ def welch_t_test(
     """
     t_stat: float
     p_value: float
-    #t_stat, p_value = stats.ttest_ind(a, b, equal_var=False)
-    t_stat, p_value = stats.mannwhitneyu(a, b, alternative='two-sided')
+    t_stat, p_value = stats.ttest_ind(a, b, equal_var=False)
+
     mean_diff: float = float(np.mean(a) - np.mean(b))
 
     # 95% CI for the difference in means

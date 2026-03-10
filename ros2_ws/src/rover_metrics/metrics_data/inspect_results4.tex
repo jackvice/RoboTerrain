@@ -1,0 +1,27 @@
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lrrrl}
+\toprule
+\textbf{Comparison} & \textbf{$\Delta$} & \textbf{$d$} & \textbf{$p_{\mathrm{corr}}$} & \\
+\midrule
+\multicolumn{5}{l}{\textbf{Risk secs per goal ($d_{\min} < 0.5$\,m)}} \\
+\quad With Attention vs No Attention & -0.0684 & -0.60 & 0.01 & * \\
+\quad With Attention vs No Social Nav & -0.1103 & -0.66 & 0.01 & * \\
+\quad With Attention vs Nav2 (w/reverse) & -0.3734 & -1.72 & $<$0.001 & *** \\
+\quad Active Vision vs With Attention & -0.0722 & -0.63 & 0.01 & * \\
+\quad Active Vision vs No Social Nav & -0.1825 & -1.11 & $<$0.001 & *** \\
+\quad Active Vision vs Nav2 (w/reverse) & -0.4456 & -2.04 & $<$0.001 & *** \\
+\midrule
+\multicolumn{5}{l}{\textbf{Secs per goal}} \\
+\quad With Attention vs No Attention & 1.6650 & 0.64 & 0.003 & ** \\
+\quad With Attention vs No Social Nav & 4.3273 & 1.80 & $<$0.001 & *** \\
+\quad With Attention vs Nav2 (w/reverse) & -10.2908 & -2.55 & $<$0.001 & *** \\
+\quad Active Vision vs With Attention & 1.7819 & 0.54 & 0.04 & * \\
+\quad Active Vision vs No Social Nav & 6.1092 & 2.00 & $<$0.001 & *** \\
+\quad Active Vision vs Nav2 (w/reverse) & -8.5089 & -1.80 & $<$0.001 & *** \\
+\bottomrule
+\end{tabular}
+\caption{Statistical comparisons for Inspect environment using goal-normalized windows ($G = 10$ goals per window). $\Delta$: difference in means (A$-$B). $d$: Cohen's $d$. $p_{\mathrm{corr}}$: Holm--Bonferroni corrected. Risk secs per goal: seconds with $d_{\min} < 0.5$\,m per goal achieved (lower = safer). Secs per goal: time to complete one goal (lower = faster). *\,$p < .05$, **\,$p < .01$, ***\,$p < .001$.}
+\label{tab:stats_inspect}
+\end{table}
