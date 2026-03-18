@@ -16,10 +16,17 @@ python inference.py --attention_mode ./model_output/checkpoint_epoch_1000.pkl
 conda activate jaxRos
 FILTERED_LD_LIBRARY_PATH=$(echo $LD_LIBRARY_PATH | tr ':' '\n' | grep -E '^/opt/ros' | tr '\n' ':' | sed 's/:$//')
 
+# defense vid:
+env LD_LIBRARY_PATH="$FILTERED_LD_LIBRARY_PATH" CUDA_HOME="" XLA_PYTHON_CLIENT_PREALLOCATE=false XLA_PYTHON_CLIENT_ALLOCATOR=platform python dreamerv3/main.py --configs leorover --logdir ./logdir/dreamer/20251119T212857/
+
 env LD_LIBRARY_PATH="$FILTERED_LD_LIBRARY_PATH" CUDA_HOME="" XLA_PYTHON_CLIENT_PREALLOCATE=false XLA_PYTHON_CLIENT_ALLOCATOR=platform python dreamerv3/main.py --configs leorover --logdir ./logdir/dreamer/{timestamp}
 
 env LD_LIBRARY_PATH="$FILTERED_LD_LIBRARY_PATH" CUDA_HOME="" XLA_PYTHON_CLIENT_PREALLOCATE=false XLA_PYTHON_CLIENT_ALLOCATOR=platform python dreamerv3/main.py --configs leorover --script eval_only --logdir ./logdir/dreamer/0831T1151_working --run.eval_eps 100 --run.eval_envs 1 --run.from_checkpoint ./logdir/dreamer/0831T1151_working/ckpt/2025
 
+
+###### Dynamic Obstacles
+python spawn.py --trajectory_file trajectories/inspect_linear.sdf --world_name inspect --actor_name linear
+python spawn_float.py --trajectory_file trajectories/inspect_corner_triangle.sdf --world_name inspect --actor_name triangle
 
 
 
