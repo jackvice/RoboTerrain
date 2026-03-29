@@ -12,12 +12,15 @@ conda activate attent
 python inference.py --attention_mode ./model_output/checkpoint_epoch_1000.pkl 
 
 
-###### Dreamerv3 commands ########################
+#### Dreamerv3 commands ########################
 conda activate jaxRos
 FILTERED_LD_LIBRARY_PATH=$(echo $LD_LIBRARY_PATH | tr ':' '\n' | grep -E '^/opt/ros' | tr '\n' ':' | sed 's/:$//')
 
 # defense vid:
 env LD_LIBRARY_PATH="$FILTERED_LD_LIBRARY_PATH" CUDA_HOME="" XLA_PYTHON_CLIENT_PREALLOCATE=false XLA_PYTHON_CLIENT_ALLOCATOR=platform python dreamerv3/main.py --configs leorover --logdir ./logdir/dreamer/20251119T212857/
+
+# run policy
+env LD_LIBRARY_PATH="$FILTERED_LD_LIBRARY_PATH" CUDA_HOME="" XLA_PYTHON_CLIENT_PREALLOCATE=false XLA_PYTHON_CLIENT_ALLOCATOR=platform   python dreamerv3/main.py   --configs leorover   --logdir ./logdir/dreamer/20251119T212857/   --script eval_only   --run.from_checkpoint ./logdir/dreamer/20251119T212857/ckpt/{latest ckeckpoint}
 
 env LD_LIBRARY_PATH="$FILTERED_LD_LIBRARY_PATH" CUDA_HOME="" XLA_PYTHON_CLIENT_PREALLOCATE=false XLA_PYTHON_CLIENT_ALLOCATOR=platform python dreamerv3/main.py --configs leorover --logdir ./logdir/dreamer/{timestamp}
 
@@ -26,6 +29,7 @@ env LD_LIBRARY_PATH="$FILTERED_LD_LIBRARY_PATH" CUDA_HOME="" XLA_PYTHON_CLIENT_P
 
 ###### Dynamic Obstacles
 python spawn.py --trajectory_file trajectories/inspect_linear.sdf --world_name inspect --actor_name linear
+python spawn.py --trajectory_file trajectories/inspect_diag.sdf --world_name inspect --actor_name diag
 python spawn_float.py --trajectory_file trajectories/inspect_corner_triangle.sdf --world_name inspect --actor_name triangle
 
 

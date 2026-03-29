@@ -78,7 +78,6 @@ class PoseConverterNode(Node):
         
         # Timer just publishes from queue - never blocks
         self.create_timer(0.02, self._publish_from_queue)
-
         
         self.get_logger().info(f'Pose converter initialized for {robot_name} using Sim Time')
 
