@@ -279,7 +279,8 @@ def main() -> None:
     less_0d5 = plot_timeline(encounter_points, total_goals)
 
     print(f'Detected {len(encounter_points)} encounter(s) total across '
-          f'{len(file_paths)} run(s); goals reached: {total_goals}. goals per 0.5 encounter:{round(total_goals/less_0d5,2)}')
+          f'{len(file_paths)} run(s); goals reached: {total_goals}.'
+          f'< 0.5 encounters: {less_0d5}. goals per 0.5 encounter: {round(total_goals/less_0d5,2)}')
 
 if __name__ == "__main__":
     main()

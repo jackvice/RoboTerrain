@@ -30,7 +30,18 @@ Tags emitted
                           _log_fwd_collision_context's docstring.
     [HIGH_COST]           global costmap cost under robot crossed 200
     [LETHAL_FOOT]         global costmap cost under robot >= 253
-    [CLOSE_PED]           distance to nearest pedestrian dropped below 0.5 m
+    [CLOSE_PED]           distance to nearest pedestrian dropped below 0.5 m.
+                          Logs cmd_vx + active_bt at entry so the approach
+                          type (forward / reverse / stationary) and the BT
+                          state (FollowPath / BackUp / ...) are visible
+                          without grepping back through the log.
+    [CLOSE_PED_END]       distance to nearest pedestrian rose back above
+                          0.5 m, closing the encounter that the prior
+                          [CLOSE_PED] opened.  Includes encounter duration
+                          and the *minimum* ped_dist achieved during the
+                          encounter — needed because the count alone
+                          doesn't distinguish a 0.49 m graze from a
+                          0.15 m near-collision.
     [OBSTACLE_INVISIBLE]  /scan sees a return within INVISIBLE_RANGE_MAX of the
                           robot but the local_costmap cell at that return's xy
                           has cost < INVISIBLE_COST_MAX.  This is the "thin
@@ -193,6 +204,14 @@ class Nav2Diagnostic(Node):
         self.high_cost_active: bool = False
         self.lethal_foot_active: bool = False
         self.close_ped_active: bool = False
+        # Per-encounter accumulators for CLOSE_PED → CLOSE_PED_END.  Set
+        # at the entry edge (ped_dist crosses below CLOSE_PED_THRESHOLD)
+        # and cleared at the exit edge.  Tracking the per-encounter
+        # minimum makes the proxemic-safety analysis tell us *how
+        # close* each encounter actually got, not just that it happened.
+        self.close_ped_start_t: Optional[float] = None
+        self.close_ped_start_xy: Optional[Tuple[float, float]] = None
+        self.close_ped_min_dist: float = float('inf')
         self.state_ring: deque = deque()
         # bt_recent stores (timestamp, "NodeName: prev->cur") for every
         # BT event the bt_navigator publishes — condition nodes,
@@ -794,11 +813,55 @@ class Nav2Diagnostic(Node):
             self.high_cost_active = False
 
         # ----- close pedestrian -----
+        # Edge-triggered on entry and exit of the CLOSE_PED_THRESHOLD
+        # band.  Inside the band, track the minimum distance achieved
+        # so the [CLOSE_PED_END] line can characterise severity, and
+        # ignore further entry-edge bookkeeping until ped_dist rises
+        # above the threshold.  This pairs each [CLOSE_PED] with
+        # exactly one [CLOSE_PED_END] — matching the per-encounter
+        # semantics of the plot_scripts encounter detector so the diag
+        # CLOSE_PED count agrees with the plot's <0.5 m encounter
+        # count.
         if pd is not None and pd < CLOSE_PED_THRESHOLD:
             if not self.close_ped_active:
-                self.log('CLOSE_PED', f'ped_dist={pd:.2f} robot=({x:.2f},{y:.2f})')
+                # Entry edge.  Record where and when, snapshot cmd_vx
+                # and the active BT node so the approach classifier
+                # in analyze_diag.sh has the info it needs without
+                # walking back through [STATE] lines.
+                self.close_ped_start_t = t
+                self.close_ped_start_xy = (x, y)
+                self.close_ped_min_dist = pd
+                active_bt = self._active_bt_node()
+                self.log('CLOSE_PED',
+                         f'ped_dist={pd:.2f} robot=({x:.2f},{y:.2f}) '
+                         f'cmd_vx={self.cmd_vx:+.2f} cmd_wz={self.cmd_wz:+.2f} '
+                         f'active_bt={active_bt}')
                 self.close_ped_active = True
+            else:
+                if pd < self.close_ped_min_dist:
+                    self.close_ped_min_dist = pd
         else:
+            if self.close_ped_active:
+                # Exit edge.  Use the per-encounter start time so
+                # duration is the actual lifetime of the encounter,
+                # and emit min_ped_dist so severity is on the same
+                # line as count.  Approach type at exit + active_bt
+                # at exit are included for completeness; the entry-
+                # side values are on the matching [CLOSE_PED] line.
+                start_t = self.close_ped_start_t or t
+                duration = t - start_t
+                sx, sy = self.close_ped_start_xy or (x, y)
+                active_bt = self._active_bt_node()
+                self.log('CLOSE_PED_END',
+                         f'duration={duration:.1f}s '
+                         f'min_ped_dist={self.close_ped_min_dist:.2f} '
+                         f'start=({sx:.2f},{sy:.2f}) '
+                         f'end=({x:.2f},{y:.2f}) '
+                         f'cmd_vx={self.cmd_vx:+.2f} '
+                         f'active_bt={active_bt}')
+                self.close_ped_start_t = None
+                self.close_ped_start_xy = None
+                self.close_ped_min_dist = float('inf')
             self.close_ped_active = False
 
     def _dump_context(self) -> None:

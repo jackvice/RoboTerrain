@@ -18,6 +18,12 @@
 #   7. OBSTACLE_INVISIBLE analysis: how many invisible-obstacle events
 #      happened in the 5 s window before each GOAL_FAIL, indicating that
 #      the scan saw a close obstacle that the local costmap didn't have
+#   8. CLOSE_PED analysis: severity (min-ped-dist) and approach-type
+#      distributions, spatial clustering, and the 8 most recent
+#      BT/ROSOUT/STUCK/BACKUP events before each close pass.  This is
+#      the section that drives proxemic-ratio tuning; lower min-ped-dist
+#      values and a forward/reverse skew tell us what the controller did
+#      wrong at each close pass.
 # Keep set -u (catches typos), drop -e and pipefail.  This script is
 # read-only analysis; tolerating "no matches" exits from grep/awk inside
 # pipes is essential — otherwise sections after a no-match (e.g. zero
@@ -40,7 +46,7 @@ echo
 echo "--- 1. Tag counts ---"
 for tag in INIT STATE GOAL_START GOAL_OK GOAL_FAIL GOAL_STATE \
            STUCK_START STUCK_END FWD_COLLISION \
-           HIGH_COST LETHAL_FOOT CLOSE_PED \
+           HIGH_COST LETHAL_FOOT CLOSE_PED CLOSE_PED_END \
            OBSTACLE_INVISIBLE BACKUP_START BACKUP_END BT \
            ROSOUT_LETHAL_START ROSOUT_NO_VALID_TRAJ ROSOUT_PATIENCE \
            ROSOUT_PLANNER_RATE ROSOUT_PLAN_FAILED ROSOUT_CONTROLLER_ABORT \
@@ -262,3 +268,124 @@ if [[ "$total_inv" -gt 0 ]]; then
       }
     ' "$LOG"
 fi
+echo
+
+echo "--- 8. CLOSE_PED analysis ---"
+# Pedestrian proxemic-safety section.  Every [CLOSE_PED] is paired with a
+# [CLOSE_PED_END] (nav2_diag tracks the encounter from entry to exit of
+# the 0.5 m threshold), so the encounter count here should match the
+# `<0.5 m encounter` count printed by plot_scripts/inspect_multi_plot_new.py
+# for the same run.  Mismatches usually mean the run was killed mid-
+# encounter (CLOSE_PED without a matching CLOSE_PED_END) or that the diag
+# node missed early /people messages before the first CLOSE_PED fired.
+n_cp=$(grep -c '\[CLOSE_PED\]' "$LOG" || true)
+n_cpe=$(grep -c '\[CLOSE_PED_END\]' "$LOG" || true)
+echo "  CLOSE_PED:     $n_cp"
+echo "  CLOSE_PED_END: $n_cpe"
+if [[ "$n_cpe" -gt 0 ]]; then
+    echo "  min_ped_dist distribution (severity of each encounter):"
+    grep '\[CLOSE_PED_END\]' "$LOG" \
+      | grep -oE 'min_ped_dist=[0-9.]+' \
+      | sed 's/^min_ped_dist=//' \
+      | awk '
+          { v = $1 + 0
+            if (n++ == 0) { mn = v; mx = v } else {
+                if (v < mn) mn = v
+                if (v > mx) mx = v
+            }
+            sum += v
+            # 10 cm bins from 0.0 to 0.5 m
+            b = int(v * 10)
+            if (b < 0) b = 0
+            if (b > 4) b = 4
+            bins[b]++
+          }
+          END {
+            if (n > 0) {
+                printf "    n=%d  mean=%.2fm  min=%.2fm  max=%.2fm\n",
+                       n, sum/n, mn, mx
+                printf "    bins:\n"
+                printf "      0.00-0.10 m: %d\n", (0 in bins ? bins[0] : 0)
+                printf "      0.10-0.20 m: %d\n", (1 in bins ? bins[1] : 0)
+                printf "      0.20-0.30 m: %d\n", (2 in bins ? bins[2] : 0)
+                printf "      0.30-0.40 m: %d\n", (3 in bins ? bins[3] : 0)
+                printf "      0.40-0.50 m: %d\n", (4 in bins ? bins[4] : 0)
+            }
+          }'
+
+    echo "  duration distribution:"
+    grep '\[CLOSE_PED_END\]' "$LOG" \
+      | grep -oE 'duration=[0-9.]+s' \
+      | tr -d 'durations=' \
+      | duration_stats
+fi
+
+# Approach-type breakdown from [CLOSE_PED] lines (cmd_vx is captured at
+# encounter entry).  Tells us *what the robot was doing* when each
+# close pass started:
+#   forward   — cmd_vx > +0.10 m/s.  Robot was driving forward; this is
+#               the case to attack with path/social-cost tuning.
+#   slow_fwd  — 0.05 < cmd_vx <= 0.10.  Cautious forward; usually OK.
+#   reverse   — cmd_vx < -0.05.  Robot reversed into the ped (or ped
+#               walked into the rear arc).  The case PreferForward and
+#               the narrow min_vel_x band are designed to prevent.
+#   stationary — |cmd_vx| <= 0.05.  Robot was stopped or near-stopped;
+#                ped walked into it.  Largely unavoidable.
+if [[ "$n_cp" -gt 0 ]]; then
+    echo "  approach type at entry (from cmd_vx on [CLOSE_PED] line):"
+    grep '\[CLOSE_PED\]' "$LOG" \
+      | grep -oE 'cmd_vx=[-+]?[0-9.]+' \
+      | sed 's/^cmd_vx=//' \
+      | awk '
+          { v = $1 + 0
+            if (v > 0.10) fwd++
+            else if (v > 0.05) slow_fwd++
+            else if (v < -0.05) rev++
+            else stat++
+            n++
+          }
+          END {
+            if (n > 0) {
+                printf "    forward   (cmd_vx >  +0.10):  %d\n", fwd  ? fwd : 0
+                printf "    slow_fwd  (+0.05 .. +0.10):   %d\n", slow_fwd ? slow_fwd : 0
+                printf "    reverse   (cmd_vx <  -0.05):  %d\n", rev  ? rev : 0
+                printf "    stationary (|cmd_vx| <= 0.05): %d\n", stat ? stat : 0
+            }
+          }'
+
+    echo "  active BT node at entry:"
+    grep '\[CLOSE_PED\]' "$LOG" \
+      | grep -oE 'active_bt=[A-Za-z_]+' \
+      | sort | uniq -c | sort -rn \
+      | awk '{ printf "    %4d  %s\n", $1, $2 }'
+
+    echo "  spatial clustering of close-pass entry positions:"
+    grep '\[CLOSE_PED\]' "$LOG" \
+      | grep -oE 'robot=\([^)]+\)' \
+      | sed -E 's/robot=\(([^,]+),([^,]+)\)/\1 \2/' \
+      | awk '{ printf "(%d, %d)\n", int($1), int($2) }' \
+      | sort | uniq -c | sort -rn | head -10 \
+      | awk '{ printf "    %s close-passes near %s\n", $1, $2" "$3 }'
+fi
+echo
+
+# Per-CLOSE_PED context window: the 8 most recent BT / ROSOUT / STUCK
+# / FWD_COLLISION / HIGH_COST / LETHAL_FOOT / OBSTACLE_INVISIBLE /
+# BACKUP_ events before each CLOSE_PED.  Mirrors section 3 but rooted
+# on close passes instead of failures, so we can see what BT state +
+# costmap regime led into the encounter — typically "FollowPath
+# running, planner laid a path through a SocialLayer cost zone" or
+# "BackUp recovery firing, robot reversed into someone".
+echo "--- 9. Events in the 8 lines before each CLOSE_PED ---"
+awk '
+  /\[CLOSE_PED\][^_]/ {
+    print "  --- close pass ---"
+    for (i=1; i<=n; i++) print "  " buf[i]
+    print "  " $0
+    delete buf; n = 0; next
+  }
+  /\[(BT|ROSOUT_|STUCK|FWD_COLLISION|HIGH_COST|LETHAL_FOOT|OBSTACLE_INVISIBLE|BACKUP_|CLOSE_PED_END)/ {
+    if (n >= 8) { for (i=1; i<8; i++) buf[i] = buf[i+1]; n = 7 }
+    n++; buf[n] = $0
+  }
+' "$LOG"

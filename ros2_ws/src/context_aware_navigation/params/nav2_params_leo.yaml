@@ -98,32 +98,28 @@ controller_server:
       yaw_goal_tolerance: 0.25
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
-      # Small reverse band (-0.15 m/s) as a controlled escape valve, not
-      # a goal-pursuit option.  Background:
-      #   * min_vel_x: -0.7 (original): DWB happily reversed toward goals
-      #     even with PreferForward.penalty=15 (run 4: 120 / 126 backups
-      #     during FollowPath, max 7.23 m reverse).
-      #   * min_vel_x:  0.0 (run 6-7): eliminated DWB-chosen reverse, but
-      #     when an obstacle blocked the forward path the robot froze
-      #     in place — analysis7.txt shows 41 FWD_COLLISION events and
-      #     long-duration (95-142 s) BT-root aborts because no escape
-      #     was available.  Diag dump on one of them showed
-      #     local_fwd_0.3m=252, global_fwd_0.3m=252: planner laid a
-      #     path through a near-inscribed inflation zone that DWB
-      #     could not execute, and there was no way to back out.
-      #   * min_vel_x: -0.15 (now): max reverse trajectory endpoint is
-      #     0.15 * sim_time(1.7) = 0.255 m — well within ground the
-      #     forward-mounted YOLO camera saw seconds ago, so it is
-      #     not "blind reverse into pedestrians".  PreferForward.penalty
-      #     (still 15) imposes ≥ -225 score on any reverse trajectory,
-      #     which is comparable to GoalDist's swing for ~0.5 m of
-      #     forward progress.  So DWB only picks reverse when forward
-      #     scoring is so bad (lethal cells, no valid forward
-      #     trajectory) that reverse beats it — i.e. exactly the
-      #     stuck-against-obstacle case.
-      # BackUp recovery (behavior_server) still operates independently
-      # at its configured speed in the BT XML and remains the fallback
-      # for the deliberate, BT-decided blind reverse case.
+      # Narrow reverse band (-0.15 m/s).  Locked here after a three-
+      # point bisection on 2026-05-25/26 showed -0.15 to be the local
+      # optimum on the proxemic-safety metric (goals / <0.5 m
+      # encounter):
+      #   * min_vel_x: -0.7 + no PreferForward (run 13, ratio 1.26):
+      #     bare reverse band caused DWB to reverse into pedestrians
+      #     the front-only YOLO camera could not see.
+      #   * min_vel_x: -0.7 + PreferForward.penalty=15 (run 14, ratio
+      #     1.45): PreferForward.penalty=15 is *not* strong enough to
+      #     suppress reverse trajectories when the full -0.7 m/s band
+      #     is available — DWB still picked occasional reverses that
+      #     hit the proxemic metric.
+      #   * min_vel_x: -0.15 + PreferForward.penalty=15 (run 11, ratio
+      #     1.83): the -0.15 cap bounds the worst-case reverse
+      #     trajectory at 0.15 × sim_time(1.7) = 0.255 m, i.e. only
+      #     ground the YOLO camera saw seconds earlier.  Combined with
+      #     PreferForward this is the proxemic-safest config tested.
+      # Historical (pre-bisection):
+      #   * min_vel_x: -0.7 (baseline): unrestricted reverse.
+      #   * min_vel_x:  0.0 (run 6-7): eliminated DWB-chosen reverse
+      #     entirely, caused the robot to freeze when forward was
+      #     blocked (analysis7.txt: 41 FWD_COLLISION events).
       min_vel_x: -0.15
       max_vel_x: 0.7
       max_vel_theta: 1.5
@@ -176,6 +172,14 @@ controller_server:
       # comparable in magnitude to ~3 m of PathDist deviation) — strong
       # enough to discourage brushes past pedestrians, not strong enough
       # to deadlock DWB.
+      #
+      # NOTE 2026-05-26: 1.0 was queued for run 16 to attack the 3
+      # forward-at-max-speed close passes, but reverted back to 0.5 in
+      # favor of the footprint enlargement (also run 16): user-reported
+      # wheel-clipping was identified as the higher-priority symptom and
+      # the two changes cannot be cleanly bisected together.  If the
+      # footprint change does not recover the ratio, re-queue
+      # BaseObstacle.scale: 1.0 as the run 17 ablation.
       BaseObstacle.scale: 0.5
       # PreferForward penalty per timestep that the trajectory has
       # negative vx.  Diagnostic evidence (nav2_diag run 2026-05-25):
@@ -279,18 +283,23 @@ local_costmap:
       #   - Front wheel center (in base_footprint): x = +0.155 m
       #     (rocker_L_joint at +0.00263 in base + wheel_FL_joint
       #     -0.15256 in rocker after π yaw flip → 0.155)
-      #     + wheel radius 0.0625 → forward edge at x = 0.218 m
+      #     + wheel radius 0.0625 → forward edge at x = +0.218 m
+      #     rear-most wheel rear edge at x = -0.212 m
       #   - Wheel cylinder center y = 0.179 m (= wheel_separation/2)
-      #     + half-cylinder length 0.035 m → outer edge at y = 0.214 m
+      #     + half-cylinder length 0.035 m → outer edge at y = ±0.214 m
       # Plus a 1 cm safety margin → 0.23 × 0.23 m half-extents.
-      # Previous footprint of [0.21, 0.16] under-approximated the
-      # lateral axis by 5 cm, causing wheels to clip walls/boxes that
-      # the global planner laid paths past (see analysis5.txt: 8
-      # FWD_COLLISION events, 14 OBSTACLE_INVISIBLE close-range events).
-      # The old robot_radius: 0.3 was conservative on both axes so
-      # wheels never clipped; the proper rectangle (0.23) is between
-      # those two failure modes.  Corner order CCW from front-left;
-      # +x = forward.
+      #
+      # Run 16 experiment (2026-05-26): bumped 0.23 → 0.27 to enlarge
+      # the inscribed-radius margin to ~1 costmap cell.  Result:
+      # catastrophic regression — `ROSOUT_NO_VALID_TRAJ` went 4 → 27,
+      # `GOAL_FAIL` 25 → 37, only 2 successful goals in 25 min.  The
+      # inspect world has corridors that fit a 0.46 m square robot but
+      # not a 0.54 m one.  Reverted to 0.23 in run 17.  If wheel-clip
+      # incidents need addressing, the right knob is the inflation
+      # gradient (cost_scaling_factor / inflation_radius), not the
+      # footprint itself — that affects only DWB's BaseObstacle pull
+      # without changing the inscribed-radius collision check used by
+      # the planner.  Corner order CCW from front-left; +x = forward.
       footprint: "[[0.23, 0.23], [0.23, -0.23], [-0.23, -0.23], [-0.23, 0.23]]"
       plugins: ["social_layer", "obstacle_layer", "inflation_layer"]
       social_layer:
@@ -310,7 +319,7 @@ local_costmap:
           # robot, refusing back-up recoveries and tripping lethal-start.
           # 0.3 s = ~6 scans @ 20 Hz lets ghosts decay; real walls re-confirm
           # every scan so they stick.
-          observation_persistence: 0.3
+          observation_persistence: 1.0
           expected_update_rate: 20.0
           inf_is_valid: false
           clearing: true
@@ -362,7 +371,9 @@ global_costmap:
       # otherwise the global planner's collision check and DWB's
       # footprint check disagree at footprint edges → "valid global
       # plan that DWB cannot follow".  See local_costmap above for
-      # the SDF-derived 0.23 × 0.23 m half-extent rationale.
+      # the SDF-derived 0.23 × 0.23 m half-extent rationale, and for
+      # the run 16 experiment that confirmed 0.27 × 0.27 makes the
+      # inspect world unnavigable.
       footprint: "[[0.23, 0.23], [0.23, -0.23], [-0.23, -0.23], [-0.23, 0.23]]"
       track_unknown_space: false
       # InteractionLayer omitted: this benchmark uses independent-pedestrian
@@ -392,7 +403,7 @@ global_costmap:
           # ghost obstacles in the inspect world; min_range kept at 0.15 so
           # close head-on returns to the rectangular leo footprint are still
           # detected.
-          observation_persistence: 0.3
+          observation_persistence: 1.0
           expected_update_rate: 20.0
           inf_is_valid: false
           clearing: true

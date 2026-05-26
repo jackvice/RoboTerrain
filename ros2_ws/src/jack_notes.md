@@ -12,6 +12,8 @@ colcon build --symlink-install
 source ~/src/RoboTerrain/ros2_ws/install/setup.bash
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 ros2 launch context_aware_navigation leo_nav2can_launch.py world_name:=inspect
+ros2 launch context_aware_navigation leo_nav2can_launch.py     world:=office_cpr_construction.world     world_name:=default
+
 
 ## Terminal 2: dynamic actors (same files you use for AVSN)
 cd ~/src/RoboTerrain/ros2_ws/src/dynamic_obstacles
@@ -22,7 +24,13 @@ python spawn_float.py --trajectory_file trajectories/inspect_corner_triangle.sdf
 ## Terminal 3: random-PointNav goal driver + metrics CSV
 cd ~/src/RoboTerrain/ros2_ws/src/rover_metrics
 python3 nav2_lidar_metrics_collector.py inspect
+python3 nav2_lidar_metrics_collector.py construct
+
 # similarly: ... island   /   ... construct
+
+## Terminal 4: Diagnostics
+ python3 nav2_diag.py 2>&1 | tee diag_out7.txt # run for 15 minutes
+
 
 
 
