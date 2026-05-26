@@ -1,6 +1,34 @@
+# Nav2CAM
+## When you only changed the launch/params/sdf inside these packages:
+colcon build --symlink-install --packages-select context_aware_navigation roverrobotics_gazebo
+
+## When you changed something the leaf packages depend on (e.g. interfaces):
+colcon build --symlink-install --packages-up-to context_aware_navigation roverrobotics_gazebo
+
+## First time on a fresh checkout (or if you just blew away install/build):
+colcon build --symlink-install
+
+## Terminal 1: sim + Nav2CAN + tracker
+source ~/src/RoboTerrain/ros2_ws/install/setup.bash
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+ros2 launch context_aware_navigation leo_nav2can_launch.py world_name:=inspect
+
+## Terminal 2: dynamic actors (same files you use for AVSN)
+cd ~/src/RoboTerrain/ros2_ws/src/dynamic_obstacles
+python spawn.py --trajectory_file trajectories/inspect_linear.sdf --world_name inspect --actor_name linear
+python spawn.py --trajectory_file trajectories/inspect_diag.sdf   --world_name inspect --actor_name diag
+python spawn_float.py --trajectory_file trajectories/inspect_corner_triangle.sdf --world_name inspect --actor_name triangle
+
+## Terminal 3: random-PointNav goal driver + metrics CSV
+cd ~/src/RoboTerrain/ros2_ws/src/rover_metrics
+python3 nav2_lidar_metrics_collector.py inspect
+# similarly: ... island   /   ... construct
 
 
-############# Nav2
+
+
+
+# Nav2
 
 Open RViz2: rviz2
 Set Fixed Frame to odom
@@ -15,11 +43,12 @@ Click the 2D Goal Pose button in the toolbar
 Click and drag on the map to set a goal position and orientation
 
 
-#################  Roboterrain and Attention: ########################
+#  Roboterrain and Attention: ########################
 
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 ros2 launch roverrobotics_gazebo Leo_rover_gazebo.launch.py
+
 # active vision
 ros2 launch roverrobotics_gazebo Leo_rover_fisheye.launch.py
 ros2 launch roverrobotics_gazebo Leo_rover_fisheye.launch.py headless:=true
@@ -45,20 +74,20 @@ conda activate attent
 python inference.py --attention_mode ./model_output/checkpoint_epoch_1000.pkl 
 
 # dynamic obstacles
-# inspect
+## inspect
 python spawn.py --trajectory_file trajectories/inspect_linear.sdf --world_name inspect --actor_name linear
 ros2 run ros_gz_bridge parameter_bridge /linear_actor/pose@geometry_msgs/msg/Pose[gz.msgs.Pose
 
 python spawn_float.py --trajectory_file trajectories/inspect_corner_triangle.sdf --world_name inspect --actor_name triangle
 
-# constuct
+## constuct
 python spawn.py --trajectory_file trajectories/construction_upper.sdf --actor_name upper --world_name default
 
-# island/moon
+## island/moon
 python spawn.py --trajectory_file trajectories/flat_triangle_traject.sdf --world_name moon --actor_name triangle
 
 
-############## Dreamerv3 commands ########################
+# Dreamerv3 commands ########################
 conda activate jaxRos
 FILTERED_LD_LIBRARY_PATH=$(echo $LD_LIBRARY_PATH | tr ':' '\n' | grep -E '^/opt/ros' | tr '\n' ':' | sed 's/:$//')
 
@@ -74,10 +103,10 @@ python plot_RL_metrics.py  0831T1151_working/metrics.jsonl --window 30
 
 
 
-############## ROS2 commands ########################
+# ROS2 commands ########################
 ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/leo1/cmd_vel
 
-# to see what 96x96 view looks like.
+## to see what 96x96 view looks like.
 ros2 launch launch/crop_decimate.launch.py
 
 ros2 run rqt_image_view rqt_image_view
@@ -85,9 +114,9 @@ ros2 run rqt_image_view rqt_image_view
 
 ros2 daemon start
 
-############## new world setup ########################
+# new world setup ########################
 
-# new Actor trajectory
+## new Actor trajectory
 ros2 bag record /rover/pose_array
 python trajectory-from-bag.py > construction_upper.sdf
 
@@ -95,7 +124,7 @@ python trajectory-from-bag.py > construction_upper.sdf
 
 
 
-############## OLD SB3 ########################
+## OLD SB3 ########################
 python sb3_SAC.py --mode train --load False --world inspect --vision True
 
 python sb3_SAC.py \
@@ -126,41 +155,41 @@ python dreamerv3/leo_main.py --logdir ~/logdir/20250315T131727 --configs leorove
 
 ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r /cmd_vel:=/leo1/cmd_vel
 
-# to see what 96x96 view looks like.
+## to see what 96x96 view looks like.
 ros2 launch launch/crop_decimate.launch.py
 
 ros2 run rqt_image_view rqt_image_view
 
 
-# launch gazeob
+## launch gazeob
 ros2 launch roverrobotics_gazebo 4wd_rover_gazebo.launch.py
 
 #pose converter:
 python3 ign_ros2_pose_topic.py inspect rover_zero4wd
 
-# agent
+## agent
 conda activate sb3
 python sb3_SAC.py --load False
 python sb3_SAC.py --load True --checkpoint_name checkpoints/ppo_rover_model_20241115_1152_900000_steps.zip
 python sb3_SAC.py --mode predict --load True --checkpoint_name checkpoints/sac_baseline_pointnav.zip --normalize_stats checkpoints/vec_normalize_20250201_1453_final.pkl
 
-# tensorboard
+## tensorboard
 ~/src/RoboTerrain/ros2_ws/src/sb3$ tensorboard --logdir tboard_logs/
 
 
-# metrics logger in ~/rover_workspace/rover_metrics/
+## metrics logger in ~/rover_workspace/rover_metrics/
 ros2 run rover_metrics metrics_node
 
 
 
-# Claude prompt
+## Claude prompt
 How will you go about writing this program? I prefer a functional programming style with explicit variable typing.
 Please ask me any questions that you have or clarifications that you need. If you have any suggestions please let me know.
 Do not write the program yet. Let us work on getting all issues resolved and then write the program.
 
 
 
-# Dream Rover commands:
+## Dream Rover commands:
 
 python dreamerv3/main.py --configs rover --logdir ~/logdir/r_camera_test
 
@@ -172,7 +201,7 @@ python dreamerv3/main.py --logdir ~/logdir/{timestamp} --configs dmc_proprio
 
 
 
-################ ROS2
+# ROS2
 
 ros2 launch roverrobotics_gazebo 4wd_rover_gazebo.launch.py
 
@@ -194,7 +223,7 @@ ros2 control list_controllers
 #Open an sdf world. for headless use '-s' for server mode
 ign gazebo -v 4 simplecave3.sdf -s
 
-# to open an sdf, first start gazebo with empty then run the ign command
+## to open an sdf, first start gazebo with empty then run the ign command
 #ign gazebo empty.sdf
 #ign service -s /world/empty/create --reqtype ignition.msgs.EntityFactory --reptype ignition.msgs.Boolean --timeout 10000 --req 'sdf_filename: "/home/jack/worlds/harmonic/h_terrain/model.sdf"'
 
@@ -210,8 +239,8 @@ ros2 service call /controller_manager/switch_controller controller_manager_msgs/
 
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
-# Files
-# robot urdf files: changed lidar from 640 to 64
+## Files
+## robot urdf files: changed lidar from 640 to 64
 /opt/ros/humble/share/turtlebot4_description/urdf/
 
 #world file with update rate:
@@ -240,6 +269,6 @@ export IGN_GAZEBO_RESOURCE_PATH=$HOME/src/RoboTerrain/models:$IGN_GAZEBO_RESOURC
 
 
 
-# Show sizes of all directories in current folder, sorted:
+## Show sizes of all directories in current folder, sorted:
 du -h --max-depth=1 | sort -h
 du -sh ./*

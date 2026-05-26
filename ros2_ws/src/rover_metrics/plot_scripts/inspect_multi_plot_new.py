@@ -36,12 +36,20 @@ def load_and_concatenate_csvs(file_paths: List[str]) -> pd.DataFrame:
 
 
 def get_total_goals_from_files(file_paths: List[str]) -> int:
-    """Get total goals by summing max from each file."""
+    """Get total goals by summing max from each file.
+
+    The collector writes the ``goals_count`` column; older AVSN runs may use
+    ``goals``.  Accept either to keep cross-method comparison plots working.
+    """
     total: int = 0
     for path in file_paths:
         df: pd.DataFrame = pd.read_csv(path)
-        if not df.empty and 'goals' in df.columns:
-            total += int(df['goals'].max())
+        if df.empty:
+            continue
+        for col in ('goals_count', 'goals'):
+            if col in df.columns:
+                total += int(df[col].max())
+                break
     return total
 
 
@@ -89,24 +97,54 @@ def detect_encounters_for_single_actor(times: pd.Series, distances: pd.Series) -
     return encounters
 
 
+def find_actor_distance_columns(df: pd.DataFrame) -> List[str]:
+    """Return CSV columns containing per-actor distance data.
+
+    The Nav2 metrics collector emits one ``<actor_id>_dist`` column per actor
+    (e.g. ``linear_actor_dist``, ``diag_actor_dist``, ``triangle_actor_dist``
+    for the *inspect* world; ``lower_actor_dist`` / ``upper_actor_dist`` for
+    *construct*; etc.).  Auto-detecting these by suffix makes the plotter
+    environment-agnostic — previously the script hard-coded
+    ``['d1_linear', 'd2_triangle', 'd3_diag']`` which never matched the
+    actual collector schema, silently producing 'No encounters detected'.
+
+    The aggregate column ``dmin`` is excluded because it duplicates the
+    minimum across actors and would double-count encounters.
+    """
+    return [
+        col for col in df.columns
+        if col.endswith('_dist') and col != 'dmin'
+    ]
+
+
 def detect_all_actor_encounters(df: pd.DataFrame, times: pd.Series) -> List[Tuple[float, float]]:
     """Detect encounters for all actors, return combined list of (time, min_distance) points."""
     all_encounters: List[Tuple[float, float]] = []
-    
-    # Process each actor separately
-    for col in ['d1_linear', 'd2_triangle', 'd3_diag']:
-        if col in df.columns:
-            actor_encounters = detect_encounters_for_single_actor(times, df[col])
-            all_encounters.extend(actor_encounters)
-    
+
+    actor_cols = find_actor_distance_columns(df)
+    if not actor_cols:
+        print('WARNING: no per-actor distance columns found in CSV. '
+              f'Columns present: {list(df.columns)}')
+        return all_encounters
+    print(f'Scanning encounter data in columns: {actor_cols}')
+
+    for col in actor_cols:
+        actor_encounters = detect_encounters_for_single_actor(times, df[col])
+        if actor_encounters:
+            print(f'  {col}: {len(actor_encounters)} encounter(s)')
+        all_encounters.extend(actor_encounters)
+
     return all_encounters
 
 
 def get_total_goals(df: pd.DataFrame) -> int:
-    """Get total number of goals reached."""
-    if df.empty or 'goals' not in df.columns:
+    """Get total number of goals reached. Accepts goals_count or goals."""
+    if df.empty:
         return 0
-    return int(df['goals'].max())
+    for col in ('goals_count', 'goals'):
+        if col in df.columns:
+            return int(df[col].max())
+    return 0
 
 
 def classify_encounters_by_min_distance(encounter_points: List[Tuple[float, float]]) -> Tuple[int, int, int]:
@@ -199,56 +237,10 @@ def plot_timeline(encounter_points: List[Tuple[float, float]], total_goals: int)
     plt.subplots_adjust(bottom=0.30)
 
     plt.show()
+    return c_lt_05
 
 
 
-
-
-def plot_timeline_old(encounter_points: List[Tuple[float, float]], total_goals: int) -> None:
-    """Plot timeline with encounter points in separate distance ranges."""
-    plt.figure(figsize=(12, 6))
-    
-    if not encounter_points:
-        plt.text(0.5, 0.5, 'No encounters detected', ha='center', va='center', transform=plt.gca().transAxes)
-        plt.xlabel('Time (min)')
-        plt.ylabel('Distance (m)')
-        plt.title(f'Robot-Actor Encounter Timeline without Attention Mechanism (Success Rate: {total_goals})')
-        plt.show()
-        return
-    
-    # Extract times and distances from encounter points
-    encounter_times: List[float] = [point[0] for point in encounter_points]
-    encounter_dists: List[float] = [point[1] for point in encounter_points]
-    
-    # Convert to numpy arrays for easier masking
-    encounter_times_array = np.array(encounter_times)
-    encounter_dists_array = np.array(encounter_dists)
-    
-    # Classify encounters by their minimum distance reached
-    encounters_08_12, encounters_05_08, encounters_below_05 = classify_encounters_by_min_distance(encounter_points)
-    
-    # Create masks for each distance range
-    range_08_12 = (encounter_dists_array >= 0.8) & (encounter_dists_array < 1.2)
-    range_05_08 = (encounter_dists_array >= 0.5) & (encounter_dists_array < 0.8)
-    range_below_05 = encounter_dists_array < 0.5
-    
-    # Plot each range with different colors (no lines, just dots)
-    plt.plot(encounter_times_array[range_08_12], encounter_dists_array[range_08_12], 'go', markersize=5, label=f'0.8m-1.2m ({encounters_08_12} encounters)')
-    plt.plot(encounter_times_array[range_05_08], encounter_dists_array[range_05_08], 'bo', markersize=5, label=f'0.5m-0.8m ({encounters_05_08} encounters)')
-    plt.plot(encounter_times_array[range_below_05], encounter_dists_array[range_below_05], 'ro', markersize=5, label=f'<0.5m ({encounters_below_05} encounters)')
-    
-    # Add horizontal threshold lines
-    plt.axhline(y=1.2, color='red', linestyle='--', alpha=0.7, label='1.2m threshold')
-    plt.axhline(y=0.8, color='orange', linestyle='--', alpha=0.7, label='0.8m threshold') 
-    plt.axhline(y=0.5, color='green', linestyle='--', alpha=0.7, label='0.5m threshold')
-    
-    plt.xlabel('Time (min)')
-    plt.ylabel('Distance (m)')
-    plt.title(f'Robot-Actor Encounter Timeline without Attention Mechanism (Success Rate: {total_goals})')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
 
 
 def main() -> None:
@@ -266,14 +258,28 @@ def main() -> None:
 
     
     print(f"Found {len(file_paths)} CSV files")
-    
+
     df: pd.DataFrame = load_and_concatenate_csvs(file_paths)
-    times: pd.Series = pd.Series(range(len(df))) / 60.0
+
+    # Prefer the collector's recorded sim-time column (`time_s`, in seconds)
+    # converted to minutes for the x-axis.  Fall back to row index / 60 only
+    # if the column is missing — that fallback is meaningless for variable-
+    # rate logging and was the cause of confusing time labels before.
+    if 'time_s' in df.columns:
+        t0 = float(df['time_s'].iloc[0])
+        times: pd.Series = (df['time_s'].astype(float) - t0) / 60.0
+    else:
+        print('WARNING: time_s column missing from CSV; using row index/60.')
+        times = pd.Series(range(len(df))) / 60.0
+
     encounter_points: List[Tuple[float, float]] = detect_all_actor_encounters(df, times)
     total_goals: int = get_total_goals_from_files(file_paths)
-    
-    plot_timeline(encounter_points, total_goals)
 
+
+    less_0d5 = plot_timeline(encounter_points, total_goals)
+
+    print(f'Detected {len(encounter_points)} encounter(s) total across '
+          f'{len(file_paths)} run(s); goals reached: {total_goals}. goals per 0.5 encounter:{round(total_goals/less_0d5,2)}')
 
 if __name__ == "__main__":
     main()

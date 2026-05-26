@@ -1,0 +1,488 @@
+# Nav2 + Nav2CAN config for the Leo Rover (RGBD + 360° LiDAR), mapless.
+#
+# Derived from roverrobotics_gazebo/config/leo_nav2_lidar_params.yaml; the only
+# Nav2CAN-specific deltas are the SocialLayer / InteractionLayer plugins on
+# both costmaps.  Global frame is `odom` (no AMCL / static map).
+
+bt_navigator:
+  ros__parameters:
+    use_sim_time: true
+    global_frame: odom
+    robot_base_frame: base_footprint
+    odom_topic: /odom_ground_truth
+    bt_loop_duration: 10
+    default_server_timeout: 20
+    wait_for_service_timeout: 1000
+    default_nav_to_pose_bt_xml: /opt/ros/humble/share/nav2_bt_navigator/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml
+    default_nav_through_poses_bt_xml: /opt/ros/humble/share/nav2_bt_navigator/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml
+    # Mirrors leo_nav2_lidar_params.yaml.  Without this list, certain BT XML
+    # nodes referenced by the default w_replanning_and_recovery.xml fail to
+    # load and the Behavior Tree silently aborts each goal.
+    plugin_lib_names:
+      - nav2_compute_path_to_pose_action_bt_node
+      - nav2_compute_path_through_poses_action_bt_node
+      - nav2_smooth_path_action_bt_node
+      - nav2_follow_path_action_bt_node
+      - nav2_spin_action_bt_node
+      - nav2_wait_action_bt_node
+      - nav2_assisted_teleop_action_bt_node
+      - nav2_back_up_action_bt_node
+      - nav2_drive_on_heading_bt_node
+      - nav2_clear_costmap_service_bt_node
+      - nav2_is_stuck_condition_bt_node
+      - nav2_goal_reached_condition_bt_node
+      - nav2_goal_updated_condition_bt_node
+      - nav2_globally_updated_goal_condition_bt_node
+      - nav2_is_path_valid_condition_bt_node
+      - nav2_initial_pose_received_condition_bt_node
+      - nav2_reinitialize_global_localization_service_bt_node
+      - nav2_rate_controller_bt_node
+      - nav2_distance_controller_bt_node
+      - nav2_speed_controller_bt_node
+      - nav2_truncate_path_action_bt_node
+      - nav2_truncate_path_local_action_bt_node
+      - nav2_goal_updater_node_bt_node
+      - nav2_recovery_node_bt_node
+      - nav2_pipeline_sequence_bt_node
+      - nav2_round_robin_node_bt_node
+      - nav2_transform_available_condition_bt_node
+      - nav2_time_expired_condition_bt_node
+      - nav2_path_expiring_timer_condition
+      - nav2_distance_traveled_condition_bt_node
+      - nav2_single_trigger_bt_node
+      - nav2_goal_updated_controller_bt_node
+      - nav2_is_battery_low_condition_bt_node
+      - nav2_navigate_through_poses_action_bt_node
+      - nav2_navigate_to_pose_action_bt_node
+      - nav2_remove_passed_goals_action_bt_node
+      - nav2_planner_selector_bt_node
+      - nav2_controller_selector_bt_node
+      - nav2_goal_checker_selector_bt_node
+      - nav2_controller_cancel_bt_node
+      - nav2_path_longer_on_approach_bt_node
+      - nav2_wait_cancel_bt_node
+      - nav2_spin_cancel_bt_node
+      - nav2_back_up_cancel_bt_node
+      - nav2_assisted_teleop_cancel_bt_node
+      - nav2_drive_on_heading_cancel_bt_node
+      - nav2_is_battery_charging_condition_bt_node
+
+
+controller_server:
+  ros__parameters:
+    use_sim_time: true
+    # 20 Hz reacts faster to pedestrian motion (a person walking at ~1 m/s
+    # moves 5 cm per controller tick at this rate vs 6.7 cm at 15 Hz),
+    # reducing the chance the controller follows a stale global plan into
+    # a person and trips the 0.5 m proxemic metric.
+    controller_frequency: 20.0
+    failure_tolerance: 0.3
+    progress_checker_plugin: "progress_checker"
+    goal_checker_plugins: ["general_goal_checker"]
+    controller_plugins: ["FollowPath"]
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      # 0.15 m within 5 s.  Original (0.2 m / 20 s) let the robot sit
+      # commanded-but-not-moving for up to 20 s when a wheel caught on box
+      # edges in the inspect world.  Now that DWB strongly prefers forward
+      # (PreferForward.penalty=5.0), reverse can only come from BackUp
+      # recovery — which the progress_checker is what triggers.  5 s gets
+      # us into recovery fast enough that the robot still has time to
+      # complete the goal within goal_timeout_sec=207 s.
+      required_movement_radius: 0.15
+      movement_time_allowance: 5.0
+    general_goal_checker:
+      plugin: "nav2_controller::SimpleGoalChecker"
+      stateful: true
+      xy_goal_tolerance: 0.20
+      yaw_goal_tolerance: 0.25
+    FollowPath:
+      plugin: "dwb_core::DWBLocalPlanner"
+      # Small reverse band (-0.15 m/s) as a controlled escape valve, not
+      # a goal-pursuit option.  Background:
+      #   * min_vel_x: -0.7 (original): DWB happily reversed toward goals
+      #     even with PreferForward.penalty=15 (run 4: 120 / 126 backups
+      #     during FollowPath, max 7.23 m reverse).
+      #   * min_vel_x:  0.0 (run 6-7): eliminated DWB-chosen reverse, but
+      #     when an obstacle blocked the forward path the robot froze
+      #     in place — analysis7.txt shows 41 FWD_COLLISION events and
+      #     long-duration (95-142 s) BT-root aborts because no escape
+      #     was available.  Diag dump on one of them showed
+      #     local_fwd_0.3m=252, global_fwd_0.3m=252: planner laid a
+      #     path through a near-inscribed inflation zone that DWB
+      #     could not execute, and there was no way to back out.
+      #   * min_vel_x: -0.15 (now): max reverse trajectory endpoint is
+      #     0.15 * sim_time(1.7) = 0.255 m — well within ground the
+      #     forward-mounted YOLO camera saw seconds ago, so it is
+      #     not "blind reverse into pedestrians".  PreferForward.penalty
+      #     (still 15) imposes ≥ -225 score on any reverse trajectory,
+      #     which is comparable to GoalDist's swing for ~0.5 m of
+      #     forward progress.  So DWB only picks reverse when forward
+      #     scoring is so bad (lethal cells, no valid forward
+      #     trajectory) that reverse beats it — i.e. exactly the
+      #     stuck-against-obstacle case.
+      # BackUp recovery (behavior_server) still operates independently
+      # at its configured speed in the BT XML and remains the fallback
+      # for the deliberate, BT-decided blind reverse case.
+      min_vel_x: -0.15
+      max_vel_x: 0.7
+      max_vel_theta: 1.5
+      min_speed_xy: 0.0
+      max_speed_xy: 0.7
+      acc_lim_x: 1.0
+      # Halved from 2.5 → 1.5 to break a DWB critic-scoring local
+      # minimum observed in run 8.  When the robot drifts off the
+      # global path within ~1.5 m of a goal, PathDist (32) and
+      # GoalDist (24) pull in different directions; with no critic
+      # dominating, DWB's best trajectory each tick was a tiny
+      # rotation, alternating sign every controller tick (visible
+      # in diag_out8.txt around t=1779746975-982: pos frozen at
+      # (-23.70,-20.40), cmd_vx≈0, cmd_wz=±0.24 ping-pong).  At
+      # acc=2.5 rad/s² the controller can fully flip cmd_wz sign
+      # within one 50 ms tick.  At 1.5 a sign change takes ≥2 ticks,
+      # so the sim_time integration of an oscillating trajectory
+      # consistently lands worse than a committed forward trajectory.
+      acc_lim_theta: 1.5
+      decel_lim_x: -1.0
+      decel_lim_theta: -1.5
+      vx_samples: 20
+      vtheta_samples: 20
+      sim_time: 1.7
+      transform_tolerance: 0.2
+      xy_goal_tolerance: 0.25
+      stateful: true
+      # NOTE on ObstacleFootprint: previously added here, but it rejects
+      # (not just penalises) any trajectory whose footprint covers a
+      # LETHAL_OBSTACLE cell.  The leo's lidar has obstacle_min_range=0.15
+      # vs robot_radius=0.4, so chassis/camera-mount returns and any
+      # pedestrian leg < 0.4 m from the sensor mark LETHAL cells inside
+      # the robot footprint span — causing "No valid trajectories out of
+      # 440" + "Controller patience exceeded" loops.  Use BaseObstacle
+      # only; it penalises proxemic cost without hard-rejecting.
+      #
+      # PreferForward added so DWB pays a score penalty for reverse
+      # trajectories.  Without it, DWB has no preference between forward
+      # and backward motion (min_vel_x=-0.7 == max_vel_x=0.7) and was
+      # happily reversing toward goals — bad for the 0.5 m proxemic
+      # metric since pedestrians cannot anticipate reverse motion and the
+      # forward-mounted YOLO camera does not see what the robot is
+      # backing into.
+      critics: ["RotateToGoal", "Oscillation", "BaseObstacle",
+                "GoalAlign", "PathAlign", "PathDist", "GoalDist",
+                "PreferForward"]
+      # BaseObstacle was 0.15 originally.  2.0 was too aggressive and
+      # crowded out legitimate trajectories near walls/pedestrians.  0.5
+      # is ~3× the original (a 180-cost cell contributes ~90 to the score,
+      # comparable in magnitude to ~3 m of PathDist deviation) — strong
+      # enough to discourage brushes past pedestrians, not strong enough
+      # to deadlock DWB.
+      BaseObstacle.scale: 0.5
+      # PreferForward penalty per timestep that the trajectory has
+      # negative vx.  Diagnostic evidence (nav2_diag run 2026-05-25):
+      # 167 backups in 17 min, 50 % of run time spent in backup state,
+      # 161 of 167 with active_bt=RateController (== DWB during normal
+      # FollowPath, NOT a recovery behavior).  Penalty 5.0 was being
+      # outweighed by GoalDist/PathDist (scaled 24-32) when the goal sat
+      # behind the robot: a reverse-toward-goal trajectory earned more
+      # from GoalDist than it lost from the +5/timestep penalty.  Raised
+      # to 15.0 — at ~15 timesteps that's a -225 score contribution per
+      # reverse trajectory, comparable to the GoalDist swing for a
+      # half-meter "shortcut" reverse.  Bump again to 20-25 if the next
+      # run still shows >50 backups in 15 min.
+      PreferForward.penalty: 15.0
+      PreferForward.strafe_x: 0.1
+      PreferForward.strafe_theta: 0.2
+      PreferForward.theta_scale: 10.0
+      PathAlign.scale: 32.0
+      # Raised 0.1 → 0.325 (Nav2 default) to fix the in-place
+      # rotation ping-pong from run 8.  With a 10 cm "carrot" the
+      # PathAlign/GoalAlign critics scored rotation-only trajectories
+      # almost as well as translation, because turning the robot
+      # changed the heading-to-carrot angle nearly as much as
+      # driving forward did.  At 0.325 m the carrot is ~0.5 s of
+      # forward motion ahead, so satisfying alignment requires
+      # actually translating — rotation-only trajectories under-score
+      # against forward ones and DWB stops fidgeting.
+      PathAlign.forward_point_distance: 0.325
+      GoalAlign.scale: 24.0
+      GoalAlign.forward_point_distance: 0.325
+      PathDist.scale: 32.0
+      GoalDist.scale: 24.0
+      RotateToGoal.scale: 32.0
+      RotateToGoal.slowing_factor: 5.0
+      RotateToGoal.lookahead_time: -1.0
+      # Oscillation critic — was listed in `critics` above but had
+      # no params set, so it ran with defaults (oscillation_reset_dist
+      # 0.05 m, _angle 0.2 rad).  At 20 Hz those reset thresholds are
+      # met by ordinary controller jitter, so the oscillation lock
+      # cleared between ticks and the critic never actually banned
+      # opposite-sign vtheta trajectories.  Result in run 8: 8+ s of
+      # cmd_wz=±0.24 ping-pong with pos frozen at (-23.70,-20.40).
+      # 0.10 m / 0.4 rad makes the lock survive across the typical
+      # in-place fidget envelope, so the critic rejects the opposite-
+      # sign trajectory until the robot has made real progress.
+      # x_only_threshold 0.05 keeps the standard linear-oscillation
+      # detection (vx sign flips below this speed are treated as
+      # "not really translating, watch theta instead").
+      Oscillation.scale: 1.0
+      Oscillation.oscillation_reset_dist: 0.10
+      Oscillation.oscillation_reset_angle: 0.4
+      Oscillation.x_only_threshold: 0.05
+
+
+planner_server:
+  ros__parameters:
+    use_sim_time: true
+    # 20 Hz is unachievable for Smac2D on a 20×20 m rolling global costmap
+    # under preemption — logs showed it dropping to 5–10 Hz with "Planner
+    # loop missed its desired rate" warnings.  5 Hz is what the planner can
+    # actually sustain.  Lower if you still see rate warnings.
+    expected_planner_frequency: 5.0
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin: "nav2_smac_planner/SmacPlanner2D"
+      tolerance: 0.5
+      allow_unknown: true
+      max_iterations: 1000000
+      max_on_approach_iterations: 1000
+      # Cap a single planning attempt at 2 s so a goal in a bad costmap
+      # state doesn't stall the BT instead of triggering a clear/replan.
+      max_planning_time: 2.0
+      motion_model_for_search: "MOORE"
+      # Was 2.0: too weak to detour around 0.5 m proxemic zones when a
+      # straight-line shortcut existed.  3.5 multiplies the penalty for
+      # traversing a 180-cost social cell to ~630 per cell — Smac2D will
+      # now prefer a ~1 m detour over a 0.5 m brush past a pedestrian.
+      cost_travel_multiplier: 3.5
+      use_final_approach_orientation: false
+
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      use_sim_time: true
+      update_frequency: 5.0
+      publish_frequency: 2.0
+      global_frame: odom
+      robot_base_frame: base_footprint
+      # Ground-truth odom and the lidar/IMU update at different rates; the
+      # default 0.3s tolerance throws "Could not transform" warnings under
+      # load and stops costmap updates.
+      transform_tolerance: 0.5
+      rolling_window: true
+      width: 6
+      height: 6
+      resolution: 0.05
+      # Rectangular footprint sized from the leo_nav2can.sdf wheel
+      # geometry, not the chassis mesh.  The wheels are what actually
+      # contact obstacles:
+      #   - Front wheel center (in base_footprint): x = +0.155 m
+      #     (rocker_L_joint at +0.00263 in base + wheel_FL_joint
+      #     -0.15256 in rocker after π yaw flip → 0.155)
+      #     + wheel radius 0.0625 → forward edge at x = 0.218 m
+      #   - Wheel cylinder center y = 0.179 m (= wheel_separation/2)
+      #     + half-cylinder length 0.035 m → outer edge at y = 0.214 m
+      # Plus a 1 cm safety margin → 0.23 × 0.23 m half-extents.
+      # Previous footprint of [0.21, 0.16] under-approximated the
+      # lateral axis by 5 cm, causing wheels to clip walls/boxes that
+      # the global planner laid paths past (see analysis5.txt: 8
+      # FWD_COLLISION events, 14 OBSTACLE_INVISIBLE close-range events).
+      # The old robot_radius: 0.3 was conservative on both axes so
+      # wheels never clipped; the proper rectangle (0.23) is between
+      # those two failure modes.  Corner order CCW from front-left;
+      # +x = forward.
+      footprint: "[[0.23, 0.23], [0.23, -0.23], [-0.23, -0.23], [-0.23, 0.23]]"
+      plugins: ["social_layer", "obstacle_layer", "inflation_layer"]
+      social_layer:
+        plugin: "context_aware_navigation::SocialLayer"
+        enabled: true
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: true
+        observation_sources: scan
+        scan:
+          topic: /scan
+          sensor_frame: lidar_link
+          data_type: "LaserScan"
+          # 0.3 s (was 1.0): on uneven terrain (inspect world ramps and
+          # box edges) the 2D LiDAR briefly sees ground bumps as obstacles.
+          # 1 s persistence keeps the ghost in the costmap behind/under the
+          # robot, refusing back-up recoveries and tripping lethal-start.
+          # 0.3 s = ~6 scans @ 20 Hz lets ghosts decay; real walls re-confirm
+          # every scan so they stick.
+          observation_persistence: 0.3
+          expected_update_rate: 20.0
+          inf_is_valid: false
+          clearing: true
+          marking: true
+          # Lowered from 8.0 → 4.0 to suppress hill/slope ghost obstacles
+          # in the inspect world.  At 8 m the 2D laser sweeps far enough
+          # up nearby hillsides that the slope shows up as a "wall" in
+          # the costmap (44 HIGH_COST events in diag run 4, most while
+          # crossing terrain features the robot can actually climb).
+          # 4 m still gives DWB enough lookahead for reactive avoidance
+          # (sim_time=1.7s × max_vel_x=0.7 m/s ≈ 1.2 m forward sample) and
+          # Smac2D still gets long-horizon obstacles via the 20×20 m global
+          # rolling window.  Raytrace_max_range stays at 10 m so clearing
+          # of stale marks works at the old distance.
+          obstacle_max_range: 4.0
+          obstacle_min_range: 0.15
+          raytrace_max_range: 10.0
+          raytrace_min_range: 0.15
+          max_obstacle_height: 15.0
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        # Was 5.0 / 0.4: only ~10 cm of cost gradient beyond the 0.3 m
+        # inscribed radius, and the cost decayed by 40 % in the first
+        # 5 cm of that buffer.  DWB therefore had no incentive to keep
+        # the path more than 35 cm from a box, so any perturbation
+        # (pedestrian, terrain bump, controller jitter) put the wheel
+        # on the inscribed boundary.  3.0 / 0.55 gives ~25 cm of usable
+        # gradient — passages > 1 m wide stay fully plannable; passages
+        # 0.6–1 m get cost-painted but not blocked.
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.55
+      always_send_full_costmap: true
+
+
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      use_sim_time: true
+      update_frequency: 5.0
+      publish_frequency: 2.0
+      global_frame: odom
+      robot_base_frame: base_footprint
+      transform_tolerance: 0.5
+      rolling_window: true
+      width: 20
+      height: 20
+      resolution: 0.05
+      # Rectangular footprint must match the local costmap exactly,
+      # otherwise the global planner's collision check and DWB's
+      # footprint check disagree at footprint edges → "valid global
+      # plan that DWB cannot follow".  See local_costmap above for
+      # the SDF-derived 0.23 × 0.23 m half-extent rationale.
+      footprint: "[[0.23, 0.23], [0.23, -0.23], [-0.23, -0.23], [-0.23, 0.23]]"
+      track_unknown_space: false
+      # InteractionLayer omitted: this benchmark uses independent-pedestrian
+      # scenarios (no group/queue interactions), so the InteractionLayer would
+      # have no publisher to consume from and contributes no signal to the
+      # comparison vs the AVSN baseline.  To enable for paper-faithful Nav2CAN
+      # runs add "interaction_layer" back to plugins, uncomment the block
+      # below, AND launch with `use_interaction:=true`.
+      plugins: ["social_layer", "obstacle_layer", "inflation_layer"]
+      social_layer:
+        plugin: "context_aware_navigation::SocialLayer"
+        enabled: true
+      # interaction_layer:
+      #   plugin: "context_aware_navigation::InteractionLayer"
+      #   enabled: true
+      #   interaction_cost: 220.0
+      #   keeptime: 5.0
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: true
+        observation_sources: scan
+        scan:
+          topic: /scan
+          sensor_frame: lidar_link
+          data_type: "LaserScan"
+          # observation_persistence shortened to 0.3 s to decay uneven-terrain
+          # ghost obstacles in the inspect world; min_range kept at 0.15 so
+          # close head-on returns to the rectangular leo footprint are still
+          # detected.
+          observation_persistence: 0.3
+          expected_update_rate: 20.0
+          inf_is_valid: false
+          clearing: true
+          marking: true
+          # See local_costmap for hill-ghost-suppression rationale.
+          obstacle_max_range: 4.0
+          obstacle_min_range: 0.15
+          raytrace_max_range: 10.0
+          raytrace_min_range: 0.15
+          max_obstacle_height: 15.0
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        # 0.5 m was too tight for the global planner: Smac2D could lay
+        # paths within 0.5 m of walls in the inspect world, leaving DWB
+        # no choice but to track them.  0.65 m matches the local layer
+        # (0.55) plus a 10 cm margin so the global plan is consistently
+        # outside the local layer's hard inflation band.
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.65
+      always_send_full_costmap: true
+
+
+behavior_server:
+  ros__parameters:
+    use_sim_time: true
+    costmap_topic: local_costmap/costmap_raw
+    footprint_topic: local_costmap/published_footprint
+    cycle_frequency: 10.0
+    behavior_plugins: ["spin", "backup", "drive_on_heading", "wait"]
+    spin: {plugin: "nav2_behaviors/Spin"}
+    backup: {plugin: "nav2_behaviors/BackUp"}
+    drive_on_heading: {plugin: "nav2_behaviors/DriveOnHeading"}
+    wait: {plugin: "nav2_behaviors/Wait"}
+    global_frame: odom
+    robot_base_frame: base_footprint
+    transform_tolerance: 0.1
+    simulate_ahead_time: 2.0
+    max_rotational_vel: 1.0
+    min_rotational_vel: 0.4
+    rotational_acc_lim: 3.2
+
+
+smoother_server:
+  ros__parameters:
+    use_sim_time: true
+    smoother_plugins: ["simple_smoother"]
+    simple_smoother:
+      plugin: "nav2_smoother::SimpleSmoother"
+      tolerance: 1.0e-10
+      max_its: 1000
+      do_refinement: true
+
+
+velocity_smoother:
+  ros__parameters:
+    use_sim_time: true
+    smoothing_frequency: 20.0
+    scale_velocities: false
+    feedback: "OPEN_LOOP"
+    max_velocity: [0.7, 0.0, 0.7]
+    min_velocity: [-0.7, 0.0, -0.7]
+    max_accel: [1.0, 0.0, 2.5]
+    max_decel: [-1.0, 0.0, -2.5]
+    odom_topic: "odom_ground_truth"
+    odom_duration: 0.1
+    deadband_velocity: [0.0, 0.0, 0.0]
+    velocity_timeout: 1.0
+
+
+waypoint_follower:
+  ros__parameters:
+    use_sim_time: true
+    loop_rate: 20
+    stop_on_failure: false
+    waypoint_task_executor_plugin: "wait_at_waypoint"
+    wait_at_waypoint:
+      plugin: "nav2_waypoint_follower::WaitAtWaypoint"
+      enabled: true
+      waypoint_pause_duration: 200
+
+
+lifecycle_manager_navigation:
+  ros__parameters:
+    use_sim_time: true
+    autostart: true
+    node_names:
+      - controller_server
+      - planner_server
+      - behavior_server
+      - bt_navigator
+      - smoother_server
+      - velocity_smoother
+      - waypoint_follower

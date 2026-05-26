@@ -1,0 +1,225 @@
+=== nav2_diag analysis: diag_out7.txt ===
+
+--- 1. Tag counts ---
+  INIT                      1
+  STATE                     921
+  GOAL_START                15
+  GOAL_OK                   0
+  GOAL_FAIL                 15
+  GOAL_STATE                16
+  STUCK_START               45
+  STUCK_END                 19
+  FWD_COLLISION             41
+  HIGH_COST                 38
+  LETHAL_FOOT               0
+  CLOSE_PED                 2
+  OBSTACLE_INVISIBLE        5
+  BACKUP_START              10
+  BACKUP_END                10
+  BT                        5172
+  ROSOUT_LETHAL_START       2
+  ROSOUT_NO_VALID_TRAJ      8
+  ROSOUT_PATIENCE           0
+  ROSOUT_PLANNER_RATE       0
+  ROSOUT_PLAN_FAILED        2
+  ROSOUT_CONTROLLER_ABORT   91
+  ROSOUT_TRANSFORM_OLD      0
+  CONTEXT_STATE             155
+  CONTEXT_BT                300
+  CONTEXT_END               15
+
+--- 2. Goal lifecycle summary ---
+  successes:    0
+  failures:     15
+  total:        15
+  fail rate:    100%
+
+  Goal durations (success):
+    (none)
+  Goal durations (failure):
+    n=15  mean=56.4s  min=0.0s  max=142.7s
+
+--- 3. Events in the 8 lines before each GOAL_FAIL ---
+  --- failure ---
+  t=1779744717.071 wall=1779744717.071 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779744717.071 wall=1779744717.071 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779744718.081 wall=1779744718.081 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779744718.081 wall=1779744718.081 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779744718.101 wall=1779744718.101 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779744718.101 wall=1779744718.101 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779744718.102 wall=1779744718.102 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779744718.102 wall=1779744718.102 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779744718.771 wall=1779744718.771 [GOAL_FAIL] goal_id=8307ccdb2017 status=ABORTED duration=0.0s goal=(-17.010817890381773,-24.767665226475504) robot=(-23.003946885297257,-21.71789150250634)
+  --- failure ---
+  t=1779744860.876 wall=1779744860.876 [FWD_COLLISION] duration=1779744861.9s cmd_vx=+0.26 actual_v=0.01 robot=(-21.05,-22.05,-73deg) min_scan=0.22m@+130deg local_fwd_0.3m=252 global_fwd_0.3m=252 local_fwd_0.6m=240 global_fwd_0.6m=240 local_fwd_1.0m=105 global_fwd_1.0m=105 active_bt=no_driver_RateController goal_dist=4.87m
+  t=1779744861.468 wall=1779744861.468 [ROSOUT_CONTROLLER_ABORT] node=controller_server msg='[follow_path] [ActionServer] Aborting handle.'
+  t=1779744861.481 wall=1779744861.481 [BT] FollowPath: RUNNING->FAILURE
+  t=1779744861.481 wall=1779744861.481 [BT] FollowPath: FAILURE->IDLE
+  t=1779744861.481 wall=1779744861.481 [BT] FollowPath: RUNNING->FAILURE
+  t=1779744861.481 wall=1779744861.481 [BT] FollowPath: FAILURE->IDLE
+  t=1779744861.481 wall=1779744861.481 [BT] NavigateRecovery: RUNNING->FAILURE
+  t=1779744861.481 wall=1779744861.481 [BT] NavigateRecovery: FAILURE->IDLE
+  t=1779744861.491 wall=1779744861.491 [GOAL_FAIL] goal_id=fc5121c4a304 status=ABORTED duration=142.7s goal=(-17.010817890381773,-24.767665226475504) robot=(-21.050972375161265,-22.0507026192249)
+  --- failure ---
+  t=1779744933.351 wall=1779744933.351 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779744933.351 wall=1779744933.351 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779744934.361 wall=1779744934.361 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779744934.361 wall=1779744934.361 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779744934.382 wall=1779744934.382 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779744934.382 wall=1779744934.382 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779744934.382 wall=1779744934.382 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779744934.382 wall=1779744934.382 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779744935.332 wall=1779744935.332 [GOAL_FAIL] goal_id=78c161fac8b1 status=ABORTED duration=72.0s goal=(-16.431681324047304,-19.79179471215179) robot=(-26.356247042523155,-21.017146072195633)
+  --- failure ---
+  t=1779744961.141 wall=1779744961.141 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779744961.141 wall=1779744961.141 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779744962.151 wall=1779744962.151 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779744962.151 wall=1779744962.151 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779744962.172 wall=1779744962.172 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779744962.172 wall=1779744962.172 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779744962.172 wall=1779744962.172 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779744962.172 wall=1779744962.172 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779744962.351 wall=1779744962.351 [GOAL_FAIL] goal_id=99e49995a608 status=ABORTED duration=27.0s goal=(-17.790751615485036,-19.58719112799549) robot=(-16.72777965370558,-19.74730865772375)
+  --- failure ---
+  t=1779745014.618 wall=1779745014.618 [ROSOUT_CONTROLLER_ABORT] node=controller_server msg='[follow_path] [ActionServer] Aborting handle.'
+  t=1779745014.631 wall=1779745014.631 [BT] FollowPath: RUNNING->FAILURE
+  t=1779745014.631 wall=1779745014.631 [BT] FollowPath: FAILURE->IDLE
+  t=1779745014.631 wall=1779745014.631 [BT] FollowPath: RUNNING->FAILURE
+  t=1779745014.631 wall=1779745014.631 [BT] FollowPath: FAILURE->IDLE
+  t=1779745014.631 wall=1779745014.631 [BT] NavigateRecovery: RUNNING->FAILURE
+  t=1779745014.631 wall=1779745014.631 [BT] NavigateRecovery: FAILURE->IDLE
+  t=1779745014.641 wall=1779745014.641 [ROSOUT_CONTROLLER_ABORT] node=bt_navigator msg='[navigate_to_pose] [ActionServer] Aborting handle.'
+  t=1779745014.643 wall=1779745014.643 [GOAL_FAIL] goal_id=6e3b10097a48 status=ABORTED duration=52.3s goal=(-17.790751615485036,-19.58719112799549) robot=(-17.043379069748905,-19.45774821444905)
+  --- failure ---
+  t=1779745032.948 wall=1779745032.948 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745032.948 wall=1779745032.948 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745033.959 wall=1779745033.959 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779745033.959 wall=1779745033.959 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779745033.978 wall=1779745033.978 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745033.978 wall=1779745033.978 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745033.978 wall=1779745033.978 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745033.978 wall=1779745033.978 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745034.989 wall=1779745034.989 [GOAL_FAIL] goal_id=dfc1d38bf8af status=ABORTED duration=18.5s goal=(-25.76244553508333,-20.142031116358773) robot=(-22.2841291464783,-22.769863881976114)
+  --- failure ---
+  t=1779745064.368 wall=1779745064.368 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745064.368 wall=1779745064.368 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745065.378 wall=1779745065.378 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779745065.378 wall=1779745065.378 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779745065.398 wall=1779745065.398 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745065.398 wall=1779745065.398 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745065.398 wall=1779745065.398 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745065.398 wall=1779745065.398 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745065.718 wall=1779745065.718 [GOAL_FAIL] goal_id=068802460cda status=ABORTED duration=30.7s goal=(-19.37274518526684,-18.734486657483526) robot=(-25.874347138635443,-20.414040730831314)
+  --- failure ---
+  t=1779745180.966 wall=1779745180.966 [ROSOUT_CONTROLLER_ABORT] node=controller_server msg='[follow_path] [ActionServer] Aborting handle.'
+  t=1779745180.978 wall=1779745180.978 [BT] FollowPath: RUNNING->FAILURE
+  t=1779745180.978 wall=1779745180.978 [BT] FollowPath: FAILURE->IDLE
+  t=1779745180.978 wall=1779745180.978 [BT] FollowPath: RUNNING->FAILURE
+  t=1779745180.978 wall=1779745180.978 [BT] FollowPath: FAILURE->IDLE
+  t=1779745180.978 wall=1779745180.978 [BT] NavigateRecovery: RUNNING->FAILURE
+  t=1779745180.978 wall=1779745180.978 [BT] NavigateRecovery: FAILURE->IDLE
+  t=1779745180.988 wall=1779745180.988 [ROSOUT_CONTROLLER_ABORT] node=bt_navigator msg='[navigate_to_pose] [ActionServer] Aborting handle.'
+  t=1779745180.988 wall=1779745180.988 [GOAL_FAIL] goal_id=3203f627d471 status=ABORTED duration=115.3s goal=(-19.37274518526684,-18.734486657483526) robot=(-22.245823113743604,-19.1276163229399)
+  --- failure ---
+  t=1779745185.908 wall=1779745185.908 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745185.908 wall=1779745185.908 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745186.909 wall=1779745186.909 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779745186.909 wall=1779745186.909 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779745186.929 wall=1779745186.929 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745186.929 wall=1779745186.929 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745186.929 wall=1779745186.929 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745186.929 wall=1779745186.929 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745187.378 wall=1779745187.378 [GOAL_FAIL] goal_id=f5a83c9ddb4b status=ABORTED duration=4.6s goal=(-16.42478533711649,-19.684813251629034) robot=(-18.46696070119577,-20.987307371836277)
+  --- failure ---
+  t=1779745199.288 wall=1779745199.288 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745199.288 wall=1779745199.288 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745200.298 wall=1779745200.298 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779745200.298 wall=1779745200.298 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779745200.318 wall=1779745200.318 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745200.318 wall=1779745200.318 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745200.318 wall=1779745200.318 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745200.318 wall=1779745200.318 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745200.988 wall=1779745200.988 [GOAL_FAIL] goal_id=7390369ff226 status=ABORTED duration=13.6s goal=(-20.91404752657933,-23.042901968163104) robot=(-16.239686690925637,-19.453271506136993)
+  --- failure ---
+  t=1779745318.690 wall=1779745318.690 [ROSOUT_CONTROLLER_ABORT] node=controller_server msg='[follow_path] [ActionServer] Aborting handle.'
+  t=1779745318.709 wall=1779745318.709 [BT] FollowPath: RUNNING->FAILURE
+  t=1779745318.709 wall=1779745318.709 [BT] FollowPath: FAILURE->IDLE
+  t=1779745318.709 wall=1779745318.709 [BT] FollowPath: RUNNING->FAILURE
+  t=1779745318.709 wall=1779745318.709 [BT] FollowPath: FAILURE->IDLE
+  t=1779745318.709 wall=1779745318.709 [BT] NavigateRecovery: RUNNING->FAILURE
+  t=1779745318.709 wall=1779745318.709 [BT] NavigateRecovery: FAILURE->IDLE
+  t=1779745318.718 wall=1779745318.718 [ROSOUT_CONTROLLER_ABORT] node=bt_navigator msg='[navigate_to_pose] [ActionServer] Aborting handle.'
+  t=1779745318.718 wall=1779745318.718 [GOAL_FAIL] goal_id=faea910ad1fd status=ABORTED duration=117.7s goal=(-20.91404752657933,-23.042901968163104) robot=(-16.73574862701409,-20.69842960455944)
+  --- failure ---
+  t=1779745414.958 wall=1779745414.958 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745414.958 wall=1779745414.958 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745415.968 wall=1779745415.968 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779745415.968 wall=1779745415.968 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779745415.989 wall=1779745415.989 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745415.989 wall=1779745415.989 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745415.989 wall=1779745415.989 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745415.989 wall=1779745415.989 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745416.388 wall=1779745416.388 [GOAL_FAIL] goal_id=cb99460f4095 status=ABORTED duration=95.9s goal=(-24.243798353073128,-20.561671546183092) robot=(-21.684745337417986,-21.625029700287428)
+  --- failure ---
+  t=1779745482.067 wall=1779745482.067 [ROSOUT_CONTROLLER_ABORT] node=controller_server msg='[follow_path] [ActionServer] Aborting handle.'
+  t=1779745482.078 wall=1779745482.078 [BT] FollowPath: RUNNING->FAILURE
+  t=1779745482.078 wall=1779745482.078 [BT] FollowPath: FAILURE->IDLE
+  t=1779745482.078 wall=1779745482.078 [BT] FollowPath: RUNNING->FAILURE
+  t=1779745482.078 wall=1779745482.078 [BT] FollowPath: FAILURE->IDLE
+  t=1779745482.078 wall=1779745482.078 [BT] NavigateRecovery: RUNNING->FAILURE
+  t=1779745482.078 wall=1779745482.078 [BT] NavigateRecovery: FAILURE->IDLE
+  t=1779745482.088 wall=1779745482.088 [ROSOUT_CONTROLLER_ABORT] node=bt_navigator msg='[navigate_to_pose] [ActionServer] Aborting handle.'
+  t=1779745482.089 wall=1779745482.089 [GOAL_FAIL] goal_id=d67337e597ab status=ABORTED duration=65.7s goal=(-24.243798353073128,-20.561671546183092) robot=(-22.153024560186083,-22.022306554920473)
+  --- failure ---
+  t=1779745541.235 wall=1779745541.235 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745541.235 wall=1779745541.235 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745542.245 wall=1779745542.245 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779745542.245 wall=1779745542.245 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779745542.264 wall=1779745542.264 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745542.264 wall=1779745542.264 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745542.264 wall=1779745542.264 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745542.264 wall=1779745542.264 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745542.354 wall=1779745542.354 [GOAL_FAIL] goal_id=ac2018f1b86b status=ABORTED duration=58.4s goal=(-17.619607955832333,-21.391975183812722) robot=(-23.972428443606688,-22.999268128657672)
+  --- failure ---
+  t=1779745572.104 wall=1779745572.104 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745572.104 wall=1779745572.104 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745573.114 wall=1779745573.114 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779745573.114 wall=1779745573.114 [BT] ComputePathToPose: IDLE->RUNNING
+  t=1779745573.134 wall=1779745573.134 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745573.134 wall=1779745573.134 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745573.134 wall=1779745573.134 [BT] ComputePathToPose: RUNNING->SUCCESS
+  t=1779745573.134 wall=1779745573.134 [BT] ComputePathToPose: SUCCESS->IDLE
+  t=1779745573.764 wall=1779745573.764 [GOAL_FAIL] goal_id=e00604d21cdf status=ABORTED duration=31.4s goal=(-14.363421722006807,-20.874510498411297) robot=(-17.651667357873457,-21.093729729106652)
+
+--- 4. Spatial clustering of failure positions ---
+  2 failures near (-22, -22)
+  2 failures near (-16, -19)
+  1 failures near (-26, -21)
+  1 failures near (-25, -20)
+  1 failures near (-23, -22)
+  1 failures near (-23, -21)
+  1 failures near (-22, -19)
+  1 failures near (-21, -22)
+  1 failures near (-21, -21)
+  1 failures near (-18, -20)
+
+--- 5. Sanity: was the diag node receiving data? ---
+  first [STATE]: t=1779744694.876 wall=1779744694.876 [STATE] pos=(-18.93,-21.67) cmd_vx=+0.66 cmd_wz=+1.50 actual_v=0.58 gcost=133 lcost=128 ped_dist=1.135148173276413 min_scan=1.58m@+77deg
+  last  [STATE]: t=1779745614.876 wall=1779745614.876 [STATE] pos=(-17.30,-20.91) cmd_vx=+0.00 cmd_wz=-0.24 actual_v=0.69 gcost=204 lcost=204 ped_dist=None min_scan=0.20m@+102deg
+  total [STATE] lines: 921
+  approximate run duration: 920.0 s
+
+--- 6. BACKUP analysis ---
+  total backups: 10
+  by active BT node at start:
+      10  active_bt=no_driver_GoalUpdated
+  reverse distance distribution:
+    n=10  mean=0.26m  min=0.07m  max=0.30m  >0.30m=0
+  duration distribution:
+    n=10  mean=5.8s  min=1.6s  max=7.0s
+
+--- 7. OBSTACLE_INVISIBLE near failures ---
+  total OBSTACLE_INVISIBLE events: 5
+  closest-return range distribution:
+    n=5  mean=0.39m  min=0.20m  max=0.59m
+  failures with >=1 invisible-obstacle event in the 5 s before: 0 / 15 (0%)

@@ -1,0 +1,106 @@
+<?xml version="1.0" ?>
+<!--
+  Static humanoid figure used by nav2can_tb3_launch.py for testing the
+  social-navigation pipeline in TB3 sim.
+
+  gazebo_ros/spawn_entity.py only accepts <model> or <light> SDFs, so this
+  is a <model> built from primitives rather than a Gazebo <actor>.
+  Consequences:
+
+  * Visible in Gazebo (clearly humanoid silhouette: ~1.75 m tall).
+  * Has a collision cylinder, so the TB3 lidar sees it and it appears in
+    the obstacle layer of the costmap.
+  * Will NOT reliably trigger YOLO-pose (the built-in Gazebo meshes are
+    low-fidelity and don't look like real photos).  If you need real visual
+    detection in sim, the practical path is to bridge this model's pose
+    straight to /people via a small node (we treat this static body as a
+    "person" regardless of detection).  See README.
+
+  Spawn pose is overridden by the launch (-x, -y, -Y to spawn_entity.py).
+-->
+<sdf version="1.6">
+  <model name="nav2can_person1">
+    <static>true</static>
+    <link name="body">
+      <pose>0 0 0 0 0 0</pose>
+
+      <!-- Torso: blue jacket-like rectangular block -->
+      <visual name="torso_visual">
+        <pose>0 0 1.1 0 0 0</pose>
+        <geometry>
+          <box><size>0.35 0.22 0.65</size></box>
+        </geometry>
+        <material>
+          <ambient>0.15 0.25 0.55 1</ambient>
+          <diffuse>0.20 0.35 0.75 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- Head: skin-toned sphere -->
+      <visual name="head_visual">
+        <pose>0 0 1.6 0 0 0</pose>
+        <geometry>
+          <sphere><radius>0.12</radius></sphere>
+        </geometry>
+        <material>
+          <ambient>0.80 0.65 0.55 1</ambient>
+          <diffuse>0.95 0.78 0.65 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- Legs: two dark cylinders -->
+      <visual name="leg_l_visual">
+        <pose>0 0.08 0.4 0 0 0</pose>
+        <geometry>
+          <cylinder><radius>0.07</radius><length>0.8</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.10 0.10 0.15 1</ambient>
+          <diffuse>0.15 0.15 0.20 1</diffuse>
+        </material>
+      </visual>
+      <visual name="leg_r_visual">
+        <pose>0 -0.08 0.4 0 0 0</pose>
+        <geometry>
+          <cylinder><radius>0.07</radius><length>0.8</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.10 0.10 0.15 1</ambient>
+          <diffuse>0.15 0.15 0.20 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- Arms: two slimmer cylinders, same colour as torso -->
+      <visual name="arm_l_visual">
+        <pose>0 0.21 1.1 0 0 0</pose>
+        <geometry>
+          <cylinder><radius>0.05</radius><length>0.6</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.15 0.25 0.55 1</ambient>
+          <diffuse>0.20 0.35 0.75 1</diffuse>
+        </material>
+      </visual>
+      <visual name="arm_r_visual">
+        <pose>0 -0.21 1.1 0 0 0</pose>
+        <geometry>
+          <cylinder><radius>0.05</radius><length>0.6</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.15 0.25 0.55 1</ambient>
+          <diffuse>0.20 0.35 0.75 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- Single collision cylinder so the lidar sees the figure
+           and the obstacle layer reacts.  Approximates the person's
+           footprint without modelling each limb individually. -->
+      <collision name="collision">
+        <pose>0 0 0.9 0 0 0</pose>
+        <geometry>
+          <cylinder><radius>0.25</radius><length>1.75</length></cylinder>
+        </geometry>
+      </collision>
+    </link>
+  </model>
+</sdf>

@@ -1,0 +1,8 @@
+<library path="context_aware_navigation">
+  <class name="context_aware_navigation::SocialLayer" type="context_aware_navigation::SocialLayer" base_class_type="nav2_costmap_2d::Layer">
+    <description>Adds proxemic cost distributions</description>
+  </class>
+  <class name="context_aware_navigation::InteractionLayer" type="context_aware_navigation::InteractionLayer" base_class_type="nav2_costmap_2d::Layer">
+    <description>Generates a gaussian distributions for interactions based on the bounding box size</description>
+  </class>
+</library>

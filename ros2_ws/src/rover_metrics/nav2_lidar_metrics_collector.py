@@ -26,6 +26,15 @@ GoalXY = Tuple[float, float]
 Distance = Optional[float]
 
 
+# Sim-time seconds.  /navigate_to_pose/_action/status messages that
+# arrive within this many seconds of the most recent send_goal() are
+# treated as stale terminal status for the *previous* goal, not the
+# new one.  2.0 s is comfortably above the longest accept→executing
+# latency we've seen (~0.3 s under load) without being so long that
+# we ignore a legitimate fast-fail of the new goal.
+ABORT_GRACE_S: float = 2.0
+
+
 # Enums and Types
 class GoalStatus(Enum):
     IDLE = "idle"
@@ -324,7 +333,12 @@ class MetricsCollectorNode:
         )
 
         robot_qos = QoSProfile(depth=1, reliability=QoSReliabilityPolicy.BEST_EFFORT)
-        goal_qos = QoSProfile(depth=10, reliability=QoSReliabilityPolicy.BEST_EFFORT)
+        # Nav2's bt_navigator subscribes to /goal_pose with RELIABLE QoS; a
+        # BEST_EFFORT publisher cannot deliver to a RELIABLE subscriber and
+        # `get_subscription_count()` won't count the mismatched sub, so the
+        # "Waiting for Nav2 to connect…" loop hangs forever.  Use RELIABLE
+        # to match — RViz's "2D Goal Pose" tool also publishes RELIABLE.
+        goal_qos = QoSProfile(depth=10, reliability=QoSReliabilityPolicy.RELIABLE)
 
         self.node.create_subscription(PoseArray, "/rover/pose_array", self._on_robot_pose, robot_qos)
         for actor_id, topic in config.actor_topics.items():
@@ -341,7 +355,18 @@ class MetricsCollectorNode:
 
         self.nav2_goal_failed: bool = False
         self.nav2_goal_succeeded: bool = False
-        self.controller_abort_hard: bool = False
+
+        # Sim-time of the most recent send_goal() call.  Used to
+        # ignore inbound /navigate_to_pose ABORTED messages that
+        # arrive within ABORT_GRACE_S of the new goal — those are
+        # almost always the *previous* goal's terminal status
+        # being delivered after the new goal has already been
+        # accepted, NOT a real failure of the new goal.  Without
+        # this filter the spawn-cluster burst happens: a single
+        # respawn triggers 20+ rapid-fire "controller aborted"
+        # spurious failures (see analysis6.txt section 4: 23 / 49
+        # failures clustered at the spawn point in run 6).
+        self.goal_send_sim_time: float = 0.0
 
         self.node.create_subscription(
             GoalStatusArray,
@@ -350,13 +375,17 @@ class MetricsCollectorNode:
             10,
         )
 
-        self.controller_abort_count: int = 0
-        self.node.create_subscription(
-            GoalStatusArray,
-            '/follow_path/_action/status',
-            self._on_controller_status,
-            10,
-        )
+        # NOTE: previous versions also subscribed to
+        # '/follow_path/_action/status' and treated 2 consecutive
+        # controller-only ABORTED statuses as a hard failure
+        # ("controller aborted twice — respawning").  That logic was
+        # racing the BT's own RecoveryFallback (Wait → Spin → BackUp
+        # → retry FollowPath, up to 6 attempts), killing goals
+        # mid-recovery.  In analysis6.txt this accounted for ~92 %
+        # of GOAL_FAIL events.  We now rely solely on the BT-root
+        # /navigate_to_pose action status; when that goes ABORTED
+        # Nav2 has genuinely exhausted recovery and a respawn is
+        # warranted.
 
     def _on_robot_pose(self, msg: PoseArray) -> None:
         """Update robot position and orientation."""
@@ -377,9 +406,10 @@ class MetricsCollectorNode:
         msg = create_goal_msg(goal_xy[0], goal_xy[1], "odom")
         msg.header.stamp = self.node.get_clock().now().to_msg()
         self.goal_pub.publish(msg)
+        send_t = self.node.get_clock().now().nanoseconds / 1e9
         self.state = self.state._replace(current_goal=goal_xy, goal_status=GoalStatus.WAITING,
-                                         goal_start_time=self.node.get_clock().now().nanoseconds / 1e9)
-        self.controller_abort_count = 0
+                                         goal_start_time=send_t)
+        self.goal_send_sim_time = send_t
         self.nav2_goal_failed = False
         self.nav2_goal_succeeded = False
         print(f"New goal: ({goal_xy[0]:.2f}, {goal_xy[1]:.2f})")
@@ -429,28 +459,32 @@ class MetricsCollectorNode:
         rclpy.spin_once(self.node, timeout_sec=0.01)
         
     def _on_nav_status(self, msg: GoalStatusArray) -> None:
-        """Detect Nav2 goal abort/failure and success."""
-        if msg.status_list:
-            latest = msg.status_list[-1]
-            if latest.status in (5, 6):  # CANCELED or ABORTED
-                self.nav2_goal_failed = True
-                self.controller_abort_hard = False
-            elif latest.status == 4:  # SUCCEEDED
-                self.nav2_goal_succeeded = True
-                self.controller_abort_count = 0
-            elif latest.status == 2:  # ACTIVE
-                self.controller_abort_count = 0
+        """Detect Nav2 goal abort/failure and success.
 
-    def _on_controller_status(self, msg: GoalStatusArray) -> None:
-        """Count consecutive controller aborts."""
-        if msg.status_list:
-            latest = msg.status_list[-1]
-            if latest.status == 6:  # STATUS_ABORTED
-                self.controller_abort_count += 1
-                if self.controller_abort_count >= 2:
-                    self.nav2_goal_failed = True
-                    self.controller_abort_hard = True
-                    self.controller_abort_count = 0
+        Only the most-recent entry in the action server's status_list
+        is examined.  Status semantics (action_msgs/msg/GoalStatus):
+            2 = STATUS_EXECUTING
+            4 = STATUS_SUCCEEDED
+            5 = STATUS_CANCELED
+            6 = STATUS_ABORTED  (BT root gave up — Nav2 fully failed)
+
+        ABORTED/CANCELED arriving within ABORT_GRACE_S seconds of the
+        most recent send_goal() are dropped: those are reliably the
+        previous goal's terminal status being delivered late, after
+        the bt_navigator has already accepted the new goal.  Without
+        this gate the collector enters a respawn loop the first time
+        the previous goal aborts (see analysis6.txt).
+        """
+        if not msg.status_list:
+            return
+        latest = msg.status_list[-1]
+        if latest.status in (5, 6):  # CANCELED or ABORTED
+            now_sim = self.node.get_clock().now().nanoseconds / 1e9
+            if (now_sim - self.goal_send_sim_time) < ABORT_GRACE_S:
+                return  # stale terminal status from previous goal
+            self.nav2_goal_failed = True
+        elif latest.status == 4:  # SUCCEEDED
+            self.nav2_goal_succeeded = True
 
 
 def main(env_name: str = "construct") -> None:
@@ -459,7 +493,7 @@ def main(env_name: str = "construct") -> None:
     rclpy.init()
     collector = MetricsCollectorNode(config)
 
-    csv_path = f"metrics_data/{env_name}/Nav2_lidar/{env_name}_nav2_{time.strftime('%m_%d_%H-%M')}.csv"
+    csv_path = f"metrics_data/{env_name}/Nav2CAN/{env_name}_nav2_{time.strftime('%m_%d_%H-%M')}.csv"
     csv_file = open(csv_path, "w", newline="")
     writer = csv.writer(csv_file)
     write_metrics_header(writer, sorted(config.actor_topics.keys()))
@@ -529,20 +563,19 @@ def main(env_name: str = "construct") -> None:
                         collector.respawn_robot()
                     collector.send_goal()
 
-            # Check Nav2 abort (immediate re-goal without waiting for 207s timeout)
+            # Check Nav2 BT-root abort.  After Option-B simplification
+            # this fires only when /navigate_to_pose/_action/status hits
+            # ABORTED or CANCELED outside the post-send_goal grace
+            # window — i.e. Nav2 exhausted its full RecoveryFallback
+            # (Wait/Spin/BackUp/retry) and gave up on this goal.
+            # That's a "robot is genuinely stuck" signal: respawn at
+            # the known-good spawn pose rather than try to recover
+            # in place, since recovery already failed.
             if collector.nav2_goal_failed:
                 collector.nav2_goal_failed = False
                 collector.state = collector.state._replace(goals_failed=collector.state.goals_failed + 1)
-
-                if collector.controller_abort_hard:
-                    collector.controller_abort_hard = False
-                    print(f"Nav2 controller aborted twice — respawning. Total: {collector.state.goals_succeeded}, Failed: {collector.state.goals_failed}")
-                    collector.respawn_robot()
-                else:
-                    print(f"Nav2 goal aborted — clearing + re-goal. Total: {collector.state.goals_succeeded}, Failed: {collector.state.goals_failed}")
-                    if collector.clear_local_costmap.service_is_ready():
-                        collector.clear_local_costmap.call_async(ClearEntireCostmap.Request())
-
+                print(f"Nav2 BT aborted — respawning. Total: {collector.state.goals_succeeded}, Failed: {collector.state.goals_failed}")
+                collector.respawn_robot()
                 collector.send_goal()
                 
             # Log metrics at 1 Hz
